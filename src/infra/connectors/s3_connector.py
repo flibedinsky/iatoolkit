@@ -1,0 +1,33 @@
+# Copyright (c) 2024 Fernando Libedinsky
+# Producto: IAToolkit
+# Todos los derechos reservados.
+# En trámite de registro en el Registro de Propiedad Intelectual de Chile.
+
+import boto3
+from infra.connectors.file_connector import FileConnector
+from typing import List
+
+
+class S3Connector(FileConnector):
+    def __init__(self, bucket: str, prefix: str, auth: dict):
+        self.bucket = bucket
+        self.prefix = prefix
+        self.s3 = boto3.client('s3', **auth)
+
+    def list_files(self) -> List[dict]:
+        # list all the files as dictionaries, with keys:  'path', 'name' y 'metadata'.
+        response = self.s3.list_objects_v2(Bucket=self.bucket, Prefix=self.prefix)
+        files = response.get('Contents', [])
+
+        return [
+            {
+                "path": obj['Key'],  # s3 key
+                "name": obj['Key'].split('/')[-1],  # filename
+                "metadata": {"size": obj.get('Size'), "last_modified": obj.get('LastModified')}
+            }
+            for obj in files
+        ]
+
+    def get_file_content(self, file_path: str) -> bytes:
+        response = self.s3.get_object(Bucket=self.bucket, Key=file_path)
+        return response['Body'].read()
