@@ -3,15 +3,18 @@
 # Todos los derechos reservados.
 # En trámite de registro en el Registro de Propiedad Intelectual de Chile.
 
-from exceptions import AppException
-from companies.maxxa.maxxa import Maxxa
+from common.exceptions import AppException
 from services.prompt_manager_service import PromptService
 from repositories.llm_query_repo import LLMQueryRepo
 from repositories.models import Company, Function
 from services.excel_service import ExcelService
 from services.mail_service import MailService
-from util import Utility
+from src.companies.base_company import BaseCompany
+from common.util import Utility
 from injector import inject
+import importlib
+import pkgutil
+import inspect
 import logging
 import os
 
@@ -23,20 +26,17 @@ class Dispatcher:
                  llmquery_repo: LLMQueryRepo,
                  util: Utility,
                  excel_service: ExcelService,
-                 mail_service: MailService,
-                 maxxa: Maxxa):
+                 mail_service: MailService):
         self.prompt_service = prompt_service
         self.llmquery_repo = llmquery_repo
         self.util = util
-        self.maxxa = maxxa
         self.excel_service = excel_service
         self.mail_service = mail_service
         self.system_functions = _FUNCTION_LIST
         self.system_prompts = _SYSTEM_PROMPT
 
-        self.company_classes = {
-            "maxxa": self.maxxa,
-        }
+        # automatic discovery of company classes
+        self.company_classes = self._discover_company_classes()
 
         self.tool_handlers = {
             "iat_generate_excel": self.excel_service.excel_generator,
@@ -176,6 +176,58 @@ class Dispatcher:
             logging.exception(e)
             raise AppException(AppException.ErrorType.EXTERNAL_SOURCE_ERROR,
                                f"Error en get_metadata_from_filename de {company_name}: {str(e)}") from e
+
+    def _discover_company_classes(self) -> dict:
+        """
+        Descubre dinámicamente todas las clases de empresa que heredan de BaseCompany
+        """
+        company_classes = {}
+
+        try:
+            # Importar el paquete companies
+            import companies
+            companies_package = companies
+
+            # Recorrer todos los módulos en el paquete companies
+            for importer, modname, ispkg in pkgutil.iter_modules(companies_package.__path__):
+                if ispkg:  # Si es un subpaquete (como companies.maxxa)
+                    continue
+
+                try:
+                    # Importar el módulo
+                    module_name = f"companies.{modname}"
+                    module = importlib.import_module(module_name)
+
+                    # Buscar clases que hereden de BaseCompany
+                    for name, obj in inspect.getmembers(module, inspect.isclass):
+                        if (obj != BaseCompany and
+                                issubclass(obj, BaseCompany) and
+                                obj.__module__ == module_name):
+
+                            # Crear instancia usando el inyector
+                            try:
+                                # Obtener la instancia del inyector
+                                from injector import Injector
+                                injector = Injector()
+                                company_instance = injector.get(obj)
+
+                                # Usar el nombre de la clase en minúsculas como key
+                                company_key = name.lower()
+                                company_classes[company_key] = company_instance
+
+                                logging.info(f"Empresa registrada dinámicamente: {company_key} -> {name}")
+
+                            except Exception as e:
+                                logging.warning(f"No se pudo crear instancia de {name}: {e}")
+
+                except ImportError as e:
+                    logging.warning(f"No se pudo importar módulo {modname}: {e}")
+
+        except Exception as e:
+            logging.error(f"Error en autodescubrimiento de empresas: {e}")
+
+        return company_classes
+
 
 # iatoolkit system prompts
 _SYSTEM_PROMPT = [

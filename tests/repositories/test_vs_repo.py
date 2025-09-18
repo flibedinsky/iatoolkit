@@ -5,7 +5,7 @@
 
 import pytest
 from unittest.mock import MagicMock, patch
-from exceptions import AppException
+from common.exceptions import AppException
 from repositories.vs_repo import VSRepo
 from repositories.models import VSDoc, Document
 

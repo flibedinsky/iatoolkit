@@ -7,7 +7,7 @@ from injector import inject
 from repositories.profile_repo import ProfileRepo
 from repositories.models import User, Company, ApiKey
 from flask_bcrypt import check_password_hash
-from session_manager import SessionManager
+from common.session_manager import SessionManager
 from flask_bcrypt import Bcrypt
 from infra.mail_app import MailApp
 import random

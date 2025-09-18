@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 from flask import Flask
 from views.history_view import HistoryView
 from services.history_service import HistoryService
-from auth import IAuthentication
+from common.auth import IAuthentication
 
 
 class TestHistoryView:

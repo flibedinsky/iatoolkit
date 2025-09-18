@@ -10,8 +10,8 @@ import json
 from datetime import datetime
 from services.sql_service import SqlService
 from repositories.database_manager import DatabaseManager
-from util import Utility
-from exceptions import AppException
+from common.util import Utility
+from common.exceptions import AppException
 
 class TestSqlService:
     def setup_method(self):

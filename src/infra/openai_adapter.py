@@ -6,7 +6,7 @@
 import logging
 from typing import Dict, List, Optional
 from infra.llm_response import LLMResponse, ToolCall, Usage
-from exceptions import AppException
+from common.exceptions import AppException
 
 
 class OpenAIAdapter:

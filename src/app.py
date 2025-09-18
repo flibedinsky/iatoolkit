@@ -17,7 +17,7 @@ from repositories.tasks_repo import TaskRepo
 from services.query_service import QueryService
 from services.dispatcher_service import Dispatcher
 from services.load_documents_service import LoadDocumentsService
-from companies.maxxa.apps.maxxa_customer_cluster import MaxxaCluster
+from companies import MaxxaCluster
 from services.tasks_service import TaskService
 from services.profile_service import ProfileService
 from services.document_service import DocumentService
@@ -27,12 +27,12 @@ from services.benchmark_service import BenchmarkService
 from views.llmquery_view import LLMQueryView
 from infra.llm_proxy import LLMProxy
 from infra.google_chat_app import GoogleChatApp
-from auth import IAuthentication
+from common.auth import IAuthentication
 from infra.llm_client import llmClient
 from infra.mail_app import MailApp
-from util import Utility
+from common.util import Utility
 from dotenv import load_dotenv
-from routes import register_routes
+from common.routes import register_routes
 from flask_cors import CORS
 import logging
 import redis

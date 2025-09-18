@@ -6,11 +6,11 @@
 import logging
 import os
 
-from flask import current_app, jsonify, request, send_from_directory
+from flask import current_app, jsonify, send_from_directory
 from flask.views import MethodView
 from injector import inject
 
-from auth import IAuthentication
+from common.auth import IAuthentication
 from services.excel_service import ExcelService
 from services.profile_service import ProfileService
 

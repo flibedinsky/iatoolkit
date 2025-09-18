@@ -4,12 +4,12 @@
 # En trámite de registro en el Registro de Propiedad Intelectual de Chile.
 
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 from services.history_service import HistoryService
 from repositories.llm_query_repo import LLMQueryRepo
 from repositories.profile_repo import ProfileRepo
 from repositories.models import LLMQuery, Company
-from util import Utility
+from common.util import Utility
 
 
 class TestHistoryService:

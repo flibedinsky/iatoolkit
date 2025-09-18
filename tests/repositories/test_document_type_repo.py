@@ -7,7 +7,7 @@ import pytest
 from unittest.mock import MagicMock
 from repositories.models import DocumentType
 from repositories.document_type_repo import DocumentTypeRepo
-from exceptions import AppException
+from common.exceptions import AppException
 from sqlalchemy.exc import SQLAlchemyError
 
 

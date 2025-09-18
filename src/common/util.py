@@ -4,18 +4,16 @@
 # En trámite de registro en el Registro de Propiedad Intelectual de Chile.
 
 import logging
-from typing import Dict, Any, List
-from exceptions import AppException
+from typing import List
+from common.exceptions import AppException
 from injector import inject
 import os
 from jinja2 import Environment, FileSystemLoader
-import json
 from datetime import datetime, date
 from decimal import Decimal
 import yaml
 from cryptography.fernet import Fernet
 import base64
-import re
 
 
 class Utility:

@@ -6,7 +6,7 @@
 from repositories.models import DocumentType
 from injector import inject
 from repositories.database_manager import DatabaseManager
-from exceptions import AppException
+from common.exceptions import AppException
 from sqlalchemy import func
 
 

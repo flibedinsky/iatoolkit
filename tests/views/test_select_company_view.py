@@ -12,8 +12,8 @@ from repositories.profile_repo import ProfileRepo
 from views.select_company_view import SelectCompanyView
 from repositories.models import Company, Function, User
 from datetime import datetime, timezone
-from session_manager import SessionManager
-from auth import IAuthentication
+from common.session_manager import SessionManager
+from common.auth import IAuthentication
 
 
 class TestSelectCompanyView:
@@ -72,7 +72,7 @@ class TestSelectCompanyView:
         mock_session_manager.get.side_effect = lambda key, default=None: mock_values.get(key, default)
 
         with patch('views.select_company_view.SessionManager', new=mock_session_manager), \
-                patch('auth.SessionManager', new=mock_session_manager):  # <-  Aplicar el mock
+                patch('common.auth.SessionManager', new=mock_session_manager):  # <-  Aplicar el mock
             with self.app.test_request_context():  # Necesario para Flask
                 yield
 

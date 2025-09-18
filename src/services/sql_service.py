@@ -4,11 +4,11 @@
 # En trámite de registro en el Registro de Propiedad Intelectual de Chile.
 
 from repositories.database_manager import DatabaseManager
-from util import Utility
+from common.util import Utility
 from sqlalchemy import text
 from injector import inject
 import json
-from exceptions import AppException
+from common.exceptions import AppException
 
 
 class SqlService:

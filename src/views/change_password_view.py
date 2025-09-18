@@ -5,7 +5,7 @@
 
 from flask.views import MethodView
 from flask import render_template, request, redirect, flash, url_for
-from services.profile_service import ProfileService
+from src.services.profile_service import ProfileService
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired
 from flask_bcrypt import Bcrypt
 from injector import inject

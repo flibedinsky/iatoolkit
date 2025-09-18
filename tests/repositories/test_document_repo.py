@@ -7,7 +7,7 @@ import pytest
 from unittest.mock import MagicMock
 from repositories.models import Document, Company
 from repositories.document_repo import DocumentRepo
-from exceptions import AppException
+from common.exceptions import AppException
 import base64
 
 

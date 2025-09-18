@@ -9,7 +9,7 @@ from services.query_service import QueryService
 from repositories.tasks_repo import TaskRepo
 from repositories.profile_repo import ProfileRepo
 from infra.call_service import CallServiceClient
-from exceptions import AppException
+from common.exceptions import AppException
 from datetime import datetime
 from werkzeug.utils import secure_filename
 

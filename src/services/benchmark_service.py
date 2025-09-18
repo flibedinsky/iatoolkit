@@ -9,7 +9,7 @@ import logging
 from injector import inject
 from services.query_service import QueryService
 from repositories.profile_repo import ProfileRepo
-from exceptions import AppException
+from common.exceptions import AppException
 
 
 class BenchmarkService:

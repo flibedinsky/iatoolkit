@@ -7,7 +7,7 @@ import pytest
 from unittest.mock import patch, MagicMock
 from infra.call_service import CallServiceClient
 from requests import RequestException
-from exceptions import AppException
+from common.exceptions import AppException
 
 
 class TestCallServiceClient:

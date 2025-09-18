@@ -4,7 +4,7 @@ import pytest
 from unittest.mock import patch, MagicMock
 from infra.llm_client import llmClient
 from infra.llm_response import LLMResponse, ToolCall, Usage
-from exceptions import AppException
+from common.exceptions import AppException
 from repositories.models import Company
 import json
 

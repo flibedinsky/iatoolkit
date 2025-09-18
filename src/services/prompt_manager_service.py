@@ -3,7 +3,6 @@
 # Todos los derechos reservados.
 # En trámite de registro en el Registro de Propiedad Intelectual de Chile.
 
-from repositories.models import UserFeedback
 from injector import inject
 from repositories.llm_query_repo import LLMQueryRepo
 import logging
@@ -11,7 +10,7 @@ from repositories.profile_repo import ProfileRepo
 from collections import defaultdict
 from repositories.models import Prompt, PromptCategory, Company
 import os
-from exceptions import AppException
+from common.exceptions import AppException
 
 
 class PromptService:

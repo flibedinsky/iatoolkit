@@ -13,7 +13,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from infra.connectors.file_connector_factory import FileConnectorFactory
 from services.file_processor_service import FileProcessorConfig, FileProcessor
 from services.dispatcher_service import Dispatcher
-from exceptions import AppException
+from common.exceptions import AppException
 import logging
 import base64
 from injector import inject

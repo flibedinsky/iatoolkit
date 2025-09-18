@@ -6,7 +6,7 @@
 import logging
 import requests
 from requests import RequestException
-from exceptions import AppException
+from common.exceptions import AppException
 from injector import inject
 
 class CallServiceClient:

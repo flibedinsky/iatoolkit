@@ -1,8 +1,7 @@
 import pytest
 from unittest.mock import patch, MagicMock
 from infra.llm_proxy import LLMProxy
-from repositories.models import Company  # Lo mantenemos para el type hint y spec, si se deseara
-from exceptions import AppException
+from common.exceptions import AppException
 
 
 class TestLLMProxy:

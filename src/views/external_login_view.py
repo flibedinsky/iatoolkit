@@ -5,9 +5,9 @@
 
 from flask.views import MethodView
 from injector import inject
-from auth import IAuthentication
+from common.auth import IAuthentication
 from services.query_service import QueryService
-from flask import jsonify, request, session, after_this_request
+from flask import jsonify
 import logging
 
 class ExternalLoginView(MethodView):

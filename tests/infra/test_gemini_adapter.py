@@ -4,8 +4,8 @@ import uuid
 import json
 
 from infra.gemini_adapter import GeminiAdapter
-from infra.llm_response import LLMResponse, ToolCall, Usage
-from exceptions import AppException
+from infra.llm_response import LLMResponse, ToolCall
+from common.exceptions import AppException
 
 
 class TestGeminiAdapter:

@@ -3,13 +3,9 @@
 # Todos los derechos reservados.
 # En trámite de registro en el Registro de Propiedad Intelectual de Chile.
 
-from flask import render_template, request, jsonify
-from services.profile_service import ProfileService
+from flask import render_template
 from flask.views import MethodView
 from injector import inject
-import os
-from auth import IAuthentication
-from services.prompt_manager_service import PromptService
 
 
 class ChatInfoView(MethodView):

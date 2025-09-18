@@ -6,7 +6,7 @@
 from infra.mail_app import MailApp
 from injector import inject
 from pathlib import Path
-from exceptions import AppException
+from common.exceptions import AppException
 import base64
 
 TEMP_DIR = Path("static/temp")

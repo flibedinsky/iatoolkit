@@ -6,7 +6,7 @@
 import os
 from infra.connectors.file_connector import FileConnector
 from typing import List
-from exceptions import AppException
+from common.exceptions import AppException
 
 
 class LocalFileConnector(FileConnector):

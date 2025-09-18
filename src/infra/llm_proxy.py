@@ -3,14 +3,13 @@
 # Todos los derechos reservados.
 # En trámite de registro en el Registro de Propiedad Intelectual de Chile.
 
-import logging
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Any
 from abc import ABC, abstractmethod
-from util import Utility
+from common.util import Utility
 from infra.llm_response import LLMResponse
 from infra.openai_adapter import OpenAIAdapter
 from infra.gemini_adapter import GeminiAdapter
-from exceptions import AppException
+from common.exceptions import AppException
 from repositories.models import Company
 from openai import OpenAI
 import google.generativeai as genai

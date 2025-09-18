@@ -9,8 +9,8 @@ from services.query_service import QueryService
 from services.prompt_manager_service import PromptService
 from services.user_session_context_service import UserSessionContextService
 from repositories.profile_repo import ProfileRepo
-from exceptions import AppException
-from repositories.models import Company, User, Task
+from common.exceptions import AppException
+from repositories.models import Company, User
 import base64
 import json
 import os

@@ -9,8 +9,8 @@ from services.profile_service import ProfileService
 from repositories.profile_repo import ProfileRepo
 from repositories.llm_query_repo import LLMQueryRepo
 from injector import inject
-from session_manager import SessionManager
-from auth import IAuthentication
+from common.session_manager import SessionManager
+from common.auth import IAuthentication
 
 
 class SelectCompanyView(MethodView):

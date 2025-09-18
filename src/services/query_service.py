@@ -12,8 +12,8 @@ from repositories.models import Task
 from services.dispatcher_service import Dispatcher
 from services.prompt_manager_service import PromptService
 from services.user_session_context_service import UserSessionContextService
-from util import Utility
-from exceptions import AppException
+from common.util import Utility
+from common.exceptions import AppException
 from injector import inject
 import base64
 import logging

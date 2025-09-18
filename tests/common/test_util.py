@@ -4,20 +4,13 @@
 # En trámite de registro en el Registro de Propiedad Intelectual de Chile.
 
 import pytest
-from unittest import mock
-from unittest.mock import MagicMock, patch, mock_open, Mock
-from repositories.models import DocumentType
-from exceptions import AppException
+from unittest.mock import MagicMock, patch, mock_open
+from common.exceptions import AppException
 import os
-from util import Utility
+from common.util import Utility
 from datetime import datetime, date
 from decimal import Decimal
-import json
-from cryptography.fernet import Fernet, InvalidToken
-
-import base64
-import binascii
-from companies.maxxa.maxxa_util import UtilityMaxxa
+from cryptography.fernet import Fernet
 
 # Generar una clave Fernet de prueba una vez y usarla en el fixture
 ACTUAL_FERNET_KEY_FOR_ENV = Fernet.generate_key().decode('utf-8')
@@ -26,7 +19,6 @@ ACTUAL_FERNET_KEY_FOR_ENV = Fernet.generate_key().decode('utf-8')
 class TestUtil:
     def setup_method(self):
         self.util = Utility()
-        self.util_maxxa = Mock(UtilityMaxxa)
 
     @patch("jinja2.Environment.get_template")
     def test_util_when_jinja_error(self, mock_get_template):

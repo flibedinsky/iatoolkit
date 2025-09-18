@@ -6,7 +6,7 @@
 import pytest
 from flask import Flask
 from unittest.mock import MagicMock, patch
-from auth import IAuthentication
+from common.auth import IAuthentication
 from views.external_login_view import ExternalLoginView
 from services.query_service import QueryService
 

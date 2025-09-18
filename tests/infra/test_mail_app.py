@@ -5,9 +5,8 @@
 
 import pytest
 from unittest.mock import MagicMock, patch
-from exceptions import AppException
+from common.exceptions import AppException
 from infra.mail_app import MailApp
-import sib_api_v3_sdk
 import os
 
 class TestMailApp:

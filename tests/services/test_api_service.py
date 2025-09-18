@@ -5,10 +5,10 @@
 
 import pytest
 import json
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 from services.api_service import ApiService
 from infra.call_service import CallServiceClient
-from exceptions import AppException
+from common.exceptions import AppException
 
 
 class TestApiService:

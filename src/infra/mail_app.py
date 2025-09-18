@@ -3,13 +3,10 @@
 # Todos los derechos reservados.
 # En trámite de registro en el Registro de Propiedad Intelectual de Chile.
 
-from flask import Flask, render_template
 import sib_api_v3_sdk
 from sib_api_v3_sdk.rest import ApiException
-import jinja2
-from exceptions import AppException
+from common.exceptions import AppException
 import os
-import io
 import base64
 import logging
 

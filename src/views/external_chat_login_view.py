@@ -3,7 +3,7 @@ import logging
 from flask import request, jsonify, render_template
 from flask.views import MethodView
 from injector import inject
-from auth import IAuthentication
+from common.auth import IAuthentication
 from services.profile_service import ProfileService
 from services.query_service import QueryService
 from services.prompt_manager_service import PromptService

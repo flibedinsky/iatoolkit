@@ -8,7 +8,7 @@ from unittest.mock import MagicMock
 from flask import Flask
 from views.prompt_view import PromptView
 from services.prompt_manager_service import PromptService
-from auth import IAuthentication
+from common.auth import IAuthentication
 
 
 class TestPromptView:

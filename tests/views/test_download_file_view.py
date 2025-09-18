@@ -11,7 +11,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from flask import Flask, jsonify
 
-from auth import IAuthentication
+from common.auth import IAuthentication
 from repositories.models import Company
 from services.excel_service import ExcelService
 from services.profile_service import ProfileService

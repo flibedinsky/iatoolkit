@@ -10,7 +10,6 @@ from services.profile_service import ProfileService
 from repositories.models import Company
 from views.forgot_password_view import ForgotPasswordView
 import os
-from exceptions import AppException
 
 
 class TestForgotPasswordView:

@@ -7,7 +7,7 @@ import pytest
 import os
 from unittest.mock import patch, mock_open, call
 from infra.connectors.local_file_connector import LocalFileConnector
-from exceptions import AppException
+from common.exceptions import AppException
 from datetime import datetime
 
 

@@ -7,7 +7,7 @@ from infra.llm_response import LLMResponse, ToolCall, Usage
 from typing import Dict, List, Optional
 from google.generativeai.types import HarmCategory, HarmBlockThreshold
 from google.protobuf.json_format import MessageToDict
-from exceptions import AppException
+from common.exceptions import AppException
 import logging
 import json
 import uuid

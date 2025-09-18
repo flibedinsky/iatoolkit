@@ -7,8 +7,8 @@ from repositories.models import Document
 from repositories.models import Company
 from injector import inject
 from repositories.database_manager import DatabaseManager
-from exceptions import AppException
-import logging
+from common.exceptions import AppException
+
 
 class DocumentRepo:
     @inject

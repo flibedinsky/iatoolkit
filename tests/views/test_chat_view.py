@@ -9,9 +9,9 @@ from unittest.mock import MagicMock, patch
 from services.profile_service import ProfileService
 from repositories.models import Company
 from views.chat_view import ChatView
-from session_manager import SessionManager
+from common.session_manager import SessionManager
 from datetime import datetime, timezone
-from auth import IAuthentication
+from common.auth import IAuthentication
 from services.prompt_manager_service import PromptService
 
 
@@ -71,7 +71,7 @@ class TestChatView:
         mock_session_manager = MagicMock(spec=SessionManager)  # <- Mock de la clase
         mock_session_manager.get.side_effect = lambda key, default=None: mock_values.get(key, default)
 
-        with patch('auth.SessionManager', new=mock_session_manager):  # <-  Aplicar el mock
+        with patch('common.auth.SessionManager', new=mock_session_manager):  # <-  Aplicar el mock
             with self.app.test_request_context():  # Necesario para Flask
                 yield
 

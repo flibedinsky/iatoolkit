@@ -6,7 +6,7 @@
 from flask import request, jsonify, render_template
 from flask.views import MethodView
 from services.user_feedback_service import UserFeedbackService
-from auth import IAuthentication
+from common.auth import IAuthentication
 from injector import inject
 import logging
 

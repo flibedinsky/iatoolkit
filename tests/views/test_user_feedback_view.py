@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 from flask import Flask
 from views.user_feedback_view import UserFeedbackView
 from services.user_feedback_service import UserFeedbackService
-from auth import IAuthentication
+from common.auth import IAuthentication
 
 
 class TestUserFeedbackView:

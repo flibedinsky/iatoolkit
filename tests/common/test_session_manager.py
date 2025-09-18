@@ -4,8 +4,8 @@
 # En trámite de registro en el Registro de Propiedad Intelectual de Chile.
 
 import unittest
-from unittest.mock import patch, MagicMock
-from session_manager import SessionManager
+from unittest.mock import patch
+from common.session_manager import SessionManager
 
 
 class TestSessionManager(unittest.TestCase):
@@ -15,7 +15,7 @@ class TestSessionManager(unittest.TestCase):
         Configura los patches y mocks comunes para las pruebas.
         """
         # Parchear el objeto 'session' como un diccionario en todos los tests
-        self.session_patcher = patch("session_manager.session", new_callable=dict)
+        self.session_patcher = patch("common.session_manager.session", new_callable=dict)
         self.mock_session = self.session_patcher.start()  # Iniciar el patch y obtener el mock
 
     def tearDown(self):

@@ -4,9 +4,9 @@
 # En trámite de registro en el Registro de Propiedad Intelectual de Chile.
 
 import pytest
-from unittest.mock import patch, MagicMock, mock_open
+from unittest.mock import patch, MagicMock
 from services.document_service import DocumentService
-from exceptions import AppException
+from common.exceptions import AppException
 
 
 class TestDocumentService:

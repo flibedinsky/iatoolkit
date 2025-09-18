@@ -6,9 +6,8 @@
 import pytest
 from unittest.mock import patch, MagicMock, ANY
 from services.load_documents_service import LoadDocumentsService
-from services.dispatcher_service import Dispatcher
 from repositories.models import Company
-from exceptions import AppException
+from common.exceptions import AppException
 
 
 class TestLoadDocumentsService:

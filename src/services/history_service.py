@@ -3,12 +3,10 @@
 # Todos los derechos reservados.
 # En trámite de registro en el Registro de Propiedad Intelectual de Chile.
 
-from repositories.models import UserFeedback
 from injector import inject
 from repositories.llm_query_repo import LLMQueryRepo
-import logging
 from repositories.profile_repo import ProfileRepo
-from util import Utility
+from common.util import Utility
 
 
 class HistoryService:

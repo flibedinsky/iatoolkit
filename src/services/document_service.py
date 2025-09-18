@@ -10,7 +10,7 @@ import io
 import os
 import pytesseract
 from injector import inject
-from exceptions import AppException
+from common.exceptions import AppException
 
 class DocumentService:
     @inject

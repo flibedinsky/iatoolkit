@@ -25,7 +25,7 @@ from views.external_login_view import ExternalLoginView
 from views.download_file_view import DownloadFileView
 from flask import (render_template, redirect, flash, url_for,
                    send_from_directory, current_app)
-from session_manager import SessionManager
+from common.session_manager import SessionManager
 from flask import jsonify
 from views.history_view import HistoryView
 import os

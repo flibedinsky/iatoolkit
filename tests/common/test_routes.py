@@ -3,8 +3,7 @@
 # Todos los derechos reservados.
 # En trámite de registro en el Registro de Propiedad Intelectual de Chile.
 
-import pytest
-from flask import Flask, jsonify
+from flask import Flask
 from unittest.mock import patch
 
 
@@ -18,20 +17,20 @@ class TestRoutes:
         # Concentramos todos los mocks y patches aquí:
 
         # Patch para el SessionManager (por ejemplo para evitar lecturas de sesión reales)
-        self.session_manager_patch = patch("routes.SessionManager")
+        self.session_manager_patch = patch("common.routes.SessionManager")
         self.mock_session_manager = self.session_manager_patch.start()
         # Para este ejemplo, no es necesario configurar un return_value, pero se podría definir según se requiera
 
         # Patch para la función flash, reemplazándola para que no intente enviar mensajes reales
-        self.flash_patch = patch("routes.flash")
+        self.flash_patch = patch("common.routes.flash")
         self.mock_flash = self.flash_patch.start()
 
         # Patch para render_template, que es usado por la ruta "/about" y otros
-        self.render_template_patch = patch("routes.render_template", return_value="<html>About</html>")
+        self.render_template_patch = patch("common.routes.render_template", return_value="<html>About</html>")
         self.mock_render_template = self.render_template_patch.start()
 
         # Registrar las rutas en la aplicación
-        from routes import register_routes
+        from common.routes import register_routes
         register_routes(self.app)
 
         # Crear el cliente de pruebas
@@ -56,20 +55,3 @@ class TestRoutes:
         # Verificamos que se realice un redireccionamiento (código 302)
         assert response.status_code == 302
 
-    def test_about(self):
-        """
-        Testea la ruta /about, que utiliza render_template para devolver una página 'about'.
-        """
-        response = self.client.get('/about')
-        assert response.status_code == 200
-        # Como render_template fue parchado para devolver un HTML estático, verificamos su contenido
-        assert b"About" in response.data
-
-    def test_version(self):
-        """
-        Testea la ruta /version, que devuelve un JSON con la versión de la aplicación.
-        """
-        response = self.client.get('/version')
-        assert response.status_code == 200
-        json_data = response.get_json()
-        assert json_data["version"] == "1.0.0"

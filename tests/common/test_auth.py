@@ -5,7 +5,7 @@
 
 from flask import Flask, Response
 from unittest.mock import patch, MagicMock
-from auth import IAuthentication
+from common.auth import IAuthentication
 import pytest
 from datetime import datetime, timezone
 from repositories.profile_repo import ProfileRepo
@@ -48,8 +48,8 @@ class TestAuth:
     # --- Pruebas para check_if_user_is_logged_in (de TestAuth original) ---
 
     def test_allows_access_if_user_authenticated_and_active(self):
-        with patch('auth.SessionManager.get') as mock_get, \
-             patch('auth.SessionManager.set') as mock_set:
+        with patch('common.auth.SessionManager.get') as mock_get, \
+             patch('common.auth.SessionManager.set') as mock_set:
             mock_get.side_effect = lambda key, default=None: {
                 'user': {'id': 1, 'username': 'test_user'},
                 'company_short_name': 'test_company',
@@ -63,15 +63,15 @@ class TestAuth:
             mock_set.assert_called_with("last_activity", pytest.approx(CURRENT_TIME, 1))
 
     def test_redirect_if_user_not_authenticated(self):
-        with patch('auth.SessionManager.get') as mock_get:
+        with patch('common.auth.SessionManager.get') as mock_get:
             mock_get.side_effect = lambda key, default=None: None if key == "user" else default
             response = self.client.get('/test_company/protected')
             assert response.status_code == 302
             assert "/login" in response.headers['Location']
 
     def test_redirect_if_last_activity_missing(self):
-        with patch('auth.SessionManager.get') as mock_get, \
-             patch('auth.SessionManager.clear') as mock_clear:
+        with patch('common.auth.SessionManager.get') as mock_get, \
+             patch('common.auth.SessionManager.clear') as mock_clear:
             mock_get.side_effect = lambda key, default=None: {
                 'user': {'id': 1, 'username': 'test_user'},
                 'company_short_name': 'test_company'
@@ -141,7 +141,7 @@ class TestAuth:
         with patch.object(self.iauth_service, '_authenticate_via_chat_jwt') as mock_auth_jwt, \
              patch.object(self.iauth_service, '_authenticate_via_api_key') as mock_auth_api_key, \
              patch.object(self.iauth_service, 'check_if_user_is_logged_in') as mock_check_if_logged_in, \
-             patch('auth.SessionManager.get') as mock_session_get:
+             patch('common.auth.SessionManager.get') as mock_session_get:
             mock_auth_jwt.return_value = (None, None, None)
             mock_auth_api_key.return_value = (None, None)
             mock_check_if_logged_in.return_value = None
@@ -160,7 +160,7 @@ class TestAuth:
         with patch.object(self.iauth_service, '_authenticate_via_chat_jwt') as mock_auth_jwt, \
              patch.object(self.iauth_service, '_authenticate_via_api_key') as mock_auth_api_key, \
              patch.object(self.iauth_service, 'check_if_user_is_logged_in') as mock_check_if_logged_in, \
-             patch('auth.SessionManager.get') as mock_session_get:
+             patch('common.auth.SessionManager.get') as mock_session_get:
             mock_auth_jwt.return_value = (None, None, None)
             mock_auth_api_key.return_value = (None, None)
             mock_check_if_logged_in.return_value = None

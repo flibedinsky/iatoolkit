@@ -3,11 +3,10 @@
 # Todos los derechos reservados.
 # En trámite de registro en el Registro de Propiedad Intelectual de Chile.
 
-import json
 from sqlalchemy import  text
 from huggingface_hub import InferenceClient
 from injector import inject
-from exceptions import AppException
+from common.exceptions import AppException
 from repositories.database_manager import DatabaseManager
 from repositories.models import Document, VSDoc
 import os

@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "iatoolkit-core"
+version = "0.1.0"
+description = "Un toolkit de herramientas de IA"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "Tu Nombre", email = "tu.email@ejemplo.com"}
+]
+maintainers = [
+    {name = "Tu Nombre", email = "tu.email@ejemplo.com"}
+]
+keywords = ["ai", "toolkit", "machine-learning"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dynamic = ["dependencies"]
+
+[project.urls]
+Homepage = "https://github.com/tu-usuario/iatoolkit-core"
+Documentation = "https://github.com/tu-usuario/iatoolkit-core/blob/main/README.md"
+Repository = "https://github.com/tu-usuario/iatoolkit-core.git"
+"Bug Tracker" = "https://github.com/tu-usuario/iatoolkit-core/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-dir]
+"" = "src"
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}

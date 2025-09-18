@@ -3,15 +3,12 @@
 # Todos los derechos reservados.
 # En trámite de registro en el Registro de Propiedad Intelectual de Chile.
 
-import pytest
-from unittest import mock
 from unittest.mock import MagicMock, patch
 from repositories.profile_repo import ProfileRepo
 from services.profile_service import ProfileService
 from services.query_service import QueryService
 from services.user_session_context_service import UserSessionContextService
 from flask_bcrypt import generate_password_hash
-from exceptions import AppException
 from repositories.models import User, Company
 from infra.mail_app import MailApp
 import os

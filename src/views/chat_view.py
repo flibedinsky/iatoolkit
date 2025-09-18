@@ -8,7 +8,7 @@ from services.profile_service import ProfileService
 from flask.views import MethodView
 from injector import inject
 import os
-from auth import IAuthentication
+from common.auth import IAuthentication
 from services.prompt_manager_service import PromptService
 
 

@@ -1,13 +1,12 @@
 import pytest
 from unittest.mock import MagicMock, patch, mock_open
-import os
 
 # Asegúrate de que todas las importaciones necesarias estén presentes y correctas
 from services.prompt_manager_service import PromptService
 from repositories.llm_query_repo import LLMQueryRepo
 from repositories.profile_repo import ProfileRepo
 from repositories.models import Prompt, PromptCategory, Company
-from exceptions import AppException
+from common.exceptions import AppException
 
 
 class TestPromptService:

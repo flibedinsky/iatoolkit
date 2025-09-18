@@ -12,7 +12,7 @@ import pytest
 from flask import Flask
 
 from services.excel_service import ExcelService
-from util import Utility
+from common.util import Utility
 
 
 class TestExcelService:

@@ -5,7 +5,7 @@
 
 from infra.call_service import CallServiceClient
 from injector import inject
-from exceptions import AppException
+from common.exceptions import AppException
 import json
 
 

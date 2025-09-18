@@ -2,9 +2,8 @@ import pytest
 from unittest.mock import Mock, patch
 
 from infra.llm_proxy import LLMProxy
-from exceptions import AppException
+from common.exceptions import AppException
 from infra.llm_response import LLMResponse, Usage
-from util import Utility
 
 
 class TestLLMProxy:

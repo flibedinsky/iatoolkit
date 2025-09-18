@@ -10,8 +10,8 @@ from repositories.models import ApiKey, Company
 from services.query_service import QueryService
 from views.llmquery_view import LLMQueryView
 from datetime import datetime, timezone
-from session_manager import SessionManager
-from auth import IAuthentication
+from common.session_manager import SessionManager
+from common.auth import IAuthentication
 
 class TestLLMQueryView:
     @staticmethod
@@ -73,7 +73,7 @@ class TestLLMQueryView:
         mock_session_manager = MagicMock(spec=SessionManager)  # <- Mock de la clase
         mock_session_manager.get.side_effect = lambda key, default=None: mock_session_values.get(key, default)
 
-        with patch('auth.SessionManager', new=mock_session_manager):
+        with patch('common.auth.SessionManager', new=mock_session_manager):
             with self.app.test_request_context():  # Necesario para Flask
                 yield
 

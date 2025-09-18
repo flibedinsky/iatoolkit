@@ -3,14 +3,12 @@
 # Todos los derechos reservados.
 # En trámite de registro en el Registro de Propiedad Intelectual de Chile.
 
-from util import Utility
+from common.util import Utility
 import pandas as pd
 from uuid import uuid4
 from pathlib import Path
-from exceptions import AppException
+from common.exceptions import AppException
 from injector import inject
-import io
-import base64
 import os
 import logging
 from flask import current_app, jsonify

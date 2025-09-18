@@ -3,10 +3,10 @@
 # Todos los derechos reservados.
 # En trámite de registro en el Registro de Propiedad Intelectual de Chile.
 
-from flask import request, jsonify, render_template, session
+from flask import request, jsonify, render_template
 from flask.views import MethodView
 from services.query_service import QueryService
-from auth import IAuthentication
+from common.auth import IAuthentication
 from injector import inject
 import logging
 

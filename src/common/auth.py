@@ -5,7 +5,7 @@
 
 from flask import redirect, Response, url_for, jsonify
 from functools import wraps
-from session_manager import SessionManager
+from common.session_manager import SessionManager
 from datetime import datetime, timezone
 from injector import inject
 from repositories.profile_repo import ProfileRepo

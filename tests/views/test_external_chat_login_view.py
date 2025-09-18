@@ -1,12 +1,12 @@
 import pytest
-from flask import Flask, jsonify
+from flask import Flask
 from unittest.mock import MagicMock, patch
 from views.external_chat_login_view import ExternalChatLoginView
 from services.profile_service import ProfileService
 from services.query_service import QueryService
 from services.prompt_manager_service import PromptService
 from services.jwt_service import JWTService  # <-- Importar JWTService
-from auth import IAuthentication
+from common.auth import IAuthentication
 from repositories.models import Company
 
 # --- Constantes para los Tests ---

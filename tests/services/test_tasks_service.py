@@ -4,11 +4,11 @@
 # En trámite de registro en el Registro de Propiedad Intelectual de Chile.
 
 import pytest
-from unittest.mock import MagicMock, patch, mock_open
+from unittest.mock import MagicMock, patch
 from services.tasks_service import TaskService
 from infra.call_service import CallServiceClient
 from repositories.models import Task, TaskStatus, TaskType, Company
-from exceptions import AppException
+from common.exceptions import AppException
 from datetime import datetime, timedelta
 
 
