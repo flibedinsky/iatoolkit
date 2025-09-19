@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "iatoolkit-core"
-version = "0.2.2"
+version = "0.2.1"
 description = "Un toolkit de herramientas de IA"
 readme = "readme.md"
 requires-python = ">=3.12"
@@ -31,8 +31,6 @@ Documentation = "https://github.com/flibedinsky/iatoolkit-core/blob/main/readme.
 Repository = "https://github.com/flibedinsky/iatoolkit-core.git"
 "Bug Tracker" = "https://github.com/flibedinsky/iatoolkit-core/issues"
 
-[tool.setuptools.packages.find]
-where = ["src"]
 
 [tool.setuptools.package-dir]
 "" = "src"
