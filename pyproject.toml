@@ -37,5 +37,8 @@ where = ["src"]
 [tool.setuptools.package-dir]
 "" = "src"
 
+[tool.setuptools]
+py-modules = ["iatoolkit"]
+
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
