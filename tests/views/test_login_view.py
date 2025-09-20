@@ -4,12 +4,12 @@
 # En trámite de registro en el Registro de Propiedad Intelectual de Chile.
 
 import pytest
-from flask import Flask, url_for, jsonify
+from flask import Flask, jsonify
 from unittest.mock import MagicMock, patch
 from services.profile_service import ProfileService
 from views.login_view import LoginView
 from repositories.models import Company
-import os
+
 
 class TestLoginView:
     @staticmethod

@@ -3,8 +3,7 @@
 # Todos los derechos reservados.
 # En trámite de registro en el Registro de Propiedad Intelectual de Chile.
 
-from flask import redirect, Response, url_for, jsonify
-from functools import wraps
+from flask import redirect, url_for
 from common.session_manager import SessionManager
 from datetime import datetime, timezone
 from injector import inject

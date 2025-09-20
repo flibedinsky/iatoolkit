@@ -9,7 +9,7 @@ from repositories.llm_query_repo import LLMQueryRepo
 from repositories.models import Company, Function
 from services.excel_service import ExcelService
 from services.mail_service import MailService
-from common.base_company import BaseCompany
+from iatoolkit.base_company import BaseCompany
 from common.util import Utility
 from injector import inject
 import importlib

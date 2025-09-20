@@ -8,7 +8,6 @@ from flask import request, jsonify
 from services.tasks_service import TaskService
 from repositories.profile_repo import ProfileRepo
 from injector import inject
-from datetime import datetime
 import logging
 from typing import Optional
 

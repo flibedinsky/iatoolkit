@@ -3,12 +3,10 @@
 # Todos los derechos reservados.
 # En trámite de registro en el Registro de Propiedad Intelectual de Chile.
 
-import pytest
-from unittest import mock
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 from repositories.profile_repo import ProfileRepo
 from services.user_feedback_service import UserFeedbackService
-from repositories.models import User, Company, UserFeedback
+from repositories.models import Company, UserFeedback
 from infra.google_chat_app import GoogleChatApp
 
 

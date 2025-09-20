@@ -15,12 +15,12 @@ from repositories.llm_query_repo import LLMQueryRepo
 from repositories.vs_repo import VSRepo
 from repositories.tasks_repo import TaskRepo
 from services.query_service import QueryService
-from services.dispatcher_service import Dispatcher
-from services.load_documents_service import LoadDocumentsService
+from services import Dispatcher
+from services import LoadDocumentsService
 from companies import MaxxaCluster
-from services.tasks_service import TaskService
-from services.profile_service import ProfileService
-from services.document_service import DocumentService
+from services import TaskService
+from services import ProfileService
+from services import DocumentService
 from services.prompt_manager_service import PromptService
 from services.jwt_service import JWTService
 from services.benchmark_service import BenchmarkService

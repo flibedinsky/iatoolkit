@@ -8,7 +8,7 @@ from flask import Flask
 from unittest.mock import MagicMock, patch
 from services.profile_service import ProfileService
 from views.change_password_view import ChangePasswordView
-from itsdangerous import URLSafeTimedSerializer, SignatureExpired
+from itsdangerous import SignatureExpired
 import os
 from repositories.models import Company
 

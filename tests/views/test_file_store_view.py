@@ -4,7 +4,7 @@
 # En trámite de registro en el Registro de Propiedad Intelectual de Chile.
 
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 from flask import Flask
 from views.file_store_view import FileStoreView
 from services.load_documents_service import LoadDocumentsService

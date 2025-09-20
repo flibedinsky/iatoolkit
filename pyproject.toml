@@ -4,18 +4,22 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "iatoolkit-core"
-version = "0.2.6"
+version = "0.2.7"
 requires-python = ">=3.10"
 description = "IAToolkit"
 readme = "README.md"
-license = { text = "MIT" }
+license = "MIT"
 authors = [{ name = "Fernando Libedinsky" }]
 
 # Si quieres seguir leyendo deps de requirements.txt:
 dynamic = ["dependencies"]
 
+[tool.setuptools]
+package-dir = {"" = "src"}
+
 [tool.setuptools.packages.find]
-where = ["src"]                      # IMPORTANTE
+where = ["src"]
+include = ["iatoolkit*", "services*"]
 
 [tool.setuptools.dynamic]
 dependencies = { file = ["requirements.txt"] }

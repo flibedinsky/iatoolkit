@@ -6,7 +6,6 @@ import os
 # Asegúrate de que las importaciones sean correctas y existan
 from views.home_view import HomeView
 from services.profile_service import ProfileService
-from repositories.profile_repo import ProfileRepo
 from repositories.models import Company
 
 

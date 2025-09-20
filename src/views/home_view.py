@@ -4,7 +4,7 @@
 # En trámite de registro en el Registro de Propiedad Intelectual de Chile.
 
 from flask.views import MethodView
-from flask import request, redirect, render_template, url_for, request
+from flask import render_template, request
 from injector import inject
 from services.profile_service import ProfileService
 import os

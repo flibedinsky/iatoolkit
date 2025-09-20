@@ -17,7 +17,6 @@ from typing import Optional, Dict, Any
 from injector import Binder, singleton, Injector
 
 from repositories.database_manager import DatabaseManager
-from services.dispatcher_service import Dispatcher
 from common.routes import register_routes
 
 VERSION = "2.0.0"
@@ -268,6 +267,7 @@ class IAToolkit:
         from services.load_documents_service import LoadDocumentsService
         from services.profile_service import ProfileService
         from services.jwt_service import JWTService
+        from services.dispatcher_service import Dispatcher
 
         binder.bind(QueryService, to=QueryService)
         binder.bind(TaskService, to=TaskService)
@@ -312,12 +312,13 @@ class IAToolkit:
         """🔧 Configura servicios adicionales"""
         Bcrypt(self.app)
 
-    # 🚀 Método público para inicializar empresas manualmente
     def _start_companies(self):
         if self._startup_executed:
             return
 
         try:
+            # Import tardío para evitar ciclo
+            from services.dispatcher_service import Dispatcher
             dispatcher = self._get_injector().get(Dispatcher)
             dispatcher.start_execution()
             self._startup_executed = True
@@ -333,6 +334,7 @@ class IAToolkit:
         def init_db():
             """🗄️ Inicializa la base de datos del sistema"""
             try:
+                from services.dispatcher_service import Dispatcher
                 dispatcher = self._get_injector().get(Dispatcher)
 
                 click.echo("🚀 Inicializando base de datos...")
@@ -355,17 +357,6 @@ class IAToolkit:
                 'app_name': 'IAToolkit'
             }
 
-    def _setup_auto_startup(self):
-        """🚀 Configura auto-startup para desarrollo"""
-        if not self._get_config_value("PYTEST_CURRENT_TEST"):
-            @self.app.before_request
-            def startup():
-                try:
-                    dispatcher = self._get_injector().get(Dispatcher)
-                    dispatcher.start_execution()
-                    logging.info("🏢 Empresas iniciadas automáticamente")
-                except Exception as e:
-                    logging.exception(e)
 
     def _get_default_static_folder(self) -> str:
         """Obtiene la ruta por defecto de static"""
@@ -392,10 +383,12 @@ class IAToolkit:
         return self._injector
 
     # 📊 Métodos públicos de utilidad
-    def get_dispatcher(self) -> Dispatcher:
+    def get_dispatcher(self):
         """Obtiene el dispatcher del sistema"""
         if not self._injector:
             raise IAToolkitException("App no inicializada. Llame a create_app() primero")
+        # Import tardío para evitar ciclo
+        from services.dispatcher_service import Dispatcher
         return self._injector.get(Dispatcher)
 
     def get_database_manager(self) -> DatabaseManager:

@@ -3,7 +3,6 @@
 # Todos los derechos reservados.
 # En trámite de registro en el Registro de Propiedad Intelectual de Chile.
 
-import pytest
 from unittest.mock import MagicMock
 from services.mail_service import MailService
 

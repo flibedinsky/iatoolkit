@@ -4,7 +4,7 @@
 # En trámite de registro en el Registro de Propiedad Intelectual de Chile.
 
 import pytest
-from flask import Flask, jsonify
+from flask import Flask
 from unittest.mock import MagicMock
 from views.chat_token_request_view import ChatTokenRequestView
 from services.jwt_service import JWTService

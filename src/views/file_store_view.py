@@ -8,8 +8,6 @@ from flask import request, jsonify
 from services.load_documents_service import LoadDocumentsService
 from repositories.profile_repo import ProfileRepo
 from injector import inject
-from datetime import datetime
-import logging
 import base64
 
 
