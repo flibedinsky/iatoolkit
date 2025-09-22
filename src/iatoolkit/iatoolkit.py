@@ -83,11 +83,10 @@ class IAToolkit:
         self._injector = Injector([
             toolkit_config_module,
             self._configure_core_dependencies # This method binds services, repos, etc.
-
         ])
 
         # Step 4: Explicitly bind the views to the injector.
-        self._bind_views(self._injector.binder)
+        self._bind_views_after_injection()
 
         # Step 5: Register routes using the fully configured injector
         self._register_routes()
@@ -97,14 +96,12 @@ class IAToolkit:
         FlaskInjector(app=self.app, injector=self._injector)
 
         # Step 7: Finalize setup within the application context
-        with self.app.app_context():
-            self._setup_redis_sessions()
-            self._setup_cors()
-            self._setup_additional_services()
-            self._setup_cli_commands()
-            self._setup_context_processors()
+        self._setup_redis_sessions()
+        self._setup_cors()
+        self._setup_additional_services()
+        self._setup_cli_commands()
+        self._setup_context_processors()
 
-        self.app.extensions['iatoolkit'] = self
         logging.info(f"🎉 IAToolkit v{VERSION} inicializado correctamente")
         return self.app
 
@@ -303,16 +300,21 @@ class IAToolkit:
         binder.bind(IAuthentication, to=IAuthentication)
         binder.bind(Utility, to=Utility)
 
-    def _bind_views(self, binder: Binder):
+    def _bind_views_after_injection(self):
+        """Vincula las vistas después de que el injector ha sido creado"""
         from views.llmquery_view import LLMQueryView
         from views.home_view import HomeView
         from views.chat_view import ChatView
         from views.change_password_view import ChangePasswordView
 
+        # Ahora sí podemos acceder a self._injector.binder
+        binder = self._injector.binder
         binder.bind(HomeView, to=HomeView)
         binder.bind(ChatView, to=ChatView)
         binder.bind(ChangePasswordView, to=ChangePasswordView)
         binder.bind(LLMQueryView, to=LLMQueryView)
+
+        logging.info("✅ Views configuradas correctamente")
 
     def _setup_additional_services(self):
         Bcrypt(self.app)

@@ -38,6 +38,7 @@ class Dispatcher:
 
         # The dispatcher starts "empty" and will be initialized later.
         self.company_classes = {}
+        self.initialize_companies()
 
         self.tool_handlers = {
             "iat_generate_excel": self.excel_service.excel_generator,
@@ -56,7 +57,6 @@ class Dispatcher:
         injector = current_iatoolkit()._get_injector()
         self.company_registry.set_injector(injector)
         self.company_classes = self.company_registry.instantiate_companies()
-        logging.info(f"Dispatcher late-initialized with {len(self.company_classes)} companies")
 
     def start_execution(self):
         """Runs the startup logic for all registered companies."""

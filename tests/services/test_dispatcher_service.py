@@ -17,9 +17,13 @@ from common.util import Utility
 # A mock company class for testing purposes
 class MockSampleCompany(BaseCompany):
     def init_db(self): pass
+
     def get_company_context(self, **kwargs) -> str: return "Company Context for Sample"
+
     def handle_request(self, tag: str, params: dict) -> dict: return {"result": "sample_company_response"}
+
     def start_execution(self): pass
+
     def get_metadata_from_filename(self, filename: str) -> dict: return {}
 
 
@@ -58,19 +62,31 @@ class TestDispatcher:
         mock_injector.binder.bind(MockSampleCompany, to=self.mock_sample_company_instance)
 
         # Create a mock IAToolkit instance
-        toolkit_mock = MagicMock()
-        toolkit_mock._get_injector.return_value = mock_injector
+        self.toolkit_mock = MagicMock()
+        self.toolkit_mock._get_injector.return_value = mock_injector
 
-        # Patch 'current_iatoolkit' in the dispatcher's module to use our mock
-        with patch('services.dispatcher_service.current_iatoolkit', toolkit_mock):
-            # Initialize the Dispatcher within the patched context
-            self.dispatcher = Dispatcher(
-                prompt_service=self.mock_prompt_manager,
-                llmquery_repo=self.mock_llm_query_repo,
-                util=self.util,
-                excel_service=self.excel_service,
-                mail_service=self.mail_service
-            )
+        # START the patch that will persist throughout the test
+        self.current_iatoolkit_patcher = patch('services.dispatcher_service.current_iatoolkit',
+                                               return_value=self.toolkit_mock)
+        self.current_iatoolkit_patcher.start()
+
+        # Initialize the Dispatcher within the patched context
+        self.dispatcher = Dispatcher(
+            prompt_service=self.mock_prompt_manager,
+            llmquery_repo=self.mock_llm_query_repo,
+            util=self.util,
+            excel_service=self.excel_service,
+            mail_service=self.mail_service
+        )
+
+    def teardown_method(self, method):
+        """Clean up patches after each test."""
+        if hasattr(self, 'current_iatoolkit_patcher'):
+            self.current_iatoolkit_patcher.stop()
+
+        # Clean up the registry
+        registry = get_company_registry()
+        registry.clear()
 
     def test_init_db_calls_init_db_on_each_company(self):
         """Tests that init_db calls init_db on each registered company."""
@@ -129,12 +145,17 @@ class TestDispatcher:
 
     def test_dispatcher_with_no_companies_registered(self):
         """Tests that the dispatcher works if no company is registered."""
+        # Stop the current patch first
+        self.current_iatoolkit_patcher.stop()
+
+        # Clean registry
         get_company_registry().clear()
 
         toolkit_mock = MagicMock()
-        toolkit_mock._get_injector.return_value = Injector() # Empty injector
+        toolkit_mock._get_injector.return_value = Injector()  # Empty injector
 
-        with patch('services.dispatcher_service.current_iatoolkit', toolkit_mock):
+        # Start a new patch for this specific test
+        with patch('services.dispatcher_service.current_iatoolkit', return_value=toolkit_mock):
             dispatcher = Dispatcher(
                 prompt_service=self.mock_prompt_manager,
                 llmquery_repo=self.mock_llm_query_repo,
@@ -143,8 +164,13 @@ class TestDispatcher:
                 mail_service=self.mail_service
             )
 
-        assert len(dispatcher.company_classes) == 0
+            assert len(dispatcher.company_classes) == 0
 
-        with pytest.raises(IAToolkitException) as excinfo:
-            dispatcher.dispatch("any_company", "some_action")
-        assert "Empresa 'any_company' no configurada" in str(excinfo.value)
+            with pytest.raises(IAToolkitException) as excinfo:
+                dispatcher.dispatch("any_company", "some_action")
+            assert "Empresa 'any_company' no configurada" in str(excinfo.value)
+
+        # Restart the main patch for subsequent tests
+        self.current_iatoolkit_patcher = patch('services.dispatcher_service.current_iatoolkit',
+                                               return_value=self.toolkit_mock)
+        self.current_iatoolkit_patcher.start()
