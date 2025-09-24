@@ -266,7 +266,7 @@ class ProfileService:
 
         api_key = ApiKey(key=key, company_id=company.id)
         self.profile_repo.create_api_key(api_key)
-        return {"message": f"La nueva clave de API para {company_short_name} es: {key}"}
+        return {"api-key": key}
 
 
     def send_verification_email(self, new_user: User, company_short_name):

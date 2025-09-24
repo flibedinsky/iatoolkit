@@ -11,6 +11,7 @@ from collections import defaultdict
 from repositories.models import Prompt, PromptCategory, Company
 import os
 from common.exceptions import IAToolkitException
+from pathlib import Path
 
 
 class PromptService:
@@ -32,7 +33,7 @@ class PromptService:
 
         prompt_filename = prompt_name.lower() + '.prompt'
         if is_system_prompt:
-            template_dir = 'prompts'
+            template_dir = 'src/system_prompts'
         else:
             template_dir = f'companies/{company.short_name}/prompts'
 
@@ -103,16 +104,15 @@ class PromptService:
             system_prompt_content = []
 
             # get the filepaths for all system prompts
-            current_dir = os.path.dirname(os.path.abspath(__file__))
-            src_dir = os.path.dirname(current_dir)  # ../src
-            system_prompt_dir = os.path.join(src_dir, "prompts")
+            current_dir = Path(__file__).resolve().parent
+            project_root = current_dir.parent.parent
 
-            # Obtener, ordenar y leer los system prompts
+            # read all the system prompts from the database
             system_prompts = self.llm_query_repo.get_system_prompts()
 
             for prompt in system_prompts:
-                # Construir la ruta absoluta para leer el archivo
-                absolute_filepath = os.path.join(system_prompt_dir, prompt.filepath)
+                # build the absolute filepath for reading it
+                absolute_filepath = os.path.join(project_root, prompt.filepath)
                 if not os.path.exists(absolute_filepath):
                     logging.warning(f"El archivo para el prompt de sistema no existe: {absolute_filepath}")
                     continue
@@ -123,7 +123,7 @@ class PromptService:
                     raise IAToolkitException(IAToolkitException.ErrorType.FILE_IO_ERROR,
                                        f"Error leyendo el archivo de prompt del sistema {absolute_filepath}: {e}")
 
-            # Unir todo el contenido en un solo string
+            # join the system prompts into a single string
             return "\n".join(system_prompt_content)
 
         except IAToolkitException:

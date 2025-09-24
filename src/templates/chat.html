@@ -27,15 +27,9 @@
         <div id="chat-messages">
         <!-- Mensaje de bienvenida estático -->
         <div class="answer-section">
-            ¡Hola! Soy la <strong> Inteligencia Asistida de Maxxa. </strong>¿En qué puedo ayudarte hoy?
+            ¡Hello! I'm an <strong> IAToolkit </strong> powered chatbot.
         </div>
-        <div class="answer-section">
-            <a href="{{ url_for('chat-info') }}"
-               class="btn btn-success btn-sm mt-1"
-               target="_blank" rel="noopener noreferrer" >
-                <i class="bi bi-table me-3"></i>Revisa la lista de datos de clientes con los que te puedo ayudar.
-            </a>
-        </div>
+
     </div>
 
 </div>
@@ -59,9 +53,9 @@
                     <div class="form-floating">
                         <input type="text" id="client-input"
                                class="form-control form-control-soft"
-                               placeholder="Identifica al cliente de Maxxa con su RUT o parte del nombre ...">
+                               placeholder="Identifica al cliente con su RUT  ...">
                         <label for="client-input">
-                            Identifica un cliente de Maxxa con su RUT o parte del nombre ...
+                            Identifica un cliente con su RUT o parte del nombre ...
                         </label>
                     </div>
                     <!-- Botón para limpiar, ahora dentro del contenedor relativo -->
@@ -80,7 +74,7 @@
                         <button type="button" id="agent-select-button"
                                 class="btn btn-light border dropdown-toggle w-100 text-start" data-bs-toggle="dropdown"
                                 aria-expanded="false">
-                            Listado de preguntas disponibles pensando en los usuarios de Maxxa ....
+                            List of available prompts ....
                         </button>
 
                         <!-- El menú desplegable que contiene las opciones -->

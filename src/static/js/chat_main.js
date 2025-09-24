@@ -336,7 +336,7 @@ const toggleSendStopButtons = function (showStop) {
 
 function resetAgentSelect() {
     // 1. Restaura el texto original del botón visible
-    $('#agent-select-button').text('Preguntas predefinidas para Maxxa ....');
+    $('#agent-select-button').text('Available prompts  ....');
 
     // 2. Limpia los valores de los inputs ocultos
     $('#agent-select-value').val('');

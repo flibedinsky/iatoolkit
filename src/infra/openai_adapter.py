@@ -55,7 +55,7 @@ class OpenAIAdapter:
 
             # En caso de error de contexto
             if "context_length_exceeded" in str(e):
-                error_message = 'Tu consulta supera el limite de contexto, sale e ingresa de nuevo a Maxxa IA'
+                error_message = 'Tu consulta supera el limite de contexto, sale e ingresa de nuevo a IAToolkit'
 
             raise IAToolkitException(IAToolkitException.ErrorType.LLM_ERROR, error_message)
 

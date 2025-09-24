@@ -100,7 +100,7 @@ class Dispatcher:
 
         # initialize the database for every company class
         for company in self.company_classes.values():
-            print(f'inicializando clase: {company.__class__.__name__}')
+            print(f'company: {company.__class__.__name__}')
             company.init_db()
 
 

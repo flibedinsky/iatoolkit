@@ -19,7 +19,6 @@ import click
 from typing import Optional, Dict, Any
 from repositories.database_manager import DatabaseManager
 from injector import Binder, singleton, Injector
-from .toolkit_config import IAToolkitConfig
 
 VERSION = "2.0.0"
 
@@ -78,12 +77,8 @@ class IAToolkit:
         # Step 2: Set up the core components that DI depends on
         self._setup_database()
 
-        # Step 3: Create the Injector with CORE dependencies (NO VIEWS)
-        toolkit_config_module = IAToolkitConfig(app=self.app, db_manager=self.db_manager)
-        self._injector = Injector([
-            toolkit_config_module,
-            self._configure_core_dependencies # This method binds services, repos, etc.
-        ])
+        # Step 3: Create the Injector and configure all dependencies in one place
+        self._injector = Injector(self._configure_core_dependencies)
 
         # Step 4: Register routes using the fully configured injector
         self._register_routes()
@@ -228,7 +223,8 @@ class IAToolkit:
         """⚙️ Configures all system dependencies."""
         try:
             # Core dependencies
-            binder.bind(Injector, to=self._injector, scope=singleton)
+            binder.bind(Flask, to=self.app, scope=singleton)
+            binder.bind(DatabaseManager, to=self.db_manager, scope=singleton)
 
             # Bind all application components by calling the specific methods
             self._bind_repositories(binder)
@@ -317,12 +313,13 @@ class IAToolkit:
 
     def _setup_cli_commands(self):
         """⌨️ Configura comandos CLI básicos"""
+        from services.dispatcher_service import Dispatcher
+        from services.profile_service import ProfileService
 
         @self.app.cli.command("init-db")
         def init_db():
             """🗄️ Inicializa la base de datos del sistema"""
             try:
-                from services.dispatcher_service import Dispatcher
                 dispatcher = self._get_injector().get(Dispatcher)
 
                 click.echo("🚀 Inicializando base de datos...")
@@ -332,6 +329,34 @@ class IAToolkit:
             except Exception as e:
                 logging.exception(e)
                 click.echo(f"❌ Error: {e}")
+
+
+        @self.app.cli.command("setup-company")
+        @click.argument("company_short_name")
+        def setup_company(company_short_name: str):
+            """⚙️ Ejecuta el proceso de configuración para una nueva empresa."""
+            try:
+                # step 1: init the database
+                dispatcher = self._get_injector().get(Dispatcher)
+                click.echo("🚀 step 1 of 2: init companies in the database...")
+                dispatcher.init_db()
+                click.echo("✅ database is ready.")
+
+                # step 2: generate the api key
+                profile_service = self._get_injector().get(ProfileService)
+                click.echo(f"🔑 step 2 of 2: generating api-key for use in '{company_short_name}'...")
+                result = profile_service.new_api_key(company_short_name)
+
+                if 'error' in result:
+                    click.echo(f"❌ Error in step 2: {result['error']}")
+                    click.echo("👉 Make sure company name is correct and it's initialized in your app.")
+                else:
+                    click.echo("Configuration es ready, add this variable to your environment")
+                    click.echo(f"IATOOLKIT_API_KEY={result['api-key']}")
+
+            except Exception as e:
+                logging.exception(e)
+                click.echo(f"❌ Ocurrió un error inesperado durante la configuración: {e}")
 
 
     def _setup_context_processors(self):

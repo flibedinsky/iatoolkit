@@ -39,7 +39,6 @@ def register_views(injector, app):
     from views.user_feedback_view import UserFeedbackView
     from views.prompt_view import PromptView
     from views.chat_token_request_view import ChatTokenRequestView
-    from views.chat_info_view import ChatInfoView
     from views.external_login_view import ExternalLoginView
     from views.download_file_view import DownloadFileView
 
@@ -71,7 +70,6 @@ def register_views(injector, app):
     app.add_url_rule('/tasks', view_func=TaskView.as_view('tasks'))
     app.add_url_rule('/tasks/review/<int:task_id>', view_func=TaskReviewView.as_view('tasks-review'))
     app.add_url_rule('/load', view_func=FileStoreView.as_view('load'))
-    app.add_url_rule('/chat-info', view_func=ChatInfoView.as_view('chat-info'))
 
     # for simulation of external endpoints
     app.add_url_rule(
