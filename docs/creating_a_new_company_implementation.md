@@ -39,6 +39,7 @@ For IAToolkit to recognize your new implementation, you must register it in the 
 3.  Add the import for your new company and register it in the same way.
 4. Create the api-key for your new company.
 5. set-up the LLM API-key for your new company
+6. IATOOLKIT_BASE_URL
 
 ## Step 4: Customize the Implementation
 

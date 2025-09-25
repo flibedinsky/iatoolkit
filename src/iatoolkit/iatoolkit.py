@@ -19,10 +19,10 @@ import click
 from typing import Optional, Dict, Any
 from repositories.database_manager import DatabaseManager
 from injector import Binder, singleton, Injector
+from importlib.metadata import version as _pkg_version, PackageNotFoundError
 
-VERSION = "2.0.0"
 
-# global variable for yhe unique instance of IAToolkit
+# global variable for the unique instance of IAToolkit
 _iatoolkit_instance: Optional['IAToolkit'] = None
 
 
@@ -53,6 +53,7 @@ class IAToolkit:
         self.app = None
         self.db_manager = None
         self._injector = None
+        self.version = "0.0.0+dev"
 
     @classmethod
     def get_instance(cls) -> 'IAToolkit':
@@ -69,6 +70,9 @@ class IAToolkit:
             Creates, configures, and returns the Flask application instance.
             this is the main entry point for the application factory.
         """
+        if self._initialized and self.app:
+            return self.app
+
         self._setup_logging()
 
         # Step 1: Create the Flask app instance
@@ -94,7 +98,13 @@ class IAToolkit:
         self._setup_cli_commands()
         self._setup_context_processors()
 
-        logging.info(f"🎉 IAToolkit v{VERSION} inicializado correctamente")
+        try:
+            self.version = _pkg_version("iatoolkit")
+        except PackageNotFoundError:
+            pass
+
+        logging.info(f"🎉 IAToolkit v{self.version} inicializado correctamente")
+        self._initialized = True
         return self.app
 
     def _get_config_value(self, key: str, default=None):
@@ -133,7 +143,7 @@ class IAToolkit:
         is_dev = self._get_config_value('FLASK_ENV') == 'development'
 
         self.app.config.update({
-            'VERSION': VERSION,
+            'VERSION': self.version,
             'SECRET_KEY': self._get_config_value('FLASK_SECRET_KEY', 'iatoolkit-default-secret'),
             'SESSION_COOKIE_SAMESITE': "None" if is_https else "Lax",
             'SESSION_COOKIE_SECURE': is_https,
@@ -192,9 +202,9 @@ class IAToolkit:
         """🌐 Configura CORS"""
         # Origins por defecto para desarrollo
         default_origins = [
-            "http://localhost:3000",
             "http://localhost:5001",
-            "http://127.0.0.1:5001"
+            "http://127.0.0.1:5001",
+            os.getenv('IATOOLKIT_BASE_URL')
         ]
 
         # Obtener origins adicionales desde configuración/env
@@ -364,7 +374,7 @@ class IAToolkit:
         def inject_globals():
             return {
                 'url_for': url_for,
-                'iatoolkit_version': VERSION,
+                'iatoolkit_version': self.version,
                 'app_name': 'IAToolkit',
                 'user': SessionManager.get('user'),
                 'user_company': SessionManager.get('company_short_name'),
