@@ -3,12 +3,8 @@
 # Todos los derechos reservados.
 # En trámite de registro en el Registro de Propiedad Intelectual de Chile.
 
-from iatoolkit import Company, Function
-from iatoolkit import ProfileRepo
-from iatoolkit import LLMQueryRepo
-from iatoolkit import DatabaseManager
-from iatoolkit import SqlService
-from iatoolkit import BaseCompany
+from iatoolkit import Company, Function, Prompt, PromptCategory
+from iatoolkit import ProfileRepo, LLMQueryRepo, PromptService, DatabaseManager, SqlService, BaseCompany
 from injector import inject
 from companies.sample_company.configuration import FUNCTION_LIST
 from companies.sample_company.sample_company_database import SampleCompanyDatabase
@@ -22,9 +18,11 @@ class SampleCompany(BaseCompany):
     def __init__(self,
             profile_repo: ProfileRepo,
             llm_query_repo: LLMQueryRepo,
+            prompt_service: PromptService,
             sql_service: SqlService):
         super().__init__(profile_repo, llm_query_repo)
         self.sql_service = sql_service
+        self.prompt_service = prompt_service
         self.company = self.profile_repo.get_company_by_short_name('sample_company')
         self.sample_db_manager = None
         self.sample_database = None
@@ -57,6 +55,32 @@ class SampleCompany(BaseCompany):
                     parameters=function['params']
                 )
             )
+
+            c_general = self.llm_query_repo.create_or_update_prompt_category(
+                PromptCategory(name='General', order=1, company_id=self.company.id))
+
+            c_comercial = self.llm_query_repo.create_or_update_prompt_category(
+                PromptCategory(name='Comercial', order=2, company_id=self.company.id))
+
+            prompt_list = [
+                {
+                    'name': 'analisis_ventas',
+                    'description': 'Analisis de ventas y productos',
+                    'category': c_general,
+                    'order': 1
+                }
+                ]
+
+            # create the company prompts
+            for prt in prompt_list:
+                self.prompt_service.create_prompt(
+                    prompt_name=prt['name'],
+                    description=prt['description'],
+                    order=prt['order'],
+                    company=c,
+                    category=prt['category'],
+                    active=prt.get('active', True)
+                )
 
     # Return a global context used by this company: business description, schemas, database models
     def get_company_context(self, **kwargs) -> str:

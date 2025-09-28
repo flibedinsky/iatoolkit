@@ -24,10 +24,11 @@ from services.search_service import SearchService
 from repositories.profile_repo import ProfileRepo
 from repositories.llm_query_repo import LLMQueryRepo
 from services.query_service import QueryService
+from services.prompt_manager_service import PromptService
 from repositories.database_manager import DatabaseManager
 from infra.call_service import CallServiceClient
 from common.util import Utility
-from repositories.models import Base, Company, Function, TaskType
+from repositories.models import Base, Company, Function, TaskType, Prompt, PromptCategory
 
 
 __all__ = [
@@ -44,6 +45,7 @@ __all__ = [
     'QueryService',
     'ProfileRepo',
     'LLMQueryRepo',
+    'PromptService',
     'DatabaseManager',
     'CallServiceClient',
     'Utility',
@@ -51,4 +53,6 @@ __all__ = [
     'Function',
     'TaskType',
     'Base',
+    'Prompt',
+    'PromptCategory'
 ]

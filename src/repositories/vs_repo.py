@@ -36,42 +36,6 @@ class VSRepo:
             raise IAToolkitException(IAToolkitException.ErrorType.DATABASE_ERROR,
                                f"Error insertando documentos en PostgreSQL: {str(e)}")
 
-
-    def query_old(self, company_id:int , query_text: str, n_results=3, metadata_filter=None) -> list[Document]:
-
-        # Generate the embedding with the query text
-        query_embedding = self.embedder.feature_extraction([query_text])[0]
-        try:
-            # la consulta utiliza el operador vectorial de pgvector (<->)
-            result = self.session.execute(
-                text("""
-                        SELECT documents.id, documents.filename, documents.content, documents.content_b64
-                        FROM vsdocs, documents
-                        WHERE vsdocs.company_id = :company_id
-                        AND vsdocs.document_id = documents.id
-                        ORDER BY embedding <-> :query_embedding
-                        LIMIT :n_results
-                    """),
-                {
-                    "company_id": company_id,
-                    "query_embedding": query_embedding,
-                    'n_results': n_results
-                }
-            )
-            rows = result.fetchall()
-            vs_documents = [Document(id=row[0],
-                                     company_id=company_id,
-                                     filename=row[1],
-                                     content=row[2],
-                                     content_b64=row[3])
-                            for row in rows]
-            return self.remove_duplicates_by_id(vs_documents)
-        except Exception as e:
-            raise IAToolkitException(IAToolkitException.ErrorType.DATABASE_ERROR,
-                               f"Error en la consulta: {str(e)}")
-        finally:
-            self.session.close()
-
     def query(self, company_id: int, query_text: str, n_results=3, metadata_filter=None) -> list[Document]:
         """
         Busca documentos similares a la consulta para una empresa específica.
@@ -96,10 +60,10 @@ class VSRepo:
                                       documents.content, \
                                       documents.content_b64, \
                                       documents.meta
-                               FROM vsdocs, \
-                                    documents
-                               WHERE vsdocs.company_id = :company_id
-                                 AND vsdocs.document_id = documents.id \
+                               FROM iat_vsdocs, \
+                                    iat_documents
+                               WHERE iat_vsdocs.company_id = :company_id
+                                 AND iat_vsdocs.document_id = documents.id \
                                """]
 
             # Parámetros para la consulta

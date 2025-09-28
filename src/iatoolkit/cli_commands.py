@@ -24,6 +24,8 @@ def register_core_commands(app):
     def setup_company(company_short_name: str):
         """⚙️ Genera una nueva API key para una compañía ya registrada."""
         try:
+            dispatcher = IAToolkit.get_instance().get_injector().get(Dispatcher)
+            dispatcher.setup_all_companies()
             profile_service = IAToolkit.get_instance().get_injector().get(ProfileService)
             click.echo(f"🔑 Generando API key para '{company_short_name}'...")
             result = profile_service.new_api_key(company_short_name)
