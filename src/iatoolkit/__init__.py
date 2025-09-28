@@ -21,7 +21,6 @@ from services.excel_service import ExcelService
 from services.dispatcher_service import Dispatcher
 from services.document_service import DocumentService
 from services.search_service import SearchService
-from services.query_service import QueryService
 from repositories.profile_repo import ProfileRepo
 from repositories.llm_query_repo import LLMQueryRepo
 from repositories.database_manager import DatabaseManager
@@ -40,7 +39,6 @@ __all__ = [
     'ExcelService',
     'Dispatcher',
     'DocumentService',
-    'QueryService',
     'SearchService',
     'ProfileRepo',
     'LLMQueryRepo',

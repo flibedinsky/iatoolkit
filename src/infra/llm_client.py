@@ -3,7 +3,6 @@
 # Todos los derechos reservados.
 # En trámite de registro en el Registro de Propiedad Intelectual de Chile.
 
-from iatoolkit import current_iatoolkit
 from infra.llm_proxy import LLMProxy
 from repositories.models import Company, LLMQuery
 from repositories.llm_query_repo import LLMQueryRepo
@@ -54,6 +53,9 @@ class llmClient:
     def dispatcher(self) -> 'Dispatcher':
         """Lazy-loads and returns the Dispatcher instance."""
         if self._dispatcher is None:
+            # Import what you need, right when you need it.
+            from iatoolkit import current_iatoolkit
+            from services.dispatcher_service import Dispatcher
             # Use the global context proxy to get the injector, then get the service
             self._dispatcher = current_iatoolkit().get_injector().get(Dispatcher)
         return self._dispatcher

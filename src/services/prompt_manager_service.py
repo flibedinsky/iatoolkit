@@ -74,7 +74,8 @@ class PromptService:
                 raise IAToolkitException(IAToolkitException.ErrorType.DOCUMENT_NOT_FOUND,
                                    f"No se encontró el prompt '{prompt_name}' para la empresa '{company.short_name}'")
 
-            absolute_filepath = os.path.join(execution_dir, user_prompt.filename)
+            prompt_file = f'companies/{company.short_name}/prompts/{user_prompt.filename}'
+            absolute_filepath = os.path.join(execution_dir, prompt_file)
             if not os.path.exists(absolute_filepath):
                 raise IAToolkitException(IAToolkitException.ErrorType.FILE_IO_ERROR,
                                    f"El archivo para el prompt '{prompt_name}' no existe: {absolute_filepath}")

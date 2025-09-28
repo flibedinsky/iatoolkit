@@ -9,6 +9,7 @@ from iatoolkit.company_registry import get_company_registry, register_company
 from services.dispatcher_service import Dispatcher
 from common.exceptions import IAToolkitException
 from repositories.llm_query_repo import LLMQueryRepo
+from repositories.models import Company, Function
 from services.excel_service import ExcelService
 from services.mail_service import MailService
 from services.api_service import ApiService
@@ -25,7 +26,8 @@ class MockSampleCompany(BaseCompany):
 
     def start_execution(self): pass
 
-    def get_user_info(self): pass
+    def get_user_info(self, user_identifier: str): pass
+
     def get_metadata_from_filename(self, filename: str) -> dict: return {}
 
 
@@ -55,6 +57,8 @@ class TestDispatcher:
         self.mock_sample_company_instance.handle_request = MagicMock(return_value={"result": "sample_company_response"})
         self.mock_sample_company_instance.get_company_context = MagicMock(return_value="Company Context for Sample")
         self.mock_sample_company_instance.start_execution = MagicMock(return_value=True)
+        self.mock_sample_company_instance.get_user_info = MagicMock(return_value={"email": "test@user.com"})
+        self.mock_sample_company_instance.get_metadata_from_filename = MagicMock(return_value={"meta": "data"})
 
         # Register the mock company class
         register_company("sample", MockSampleCompany)
@@ -69,7 +73,7 @@ class TestDispatcher:
         self.toolkit_mock.get_injector.return_value = mock_injector
 
         # START the patch that will persist throughout the test
-        self.current_iatoolkit_patcher = patch('services.dispatcher_service.current_iatoolkit',
+        self.current_iatoolkit_patcher = patch('iatoolkit.current_iatoolkit',
                                                return_value=self.toolkit_mock)
         self.current_iatoolkit_patcher.start()
 
@@ -82,6 +86,7 @@ class TestDispatcher:
             mail_service=self.mail_service,
             api_service=self.api_service
         )
+
 
     def teardown_method(self, method):
         """Clean up patches after each test."""
@@ -140,6 +145,100 @@ class TestDispatcher:
         self.mock_sample_company_instance.get_company_context.assert_called_once_with(**params)
         assert "Company Context for Sample" in result
 
+    def test_get_company_instance(self):
+        """Tests that get_company_instance returns the correct company instance."""
+        instance = self.dispatcher.get_company_instance("sample")
+        assert instance == self.mock_sample_company_instance
+
+        instance_none = self.dispatcher.get_company_instance("non_existent")
+        assert instance_none is None
+
+    def test_get_metadata_from_filename_success(self):
+        """Tests that get_metadata_from_filename successfully calls the company's method."""
+        filename = "test.txt"
+        expected_metadata = {"meta": "data"}
+        self.mock_sample_company_instance.get_metadata_from_filename.return_value = expected_metadata
+
+        result = self.dispatcher.get_metadata_from_filename("sample", filename)
+
+        self.mock_sample_company_instance.get_metadata_from_filename.assert_called_once_with(filename)
+        assert result == expected_metadata
+
+    def test_get_metadata_from_filename_invalid_company(self):
+        """Tests get_metadata_from_filename with an invalid company."""
+        with pytest.raises(IAToolkitException) as excinfo:
+            self.dispatcher.get_metadata_from_filename("invalid_company", "test.txt")
+        assert "Empresa no configurada: invalid_company" in str(excinfo.value)
+
+    def test_get_metadata_from_filename_company_exception(self):
+        """Tests get_metadata_from_filename when the company method raises an exception."""
+        self.mock_sample_company_instance.get_metadata_from_filename.side_effect = Exception("Company error")
+        with pytest.raises(IAToolkitException) as excinfo:
+            self.dispatcher.get_metadata_from_filename("sample", "test.txt")
+        assert "Error en get_metadata_from_filename de sample" in str(excinfo.value)
+
+    def test_get_user_info_external_user(self):
+        """Tests get_user_info for an external user."""
+        user_identifier = "ext_user_123"
+        expected_user_data = {"email": "external@example.com"}
+        self.mock_sample_company_instance.get_user_info.return_value = expected_user_data
+
+        result = self.dispatcher.get_user_info("sample", user_identifier, is_local_user=False)
+
+        self.mock_sample_company_instance.get_user_info.assert_called_once_with(user_identifier)
+        assert result["user_email"] == "external@example.com"
+        assert not result["is_local"]
+
+    def test_get_user_info_external_user_company_exception(self):
+        """Tests get_user_info for an external user when the company method fails."""
+        self.mock_sample_company_instance.get_user_info.side_effect = Exception("DB error")
+        with pytest.raises(IAToolkitException) as excinfo:
+            self.dispatcher.get_user_info("sample", "ext_user_123", is_local_user=False)
+        assert "Error en get_user_info de sample" in str(excinfo.value)
+
+    @patch('services.dispatcher_service.SessionManager')
+    def test_get_user_info_local_user(self, mock_session_manager):
+        """Tests get_user_info for a local user from session."""
+        user_identifier = "local_user_1"
+        session_data = {"email": "local@iatoolkit.com", "user_fullname": "Local User"}
+        mock_session_manager.get.return_value = session_data
+
+        result = self.dispatcher.get_user_info("sample", user_identifier, is_local_user=True)
+
+        mock_session_manager.get.assert_called_once_with('user', {})
+        self.mock_sample_company_instance.get_user_info.assert_not_called()
+        assert result["user_email"] == "local@iatoolkit.com"
+        assert result["user_fullname"] == "Local User"
+        assert result["is_local"]
+
+    def test_get_user_info_invalid_company(self):
+        """Tests get_user_info with an invalid company."""
+        with pytest.raises(IAToolkitException) as excinfo:
+            self.dispatcher.get_user_info("invalid_company", "any_user", is_local_user=False)
+        assert "Empresa no configurada: invalid_company" in str(excinfo.value)
+
+    def test_get_company_services(self):
+        """Tests that get_company_services returns a correctly formatted list of tools."""
+        # Mock Company and Function objects
+        mock_company = MagicMock(spec=Company)
+        mock_function = MagicMock(spec=Function)
+        mock_function.name = "test_function"
+        mock_function.description = "A test function"
+        mock_function.parameters = {"type": "object", "properties": {}}
+
+        self.mock_llm_query_repo.get_company_functions.return_value = [mock_function]
+
+        tools = self.dispatcher.get_company_services(mock_company)
+
+        self.mock_llm_query_repo.get_company_functions.assert_called_once_with(mock_company)
+        assert len(tools) == 1
+        tool = tools[0]
+        assert tool["type"] == "function"
+        assert tool["name"] == "test_function"
+        assert tool["description"] == "A test function"
+        assert tool["parameters"]["additionalProperties"] is False
+        assert tool["strict"] is True
+
     def test_start_execution_when_ok(self):
         """Tests that start_execution works correctly."""
         result = self.dispatcher.get_registered_companies()
@@ -157,10 +256,10 @@ class TestDispatcher:
         get_company_registry().clear()
 
         toolkit_mock = MagicMock()
-        toolkit_mock._get_injector.return_value = Injector()  # Empty injector
+        toolkit_mock.get_injector.return_value = Injector()  # Empty injector
 
         # Start a new patch for this specific test
-        with patch('services.dispatcher_service.current_iatoolkit', return_value=toolkit_mock):
+        with patch('iatoolkit.current_iatoolkit', return_value=toolkit_mock):
             dispatcher = Dispatcher(
                 prompt_service=self.mock_prompt_manager,
                 llmquery_repo=self.mock_llm_query_repo,
@@ -170,13 +269,11 @@ class TestDispatcher:
                 api_service=self.api_service
             )
 
-            assert len(dispatcher.company_classes) == 0
+            assert len(dispatcher.company_instances) == 0
 
             with pytest.raises(IAToolkitException) as excinfo:
                 dispatcher.dispatch("any_company", "some_action")
             assert "Empresa 'any_company' no configurada" in str(excinfo.value)
 
         # Restart the main patch for subsequent tests
-        self.current_iatoolkit_patcher = patch('services.dispatcher_service.current_iatoolkit',
-                                               return_value=self.toolkit_mock)
         self.current_iatoolkit_patcher.start()

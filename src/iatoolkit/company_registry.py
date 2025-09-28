@@ -46,6 +46,10 @@ class CompanyRegistry:
 
         return self._company_instances.copy()
 
+    def get_all_company_instances(self) -> Dict[str, BaseCompany]:
+        """Devuelve un diccionario con todas las instancias de empresas creadas."""
+        return self._company_instances.copy()
+
     def get_registered_companies(self) -> Dict[str, Type[BaseCompany]]:
         return self._company_classes.copy()
 
