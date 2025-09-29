@@ -71,9 +71,9 @@ class ExternalChatLoginView(MethodView):
                                         company_short_name=company_short_name,
                                         external_user_id=external_user_id,
                                         is_mobile=is_mobile,
-                                        auth_method='jwt',  # <-- Indicar que el método es JWT
-                                        session_jwt=token,  # <-- ¡CLAVE! Pasar el token al frontend
-                                        iatoolkit_base_url=os.getenv('IATOOLKIT_BASE_URL', 'http://localhost:5000'),
+                                        auth_method='jwt',  # login method is JWT
+                                        session_jwt=token,  # pass the token to the front-end
+                                        iatoolkit_base_url=os.getenv('IATOOLKIT_BASE_URL'),
                                         prompts=prompts,
                                         external_login=True)
             return chat_html, 200
