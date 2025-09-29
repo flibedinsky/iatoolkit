@@ -60,8 +60,13 @@ user, companies, user_companies, functions, llm_queries, ...
 
 you should add the IATOOLKIT_API_KEY to your .env file
 
+run: flask populate-sample-db
+
+this will create sample tables for the company. 
 
 ## 5) Customize your company
+
+
 
 - `companies/my_company/prompts/`: Prompt templates and system instructions
 - `companies/my_company/context/`: Markdown docs used as domain context

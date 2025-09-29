@@ -3,8 +3,8 @@
 # Todos los derechos reservados.
 # En trámite de registro en el Registro de Propiedad Intelectual de Chile.
 
-from iatoolkit import Company, Function, Prompt, PromptCategory
-from iatoolkit import ProfileRepo, LLMQueryRepo, PromptService, DatabaseManager, SqlService, BaseCompany
+from iatoolkit import BaseCompany, Company, Function, PromptCategory
+from iatoolkit import ProfileRepo, LLMQueryRepo, PromptService, DatabaseManager, SqlService
 from injector import inject
 from companies.sample_company.configuration import FUNCTION_LIST
 from companies.sample_company.sample_company_database import SampleCompanyDatabase
