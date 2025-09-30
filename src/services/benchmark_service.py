@@ -65,7 +65,7 @@ class BenchmarkService:
 
         company = self.profile_repo.get_company_by_short_name(company_short_name)
         if not company:
-            raise IAToolkitException(IAToolkitException.ErrorType.CONFIG_ERROR, "Compañía 'maxxa' no encontrada.")
+            raise IAToolkitException(IAToolkitException.ErrorType.CONFIG_ERROR, f"Compañía {company_short_name} no encontrada.")
 
         total_rows = len(df)
         logging.info(f"Iniciando benchmark para {total_rows} casos de prueba desde el archivo: {file_path}")

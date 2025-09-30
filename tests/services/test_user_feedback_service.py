@@ -41,7 +41,7 @@ class TestUserFeedbackService:
     def test_feedback_when_exception(self):
         self.profile_repo.get_company_by_short_name.side_effect = Exception('an error')
         response = self.service.new_feedback(
-                        company_short_name='maxxa',
+                        company_short_name='my_company',
                         message='feedback message for testing',
                         external_user_id='flibedinsky',
                         space='spaces/test-space',
@@ -54,7 +54,7 @@ class TestUserFeedbackService:
     def test_feedback_when_company_not_exist(self):
         self.profile_repo.get_company_by_short_name.return_value = None
         response = self.service.new_feedback(
-                        company_short_name='maxxa',
+                        company_short_name='my_company',
                         message='feedback message for testing',
                         external_user_id='flibedinsky',
                         space='spaces/test-space',
@@ -62,12 +62,12 @@ class TestUserFeedbackService:
                         rating=5
                         )
 
-        assert 'No existe la empresa: maxxa' == response['error']
+        assert 'No existe la empresa: my_company' == response['error']
 
     def test_feedback_when_error_saving_in_database(self):
         self.profile_repo.save_feedback.return_value = None
         response = self.service.new_feedback(
-                        company_short_name='maxxa',
+                        company_short_name='my_company',
                         message='feedback message for testing',
                         external_user_id='flibedinsky',
                         space='spaces/test-space',
@@ -80,7 +80,7 @@ class TestUserFeedbackService:
     def test_feedback_when_ok(self):
         self.profile_repo.save_feedback.return_value = UserFeedback
         response = self.service.new_feedback(
-                        company_short_name='maxxa',
+                        company_short_name='my_company',
                         message='feedback message for testing',
                         external_user_id='flibedinsky',
                         space='spaces/test-space',
@@ -96,7 +96,7 @@ class TestUserFeedbackService:
         self.profile_repo.save_feedback.return_value = UserFeedback
 
         response = self.service.new_feedback(
-            company_short_name='maxxa',
+            company_short_name='my_company',
             message='feedback message for testing',
             external_user_id='flibedinsky',
             space='spaces/AAQAupQldd4',
@@ -111,7 +111,7 @@ class TestUserFeedbackService:
         call_args = self.google_chat_app.send_message.call_args[1]['message_data']
         assert call_args['type'] == 'MESSAGE_TRIGGER'
         assert call_args['space']['name'] == 'spaces/AAQAupQldd4'
-        assert '*Nuevo feedback de maxxa*' in call_args['message']['text']
+        assert '*Nuevo feedback de my_company*' in call_args['message']['text']
         assert '*Usuario:* flibedinsky' in call_args['message']['text']
         assert '*Mensaje:* feedback message for testing' in call_args['message']['text']
         assert '*Calificación:* 5' in call_args['message']['text']
@@ -130,7 +130,7 @@ class TestUserFeedbackService:
         }
 
         response = self.service.new_feedback(
-            company_short_name='maxxa',
+            company_short_name='my_company',
             message='feedback message for testing',
             external_user_id='flibedinsky',
             space='spaces/AAQAupQldd4',
@@ -152,7 +152,7 @@ class TestUserFeedbackService:
         self.google_chat_app.send_message.side_effect = Exception('Google Chat error')
 
         response = self.service.new_feedback(
-            company_short_name='maxxa',
+            company_short_name='my_company',
             message='feedback message for testing',
             external_user_id='flibedinsky',
             space='spaces/AAQAupQldd4',
@@ -178,7 +178,7 @@ class TestUserFeedbackService:
         }
 
         response = self.service.new_feedback(
-            company_short_name='maxxa',
+            company_short_name='my_company',
             message='feedback message for testing',
             external_user_id='flibedinsky',
             space='spaces/AAQAupQldd4',

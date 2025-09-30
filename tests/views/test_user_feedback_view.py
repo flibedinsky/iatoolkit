@@ -41,7 +41,7 @@ class TestUserFeedbackView:
 
 
     def test_post_when_missing_data(self):
-        response = self.client.post('/maxxa/feedback',
+        response = self.client.post('/my_company/feedback',
                                     json={})
 
         assert response.status_code == 400
@@ -49,14 +49,14 @@ class TestUserFeedbackView:
 
     def test_post_when_auth_error(self):
         self.iauthentication.verify.return_value = {'error_message': 'error in authentication'}
-        response = self.client.post('/maxxa/feedback',
+        response = self.client.post('/my_company/feedback',
                                     json={'external_user_id': 'flibe'})
 
         assert response.status_code == 401
         assert response.json["error_message"] == 'error in authentication'
 
     def test_post_when_missing_message(self):
-        response = self.client.post('/maxxa/feedback',
+        response = self.client.post('/my_company/feedback',
                                     json={'external_user_id': 'flibe'})
 
         assert response.status_code == 400
@@ -64,7 +64,7 @@ class TestUserFeedbackView:
         self.feedback_service.new_feedback.assert_not_called()
 
     def test_post_when_missing_space(self):
-        response = self.client.post('/maxxa/feedback',
+        response = self.client.post('/my_company/feedback',
                                     json={'external_user_id': 'flibe', 'message': 'test message'})
 
         assert response.status_code == 400
@@ -72,7 +72,7 @@ class TestUserFeedbackView:
         self.feedback_service.new_feedback.assert_not_called()
 
     def test_post_when_missing_type(self):
-        response = self.client.post('/maxxa/feedback',
+        response = self.client.post('/my_company/feedback',
                                     json={'external_user_id': 'flibe', 'message': 'test message', 'space': 'spaces/test'})
 
         assert response.status_code == 400
@@ -80,7 +80,7 @@ class TestUserFeedbackView:
         self.feedback_service.new_feedback.assert_not_called()
 
     def test_post_when_missing_rating(self):
-        response = self.client.post('/maxxa/feedback',
+        response = self.client.post('/my_company/feedback',
                                     json={'external_user_id': 'flibe', 'message': 'test message', 'space': 'spaces/test', 'type': 'MESSAGE_TRIGGER'})
 
         assert response.status_code == 400
@@ -92,7 +92,7 @@ class TestUserFeedbackView:
         mock_render_template.return_value = "<html><body></body></html>"
         self.feedback_service.new_feedback.side_effect = Exception('error')
 
-        response = self.client.post('/maxxa/feedback',
+        response = self.client.post('/my_company/feedback',
                                     json={
                                         'message': 'feedback message', 
                                         'external_user_id': 'flibe',
@@ -106,7 +106,7 @@ class TestUserFeedbackView:
     def test_post_when_service_error(self):
         self.feedback_service.new_feedback.return_value = {'error': 'an error'}
 
-        response = self.client.post('/maxxa/feedback',
+        response = self.client.post('/my_company/feedback',
                                     json={
                                         'message': 'feedback message', 
                                         'external_user_id': 'flibe',
@@ -121,7 +121,7 @@ class TestUserFeedbackView:
     def test_post_when_ok(self):
         self.feedback_service.new_feedback.return_value = {'message': "Feedback guardado correctamente"}
 
-        response = self.client.post('/maxxa/feedback',
+        response = self.client.post('/my_company/feedback',
                                     json={
                                         'message': 'feedback message', 
                                         'external_user_id': 'flibe',
@@ -146,13 +146,13 @@ class TestUserFeedbackView:
             'rating': 4
         }
 
-        response = self.client.post('/maxxa/feedback', json=test_data)
+        response = self.client.post('/my_company/feedback', json=test_data)
 
         assert response.status_code == 200
 
         # Verify service was called with all parameters
         self.feedback_service.new_feedback.assert_called_once_with(
-            company_short_name='maxxa',
+            company_short_name='my_company',
             message='test feedback message',
             external_user_id='test_user_123',
             local_user_id=456,
@@ -173,7 +173,7 @@ class TestUserFeedbackView:
             'rating': 2
         }
 
-        response = self.client.post('/maxxa/feedback', json=test_data)
+        response = self.client.post('/my_company/feedback', json=test_data)
 
         assert response.status_code == 200
 
@@ -186,7 +186,7 @@ class TestUserFeedbackView:
         self.feedback_service.new_feedback.return_value = {'message': "Feedback guardado correctamente"}
 
         # Test with rating 1
-        response1 = self.client.post('/maxxa/feedback',
+        response1 = self.client.post('/my_company/feedback',
                                     json={
                                         'message': 'feedback message', 
                                         'external_user_id': 'flibe',
@@ -197,7 +197,7 @@ class TestUserFeedbackView:
         assert response1.status_code == 200
 
         # Test with rating 5
-        response2 = self.client.post('/maxxa/feedback',
+        response2 = self.client.post('/my_company/feedback',
                                     json={
                                         'message': 'feedback message', 
                                         'external_user_id': 'flibe',

@@ -67,12 +67,12 @@ class TestExternalLoginView:
 
     def test_get_with_different_company_and_user(self):
         """Test que verifica que funciona con diferentes combinaciones de company y user"""
-        response = self.client.get("/maxxa/external_login/employee456")
+        response = self.client.get("/my_company/external_login/employee456")
 
         assert response.status_code == 200
-        self.iauthentication.verify.assert_called_once_with("maxxa", "employee456")
+        self.iauthentication.verify.assert_called_once_with("my_company", "employee456")
         self.query_service.llm_init_context.assert_called_once_with(
-            company_short_name="maxxa",
+            company_short_name="my_company",
             external_user_id="employee456"
         )
 

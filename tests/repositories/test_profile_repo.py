@@ -137,7 +137,7 @@ class TestProfileRepo:
         assert result.name == 'NewCompany'
 
     def test_save_feedback_when_ok(self):
-        company = self.repo.create_company(Company(name='maxxa', short_name='maxxa'))
+        company = self.repo.create_company(Company(name='my_company', short_name='my_company'))
         feedback = UserFeedback(company_id=company.id,
                                 external_user_id='flibe',
                                 message='feedback message',

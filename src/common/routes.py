@@ -35,7 +35,6 @@ def register_views(injector, app):
     from views.forgot_password_view import ForgotPasswordView
     from views.change_password_view import ChangePasswordView
     from views.file_store_view import FileStoreView
-    from views.url_simulation_view import URLSimulationView
     from views.user_feedback_view import UserFeedbackView
     from views.prompt_view import PromptView
     from views.chat_token_request_view import ChatTokenRequestView
@@ -70,12 +69,6 @@ def register_views(injector, app):
     app.add_url_rule('/tasks', view_func=TaskView.as_view('tasks'))
     app.add_url_rule('/tasks/review/<int:task_id>', view_func=TaskReviewView.as_view('tasks-review'))
     app.add_url_rule('/load', view_func=FileStoreView.as_view('load'))
-
-    # for simulation of external endpoints
-    app.add_url_rule(
-        '/simulated-url/<company_short_name>/<object_name>',
-        view_func=URLSimulationView.as_view('simulated-url')
-    )
 
     app.add_url_rule(
         '/about',  # URL de la ruta
