@@ -1,8 +1,7 @@
 
 <div align="center">
   <h1>IAToolkit</h1>
-  <h3>The Open-Source Framework for Building Enterprise-Grade AI Chatbots on Your Private Data.
-</h3>
+  <p><strong>The Open-Source Framework for Building AI Chatbots on Your Private Data.</strong></p>
 </div>
 
 IAToolkit is a comprehensive, open-source framework designed for building enterprise-grade 
