@@ -36,6 +36,8 @@ class IAToolkitException(Exception):
         CRYPT_ERROR = 24
         LOAD_DOCUMENT_ERROR = 25
         INVALID_USER = 26
+        VECTOR_STORE_ERROR = 27
+
 
 
     def __init__(self, error_type: ErrorType = ErrorType.SYSTEM_ERROR, message=None):

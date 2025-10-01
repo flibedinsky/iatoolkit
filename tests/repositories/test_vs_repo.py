@@ -42,7 +42,7 @@ class TestVSRepo:
         with pytest.raises(IAToolkitException) as excinfo:
             vs_repo.add_document(vs_chunk_list)
 
-        assert excinfo.value.error_type == IAToolkitException.ErrorType.DATABASE_ERROR
+        assert excinfo.value.error_type == IAToolkitException.ErrorType.VECTOR_STORE_ERROR
         assert "Error insertando documentos en PostgreSQL" in str(excinfo.value)
         mock_session.rollback.assert_called_once()
 
@@ -69,7 +69,7 @@ class TestVSRepo:
         with pytest.raises(IAToolkitException) as excinfo:
             vs_repo.query(company_id=123, query_text="texto de prueba", n_results=3)
 
-        assert excinfo.value.error_type == IAToolkitException.ErrorType.DATABASE_ERROR
+        assert excinfo.value.error_type == IAToolkitException.ErrorType.VECTOR_STORE_ERROR
         assert "Error en la consulta" in str(excinfo.value)
 
     def test_query_success(self, vs_repo, mock_db_manager, mock_embedder):

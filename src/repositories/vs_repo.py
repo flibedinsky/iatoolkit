@@ -33,7 +33,7 @@ class VSRepo:
         except Exception as e:
             logging.error(f"Error insertando documentos en PostgreSQL: {str(e)}")
             self.session.rollback()
-            raise IAToolkitException(IAToolkitException.ErrorType.DATABASE_ERROR,
+            raise IAToolkitException(IAToolkitException.ErrorType.VECTOR_STORE_ERROR,
                                f"Error insertando documentos en PostgreSQL: {str(e)}")
 
     def query(self, company_id: int, query_text: str, n_results=3, metadata_filter=None) -> list[Document]:
@@ -117,7 +117,7 @@ class VSRepo:
             logging.error(f"Error en la consulta de documentos: {str(e)}")
             logging.error(f"Failed SQL: {sql_query}")
             logging.error(f"Failed params: {params}")
-            raise IAToolkitException(IAToolkitException.ErrorType.DATABASE_ERROR,
+            raise IAToolkitException(IAToolkitException.ErrorType.VECTOR_STORE_ERROR,
                                f"Error en la consulta: {str(e)}")
         finally:
             self.session.close()
