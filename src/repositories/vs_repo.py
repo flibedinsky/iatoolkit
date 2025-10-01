@@ -36,7 +36,12 @@ class VSRepo:
             raise IAToolkitException(IAToolkitException.ErrorType.VECTOR_STORE_ERROR,
                                f"Error insertando documentos en PostgreSQL: {str(e)}")
 
-    def query(self, company_id: int, query_text: str, n_results=3, metadata_filter=None) -> list[Document]:
+    def query(self,
+              company_id: int,
+              query_text: str,
+              n_results=3,
+              metadata_filter=None
+              ) -> list[Document]:
         """
         Busca documentos similares a la consulta para una empresa específica.
 
