@@ -1,6 +1,7 @@
 # Copyright (c) 2024 Fernando Libedinsky
-# Producto: IAToolkit Core
-# Framework opensource para chatbots empresariales con IA
+# Product: IAToolkit
+#
+# IAToolkit is open source software.
 
 from flask import Flask, url_for, current_app
 from flask_session import Session

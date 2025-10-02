@@ -1,5 +1,7 @@
 # Copyright (c) 2024 Fernando Libedinsky
-# Producto: IAToolkit
+# Product: IAToolkit
+#
+# IAToolkit is open source software.
 
 from typing import Dict, Type, Any
 from .base_company import BaseCompany
