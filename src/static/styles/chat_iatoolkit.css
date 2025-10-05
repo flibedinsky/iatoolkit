@@ -410,8 +410,8 @@
     align-items: center;
 }
 
-/* Estilo para el input de cliente cuando tiene contenido */
-#client-input.has-content {
+/* Estilo para el input de datos específicos cuando tiene contenido */
+.specific-data-input.has-content {
     background-color: #e9f3ed !important;                 /* Fondo verde muy pálido */
     border-color: #198754 !important;                     /* Borde en verde 'success' */
     border-width: 2px !important;                         /* Borde más grueso */
@@ -420,13 +420,13 @@
     box-shadow: 0 1px 4px rgba(25, 135, 84, 0.2) !important; /* Sombra sutil y más suave */
 }
 
-/* Pequeño ajuste para la etiqueta flotante cuando el input tiene contenido */
-#client-input.has-content + label {
+/* Ajuste para la etiqueta flotante */
+.specific-data-input.has-content + label {
     color: #0a5833 !important; /* Aseguramos que el color de la etiqueta coincida */
 }
 
-/* Estilo para el nuevo botón de limpiar el input de cliente */
-#clear-client-input-button {
+/* Estilo para el botón de limpiar */
+.clear-specific-data-button {
     position: absolute;
     top: 50%;
     right: 15px; /* Lo mueve desde la derecha */
@@ -435,12 +435,12 @@
     padding: 0.25rem 0.5rem;
     color: #6c757d;
     background-color: transparent;
+    border: none; /* Aseguramos que no tenga borde */
 }
 
-#clear-client-input-button:hover {
+.clear-specific-data-button:hover {
     color: #212529;
 }
-
 
 
 /* Estilo personalizado para un input más suave */

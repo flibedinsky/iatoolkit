@@ -12,7 +12,7 @@
     <!-- Icono de cerrar sesión -->
     {% if user.email %}
         <a href="{{ url_for('logout', company_short_name=company_short_name) }}"
-     |         class="fs-4 ms-3" title="Cerrar sesión">
+             class="fs-4 ms-3" title="Cerrar sesión">
             <i class="bi bi-box-arrow-right"></i>
         </a>
     {% endif %}
@@ -42,7 +42,7 @@
 
     <!-- Contenedor para los inputs que crecerá para llenar el espacio -->
     <div class="input-container">
-        <!-- PRIMERA FILA: Input de cliente y selector de preguntas -->
+        <!-- first row: prompt selector and optional company input-->
         <div class="row g-2 mb-2 first-line-input-container">
             <div class="col-md">
                 <div class="position-relative">
@@ -98,19 +98,21 @@
             {% if company_ui_config and company_ui_config.enabled %}
 
             <div class="col-md">
-                <!-- opcional: datos especificos para enviar al chatbot -->
+                <!-- optional: company specific data -->
                 <div class="position-relative">
                     <div class="form-floating">
                         <input type="text" id="{{ company_ui_config.id }}"
-                               class="form-control form-control-soft"
+                               class="form-control form-control-soft specific-data-input"
                                placeholder="{{ company_ui_config.placeholder }}">
                         <label for="{{ company_ui_config.id }}">
                             {{ company_ui_config.label }}
                         </label>
                     </div>
                     <!-- clean button -->
-                    <button type="button" id="clear-{{ company_ui_config.id }}-button" class="btn"
-                            style="display: none; border: none;">
+                    <button type="button"
+                            id="clear-{{ company_ui_config.id }}-button"
+                            class="btn clear-specific-data-button"
+                            style="display: none;">
                         <i class="bi bi-x-circle-fill"></i>
                     </button>
                 </div>
@@ -120,7 +122,7 @@
 
         </div>
 
-        <!-- SEGUNDA FILA: Textarea principal -->
+        <!-- second row: Textarea principal -->
         <div class="row second-line-input-container">
             <div class="col-md">
                 <div class="input-group">
