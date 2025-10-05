@@ -46,21 +46,26 @@ $(document).ready(function () {
     });
 
 
-    // Evento para estilizar el input de cliente cuando el usuario escribe en él.
-    $('#client-input').on('input', function () {
-        // 'input' es un evento que se dispara cada vez que el valor cambia.
+    // Solo se activa si el componente está configurado y habilitado
+    if (specificDataConfig && specificDataConfig.enabled) {
+        // Usa el ID dinámico de la configuración
+        $('#' + specificDataConfig.id).on('input', function () {
+            if ($(this).val().trim() !== '') {
+                $(this).addClass('has-content');
+                // Usa el ID dinámico para el botón de limpiar
+                $('#clear-' + specificDataConfig.id + '-button').show();
+            } else {
+                $(this).removeClass('has-content');
+                $('#clear-' + specificDataConfig.id + '-button').hide();
+            }
+        });
 
-        // Si el input NO está vacío (después de quitar espacios en blanco)...
-        if ($(this).val().trim() !== '') {
-            // ...añadimos nuestra clase CSS para que se ponga verde.
-            $(this).addClass('has-content');
-            $('#clear-client-input-button').show();
-        } else {
-            // ...si está vacío, se la quitamos para que vuelva a su estado normal.
-            $(this).removeClass('has-content');
-            $('#clear-client-input-button').hide();
-        }
-    });
+        // Evento para el botón de limpiar dinámico
+        $('#clear-' + specificDataConfig.id + '-button').on('click', function () {
+            resetSpecificDataInput();
+        });
+    }
+
 
 });  // fin del document.ready
 
@@ -72,14 +77,12 @@ const handleChatMessage = async function () {
     }
 
     const question = $('#question').val().trim();
-    const clientName = $('#client-input').val().trim();
     const selectedPrompt = $('#agent-select-value').val()
     const selectedDescription = $('#agent-select-description').val();
 
     // dynamic lecture of the value of the specific data input
     let specificDataValue = '';
     if (specificDataConfig && specificDataConfig.enabled) {
-        // use the ID
         specificDataValue = $('#' + specificDataConfig.id).val().trim();
     }
 
@@ -93,7 +96,7 @@ const handleChatMessage = async function () {
     }
 
     // Mostrar el prompt al usuario en el chat
-    displayUserMessage(question, selectedDescription, clientName, selectedPrompt);
+    displayUserMessage(question, selectedDescription, specificDataValue, selectedPrompt);
     showSpinner();
 
     // Cambiar botón a modo "Detener"
@@ -102,6 +105,10 @@ const handleChatMessage = async function () {
     // limpiar widgets
     $('#question').val('');
     resetAgentSelect();
+
+    if (specificDataConfig && specificDataConfig.enabled) {
+        resetSpecificDataInput();
+    }
 
     const files = window.filePond.getFiles();
     const filesBase64 = await Promise.all(files.map(fileItem => toBase64(fileItem.file))); // fileItem.file es el objeto File nativo
@@ -233,19 +240,19 @@ const callLLMAPI = async function(apiPath, data, method, timeoutMs = 500000) {
     };
 
     // Función para mostrar mensaje del usuario
-    const displayUserMessage = function(question, selectedDescription, clientName, selectedPrompt) {
+    const displayUserMessage = function(question, selectedDescription, specificDataValue, selectedPrompt) {
         const chatContainer = $('#chat-container');
         const userMessage = $('<div>').addClass('message shadow-sm');
 
         let pencil = true;
         let messageText;
-        if (clientName && question && !selectedPrompt) {
-            messageText = $('<span>').text(`${clientName}: ${question}`);
+        if (specificDataValue && question && !selectedPrompt) {
+            messageText = $('<span>').text(`${specificDataValue}: ${question}`);
             }
-        else if (clientName && !question && selectedPrompt) {
-            messageText = $('<span>').text(`${clientName}: ${selectedDescription}`);
+        else if (specificDataValue && !question && selectedPrompt) {
+            messageText = $('<span>').text(`${specificDataValue}: ${selectedDescription}`);
             }
-        else if ( ! clientName && selectedPrompt) {
+        else if ( ! specificDataValue && selectedPrompt) {
             messageText = $('<span>').text(`${selectedDescription}`);
             pencil = false;
             }
@@ -366,20 +373,14 @@ function resetAgentSelect() {
     $('#clear-selection-button').hide();
 }
 
-function resetClientInput() {
-    $('#client-input').val(''); // Limpia el texto
-    $('#client-input').removeClass('has-content'); // Quita el estilo verde
-    $('#clear-client-input-button').hide(); // Oculta el botón 'X'
+function resetSpecificDataInput() {
+    if (specificDataConfig && specificDataConfig.enabled) {
+        const input = $('#' + specificDataConfig.id);
+        input.val(''); // Limpia el texto
+        input.removeClass('has-content'); // Quita el estilo
+        $('#clear-' + specificDataConfig.id + '-button').hide(); // Oculta el botón 'X'
+    }
 }
-
-$('#clear-selection-button').on('click', function () {
-    resetAgentSelect();
-});
-
-$('#clear-client-input-button').on('click', function () {
-    resetClientInput();
-});
-
 
 function toBase64(file) { // file aquí es el objeto File nativo
     return new Promise((resolve, reject) => {

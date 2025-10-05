@@ -5,7 +5,7 @@
 
 FUNCTION_LIST = [
         {'name': 'Acceso via SQL a la base de datos.',
-         'description': "Consultas sobre clientes, productos, ordenes e items de una orden.",
+         'description': "Consultas sobre clientes, productos, ordenes , regiones, empleados",
          'function_name': "sql_query",
          'params': {
                     "type": "object",
@@ -16,9 +16,10 @@ FUNCTION_LIST = [
                     "required": ["query"]
                 }
          },
-        {'name': 'busquedas en documentos de fondos',
-         'description': "Buscar y recuperar fragmentos relevantes desde factsheets/reglamentos/prospectos PDF de fondos propios de la compañía (y sus filiales), con filtros por comisiones, clase de activo, riesgo, ISIN, etc.",
-         'function_name': "fund_search",
+        {'name': 'busquedas en documentos: manuales internos, contratos de trabajo, procedimientos, legales',
+         'description': "busquedas sobre documentos: manuales, contratos de trabajo de empleados,"
+            'manuales de procedimientos, documentos legales, manuales de proveedores (supply-chain)',
+         'function_name': "document_search",
          'params': {
                     "type": "object",
                     "properties": {

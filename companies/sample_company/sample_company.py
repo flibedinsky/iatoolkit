@@ -108,7 +108,7 @@ class SampleCompany(BaseCompany):
         if action == "sql_query":
             sql_query = kwargs.get('query')
             return self.sql_service.exec_sql(self.sample_db_manager, sql_query)
-        elif action == "fund_search":
+        elif action == "document_search":
             query_string = kwargs.get('query')
             return self.search_service.search(self.company.id, query_string)
         else:
@@ -189,24 +189,32 @@ class SampleCompany(BaseCompany):
         @app.cli.command("load")
         def load_documents():
             if os.getenv('FLASK_ENV') == 'dev':
-                connector_config = {'type': 'local',
-                                  'path': "companies/sample_company/sample_documents", }
+                connector_config = {'type': 'local', 'path': "" }
+
             else:
                 connector_config = {'type': 's3',
                                   'bucket': "iatoolkit",
                                   'prefix': 'sample_company'}
 
             load_documents_service = IAToolkit.get_instance().get_injector().get(LoadDocumentsService)
-            try:
-                result = load_documents_service.load_company_files(
-                    company=self.company,
-                    connector_config=connector_config,
-                    predefined_metadata={},
-                    filters={"filename_contains": ".pdf"})
-                click.echo(f'{result} archivos procesados exitosamente.')
-            except Exception as e:
-                logging.exception(e)
-                click.echo(f"Error: {str(e)}")
+
+            types_to_load = [
+                {'type': 'supplier_manual', 'folder': 'supplier_manuals'},
+                {'type': 'employee_contract', 'folder': 'employee_contracts'}
+                ]
+
+            for doc in types_to_load:
+                connector_config['path'] = f"companies/sample_company/sample_data/{doc['folder']}"
+                try:
+                    result = load_documents_service.load_company_files(
+                        company=self.company,
+                        connector_config=connector_config,
+                        predefined_metadata={'type': doc['type']},
+                        filters={"filename_contains": ".pdf"})
+                    click.echo(f'folder {doc["folder"]},  {result} dodumentos procesados exitosamente.')
+                except Exception as e:
+                    logging.exception(e)
+                    click.echo(f"Error: {str(e)}")
 
 
 
