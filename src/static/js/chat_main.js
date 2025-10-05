@@ -23,7 +23,7 @@ $(document).ready(function () {
     });
 
     // Evento para el selector de prompts
-    $('.input-row').on('click', '.dropdown-menu .dropdown-item', function(event) {
+    $('.input-area').on('click', '.dropdown-menu .dropdown-item', function(event) {
         // Prevenir la acción por defecto del enlace (que es navegar a '#')
         event.preventDefault();
 
@@ -43,6 +43,11 @@ $(document).ready(function () {
 
         // muestra el boton para limpiar la selección
         $('#clear-selection-button').show();
+    });
+
+    // Evento para el botón de limpiar la selección de prompts
+    $('#clear-selection-button').on('click', function() {
+        resetPromptSelect();
     });
 
 
