@@ -217,7 +217,9 @@ class llmClient:
                              answer_time=stats['response_time']
                              )
             self.llmquery_repo.add_query(query)
-            logging.info(f"finish llm call in {int(time.time() - start_time)} secs.. sql_time: {f_call_time:.1f} secs")
+            logging.info(f"finish llm call in {int(time.time() - start_time)} secs..")
+            if function_calls:
+                logging.info(f"time within the function calls {f_call_time:.1f} secs.")
 
             return {
                 'valid_response': decoded_response.get('status', False),
