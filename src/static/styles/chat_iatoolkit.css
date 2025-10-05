@@ -396,19 +396,6 @@
     text-align: right
 }
 
-.first-line-input-container {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    align-items: center;
-}
-
-.second-line-input-container {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 20px;
-    align-items: center;
-}
 
 /* Estilo para el input de datos específicos cuando tiene contenido */
 .specific-data-input.has-content {
@@ -697,4 +684,11 @@
 .star.active,
 .star.hover-active {
     color: #ffc107; /* Color dorado estándar de Bootstrap */
+}
+
+/*
+ * para que la altura de un boton coincida con la altura de un componente .form-floating
+*/
+.btn-form-floating-height {
+    height: calc(3.5rem + 2px) !important;
 }

@@ -36,144 +36,95 @@
     <input type="file" id="file-upload" class="filepond" data-max-files="5" multiple>
 </div>
 
-<!-- Contenedor principal que alinea el área de inputs -->
-<!-- Se usa 'align-items-end' para que los botones se alineen con la base del textarea. -->
-<div class="input-row d-flex align-items-end mt-2 mb-2 position-relative">
+<div class="input-row d-flex align-items-end mt-2 mb-2">
 
-    <!-- Contenedor para los inputs que crecerá para llenar el espacio -->
-    <div class="input-container">
-        <!-- first row: prompt selector and optional company input-->
-        <div class="row g-2 mb-2 first-line-input-container">
-            <div class="col-md">
-                <div class="position-relative">
+    <!-- COLUMNA IZQUIERDA: Contiene todos los inputs y crece para ocupar el espacio disponible -->
+    <div class="flex-grow-1">
+        <!-- Fila superior: Prompts y (opcional) datos de empresa -->
+        <div class="row g-2 mb-2">
+            {% set prompt_col_class = 'col-md-4' %}
+            <div class="{{ prompt_col_class }}">
+                <div class="position-relative h-100">
                     <!-- selector de prompts -->
-                    <div class="btn-group dropup w-100">
-                        <!-- El botón que el usuario verá y que mostrará la opción seleccionada -->
-                        <button type="button" id="agent-select-button"
-                                class="btn btn-light border dropdown-toggle w-100 text-start" data-bs-toggle="dropdown"
-                                aria-expanded="false">
+                    <div class="input-group dropup h-100">
+                        <button type="button"
+                                id="prompt-select-button"
+                                class="btn btn-light border dropdown-toggle w-100 text-start"
+                                data-bs-toggle="dropdown" aria-expanded="false">
                             Prompts disponibles ....
                         </button>
-
-                        <!-- El menú desplegable que contiene las opciones -->
                         <ul class="dropdown-menu dropdown-menu-soft w-100">
                             {% if prompts and prompts.message %}
                             {% for category_group in prompts.message %}
-
-                            <!-- Título de la categoría -->
-                            <li><h6 class="dropdown-header">{{ category_group.category_name }}</h6></li>
-
-                            <!-- Opciones de la categoría -->
-                            {% for prompt in category_group.prompts %}
-                            <li>
-                                <a class="dropdown-item" href="#" data-value="{{ prompt.prompt }}">
-                                    {{ prompt.description }}
-                                </a>
-                            </li>
-                            {% endfor %}
-
-                            <!-- Divisor entre categorías si no es la última -->
-                            {% if not loop.last %}
-                            <li>
-                                <hr class="dropdown-divider">
-                            </li>
-                            {% endif %}
+                                <li><h6 class="dropdown-header">{{ category_group.category_name }}</h6></li>
+                                {% for prompt in category_group.prompts %}
+                                    <li><a class="dropdown-item" href="#" data-value="{{ prompt.prompt }}">{{ prompt.description }}</a></li>
+                                {% endfor %}
+                                {% if not loop.last %}
+                                    <li><hr class="dropdown-divider"></li>
+                                {% endif %}
                             {% endfor %}
                             {% endif %}
                         </ul>
                     </div>
 
-                    <!-- Input oculto para guardar el valor seleccionado y enviarlo con el formulario -->
-                    <button type="button" id="clear-selection-button" class="btn" style="display: none; border: none;">
-                        <i class="bi bi-x-circle-fill"></i>
-                    </button>
-
-                </div>
-                <!-- Inputs ocultos (sin cambios) -->
-                <input type="hidden" id="agent-select-value" name="agent_select_value">
-                <input type="hidden" id="agent-select-description" name="agent-select-description">
-
-            </div>
-
-            {% if company_ui_config and company_ui_config.enabled %}
-
-            <div class="col-md">
-                <!-- optional: company specific data -->
-                <div class="position-relative">
-                    <div class="form-floating">
-                        <input type="text" id="{{ company_ui_config.id }}"
-                               class="form-control form-control-soft specific-data-input"
-                               placeholder="{{ company_ui_config.placeholder }}">
-                        <label for="{{ company_ui_config.id }}">
-                            {{ company_ui_config.label }}
-                        </label>
-                    </div>
-                    <!-- clean button -->
-                    <button type="button"
-                            id="clear-{{ company_ui_config.id }}-button"
+                    <!-- Botón de limpiar para el selector de prompts -->
+                    <button type="button" id="clear-selection-button"
                             class="btn clear-specific-data-button"
                             style="display: none;">
                         <i class="bi bi-x-circle-fill"></i>
                     </button>
                 </div>
+                <input type="hidden" id="prompt-select-value" name="prompt_select_value">
+                <input type="hidden" id="prompt-select-description" name="prompt-select-description">
             </div>
 
-            {% endif %}
-
-        </div>
-
-        <!-- second row: Textarea principal -->
-        <div class="row second-line-input-container">
+            {% if company_ui_config and company_ui_config.enabled %}
             <div class="col-md">
-                <div class="input-group">
-                    <textarea id="question" placeholder="Escribe tu consulta aquí..."
-                          class="form-control form-control-soft"
-                          style="resize: none;" rows="2" required></textarea>
+                <!-- optional: company specific data -->
+                <div class="position-relative">
+                    <div class="form-floating">
+                        <input type="text" id="{{ company_ui_config.id }}" class="form-control form-control-soft specific-data-input" placeholder="{{ company_ui_config.placeholder }}">
+                        <label for="{{ company_ui_config.id }}">{{ company_ui_config.label }}</label>
+                    </div>
+                    <button type="button" id="clear-{{ company_ui_config.id }}-button" class="btn clear-specific-data-button" style="display: none;"><i class="bi bi-x-circle-fill"></i></button>
                 </div>
             </div>
+            {% endif %}
+        </div>
 
+        <!-- Fila inferior: Textarea principal -->
+        <div class="row g-2">
+            <div class="col">
+                <div class="input-group">
+                    <textarea id="question" placeholder="Escribe tu consulta aquí..." class="form-control form-control-soft" style="resize: none;" rows="2" required></textarea>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="flex-shrink-0 d-flex flex-column align-items-center ms-2">
-        <!-- Fila 1: Contenedores para botones de Enviar y Detener -->
-        <div id="send-button-container" class="mb-1">
-            <button id="send-button" class="btn btn-primary px-4 rounded">
-                Enviar
-            </button>
-        </div>
-        <div id="stop-button-container" class="mb-1" style="display: none;">
-            <button id="stop-button" class="btn btn-danger px-4 rounded">
-                <i class="bi bi-stop-circle" style="margin-right: 5px;"></i> Detener
-            </button>
-        </div>
-
-        <!-- Fila 2: Iconos (alineados horizontalmente y centrados) -->
-        <div class="d-flex justify-content-center">
-            <!-- Icono de adjuntar -->
-            <div id="paperclip-button-container" class="me-2"> <!-- me-2 para margen a la derecha -->
-                <a href="javascript:void(0);" id="paperclip-button" title="Adjuntar archivos">
-                    <i class="bi bi-paperclip" style="font-size: 1rem; color: #6c757d;"></i>
-                </a>
+    <!-- COLUMNA DERECHA: Contiene los botones y tiene un ancho fijo basado en su contenido -->
+    <div class="flex-shrink-0 ms-2">
+        <div class="d-flex flex-column align-items-center">
+            <!-- Fila 1: Botones Enviar/Detener -->
+            <div id="send-button-container" class="mb-1">
+                <button id="send-button" class="btn btn-primary px-4 rounded">Enviar</button>
             </div>
-
-            <!-- Icono de ver archivos (oculto inicialmente) -->
-            <div id="view-files-button-container" style="display: none;">
-                <a href="javascript:void(0);" id="view-files-button" title="Ver archivos adjuntos">
-                    <i class="bi bi-file-earmark-text" style="font-size: 1rem; color: #007bff;"></i>
-                </a>
+            <div id="stop-button-container" class="mb-1" style="display: none;">
+                <button id="stop-button" class="btn btn-danger px-4 rounded"><i class="bi bi-stop-circle" style="margin-right: 5px;"></i> Detener</button>
             </div>
-            <div class="buttons-container">
-                <i id="history-button"
-                   class="bi bi-clock-history text-success"
-                   style="font-size: 1.5em; cursor: pointer;"
-                   title="Historial con mis consultas">
-                </i>
-                <i id="send-feedback-button"
-                   class="bi bi-emoji-smile"
-                   style="font-size: 1.5em; cursor: pointer; color: #532323;"
-                   title="Tu feedback es muy importante">
-                </i>
+            <!-- Fila 2: Iconos -->
+            <div class="d-flex justify-content-center">
+                <div id="paperclip-button-container" class="me-2">
+                    <a href="javascript:void(0);" id="paperclip-button" title="Adjuntar archivos"><i class="bi bi-paperclip" style="font-size: 1rem; color: #6c757d;"></i></a>
+                </div>
+                <div id="view-files-button-container" style="display: none;">
+                    <a href="javascript:void(0);" id="view-files-button" title="Ver archivos adjuntos"><i class="bi bi-file-earmark-text" style="font-size: 1rem; color: #007bff;"></i></a>
+                </div>
+                <div class="buttons-container">
+                    <i id="history-button" class="bi bi-clock-history text-success" style="font-size: 1.5em; cursor: pointer;" title="Historial con mis consultas"></i>
+                    <i id="send-feedback-button" class="bi bi-emoji-smile" style="font-size: 1.5em; cursor: pointer; color: #532323;" title="Tu feedback es muy importante"></i>
+                </div>
             </div>
         </div>
     </div>

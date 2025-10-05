@@ -131,7 +131,11 @@ class SampleCompany(BaseCompany):
 
     def get_ui_component_config(self)-> dict:
         return {
-            "enabled": False
+            "enabled": False,
+            "id": "supplier-input",
+            "label": "Identifica un supplier con su nombre ...",
+            "placeholder": "supplier name ...",
+            "data_key": "supplier_name"
         }
 
     def get_schema_definitions(self, db_manager: DatabaseManager) -> str:

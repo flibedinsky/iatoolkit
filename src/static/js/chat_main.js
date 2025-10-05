@@ -23,7 +23,7 @@ $(document).ready(function () {
     });
 
     // Evento para el selector de prompts
-    $('.input-container').on('click', '.dropdown-menu .dropdown-item', function(event) {
+    $('.input-row').on('click', '.dropdown-menu .dropdown-item', function(event) {
         // Prevenir la acción por defecto del enlace (que es navegar a '#')
         event.preventDefault();
 
@@ -32,14 +32,14 @@ $(document).ready(function () {
         const selectedDescription = $(this).text().trim();
 
         // display the selected option
-        $('#agent-select-button').text(selectedDescription);
+        $('#prompt-select-button').text(selectedDescription);
 
         // save values for handling in the call
-        $('#agent-select-value').val(selectedPrompt);
-        $('#agent-select-description').val(selectedDescription);
+        $('#prompt-select-value').val(selectedPrompt);
+        $('#prompt-select-description').val(selectedDescription);
 
         // Aplica el estilo de "seleccionado" al botón.
-        $('#agent-select-button').addClass('item-selected');
+        $('#prompt-select-button').addClass('item-selected');
 
         // muestra el boton para limpiar la selección
         $('#clear-selection-button').show();
@@ -77,8 +77,8 @@ const handleChatMessage = async function () {
     }
 
     const question = $('#question').val().trim();
-    const selectedPrompt = $('#agent-select-value').val()
-    const selectedDescription = $('#agent-select-description').val();
+    const selectedPrompt = $('#prompt-select-value').val()
+    const selectedDescription = $('#prompt-select-description').val();
 
     // dynamic lecture of the value of the specific data input
     let specificDataValue = '';
@@ -104,7 +104,7 @@ const handleChatMessage = async function () {
 
     // limpiar widgets
     $('#question').val('');
-    resetAgentSelect();
+    resetPromptSelect();
 
     if (specificDataConfig && specificDataConfig.enabled) {
         resetSpecificDataInput();
@@ -360,16 +360,16 @@ const toggleSendStopButtons = function (showStop) {
 };
 
 
-function resetAgentSelect() {
+function resetPromptSelect() {
     // 1. Restaura el texto original del botón visible
-    $('#agent-select-button').text('Available prompts  ....');
+    $('#prompt-select-button').text('Available prompts  ....');
 
     // 2. Limpia los valores de los inputs ocultos
-    $('#agent-select-value').val('');
-    $('#agent-select-description').val('');
+    $('#prompt-select-value').val('');
+    $('#prompt-select-description').val('');
 
     // oculta el boton de limpiar
-    $('#agent-select-button').removeClass('item-selected');
+    $('#prompt-select-button').removeClass('item-selected');
     $('#clear-selection-button').hide();
 }
 
