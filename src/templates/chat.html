@@ -4,18 +4,32 @@
 
 {% block content %}
 <!-- Sección de encabezado con el usuario conectado -->
-<div class="company-section">
-    <span class="text-muted small fw-bold ms-auto">
+<div class="company-section d-flex justify-content-between align-items-center">
+    <!-- Izquierda: Datos del usuario -->
+    <span class="text-muted small fw-bold">
         {{ company_short_name }} - {{ external_user_id or user.email }}
     </span>
 
-    <!-- Icono de cerrar sesión -->
-    {% if user.email %}
-        <a href="{{ url_for('logout', company_short_name=company_short_name) }}"
-             class="fs-4 ms-3" title="Cerrar sesión">
-            <i class="bi bi-box-arrow-right"></i>
+    <!-- Derecha: Grupo de iconos de acción -->
+    <div class="d-flex align-items-center">
+        <!-- Icono de Historial -->
+        <a href="javascript:void(0);" id="history-button" class="fs-4 ms-3" title="Historial con mis consultas">
+            <i class="bi bi-clock-history text-success"></i>
         </a>
-    {% endif %}
+
+        <!-- Icono de Feedback -->
+        <a href="javascript:void(0);" id="send-feedback-button" class="fs-4 ms-3" title="Tu feedback es muy importante">
+            <i class="bi bi-emoji-smile" style="color: #532323;"></i>
+        </a>
+
+        <!-- Icono de cerrar sesión -->
+        {% if user.email %}
+            <a href="{{ url_for('logout', company_short_name=company_short_name) }}"
+                 class="fs-4 ms-3" title="Cerrar sesión">
+                <i class="bi bi-box-arrow-right"></i>
+            </a>
+        {% endif %}
+    </div>
 </div>
 
 <div id="chat-container"
@@ -91,14 +105,33 @@
         {% endif %}
     </div>
 
-    <!-- Fila inferior: Contiene el Textarea y los Botones, alineados por arriba -->
-    <div class="row g-2 align-items-start">
+    <!-- Fila inferior: Contiene el Textarea y los Botones -->
+        <div class="row g-2 align-items-start">
         <!-- Columna Izquierda (Textarea) -->
         <div class="col">
-            <div class="input-group">
-                <textarea id="question" placeholder="Escribe tu consulta aquí..." class="form-control form-control-soft" style="resize: none;" rows="2" required></textarea>
+            <!-- 1. El input-group ahora es el marco de referencia relativo -->
+            <div class="input-group position-relative">
+                <!-- 2. El textarea tiene una clase para el padding y se quitan los iconos de su interior -->
+                <textarea id="question" placeholder="Escribe tu consulta aquí..." class="form-control form-control-soft textarea-with-icons" style="resize: none;" rows="2" required></textarea>
+
+                <!-- 3. El wrapper de iconos vuelve a estar dentro, para poder "flotar" -->
+                <div class="attachment-icons-wrapper">
+                    <!-- Icono para adjuntar (Cambiado a 'bi-plus-circle') -->
+                    <div id="paperclip-button-container">
+                        <a href="javascript:void(0);" id="paperclip-button" title="Adjuntar archivos">
+                            <i class="bi bi-plus-circle"></i>
+                        </a>
+                    </div>
+                    <!-- Icono para ver archivos (visible condicionalmente) -->
+                    <div id="view-files-button-container" style="display: none;">
+                        <a href="javascript:void(0);" id="view-files-button" title="Ver archivos adjuntos">
+                            <i class="bi bi-file-earmark-text"></i>
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
+
 
         <!-- Columna Derecha (Botones) -->
         <div class="col-auto">
@@ -110,19 +143,7 @@
                 <div id="stop-button-container" class="mb-1" style="display: none;">
                     <button id="stop-button" class="btn btn-danger px-4 rounded"><i class="bi bi-stop-circle" style="margin-right: 5px;"></i> Detener</button>
                 </div>
-                <!-- Fila 2: Iconos -->
-                <div class="d-flex justify-content-center">
-                    <div id="paperclip-button-container" class="me-2">
-                        <a href="javascript:void(0);" id="paperclip-button" title="Adjuntar archivos"><i class="bi bi-paperclip" style="font-size: 1rem; color: #6c757d;"></i></a>
-                    </div>
-                    <div id="view-files-button-container" style="display: none;">
-                        <a href="javascript:void(0);" id="view-files-button" title="Ver archivos adjuntos"><i class="bi bi-file-earmark-text" style="font-size: 1rem; color: #007bff;"></i></a>
-                    </div>
-                    <div class="buttons-container">
-                        <i id="history-button" class="bi bi-clock-history text-success" style="font-size: 1.5em; cursor: pointer;" title="Historial con mis consultas"></i>
-                        <i id="send-feedback-button" class="bi bi-emoji-smile" style="font-size: 1.5em; cursor: pointer; color: #532323;" title="Tu feedback es muy importante"></i>
-                    </div>
-                </div>
+
             </div>
         </div>
     </div>

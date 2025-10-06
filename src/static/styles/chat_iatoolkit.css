@@ -692,3 +692,36 @@
 .btn-form-floating-height {
     height: calc(3.5rem + 2px) !important;
 }
+
+/*
+ * iconos de adjuntos dentro del textarea
+*/
+/* 1. Contenedor que agrupa y posiciona los iconos */
+.attachment-icons-wrapper {
+    position: absolute;
+    top: 0.3rem;  /* Distancia desde arriba */
+    right: 0.75rem;   /* Distancia desde la derecha */
+    z-index: 10;     /* Asegura que los iconos estén por encima del textarea */
+
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;     /* Espacio entre los iconos */
+}
+
+/* 2. Estilo de los iconos (tamaño y color) */
+.attachment-icons-wrapper a {
+    color: #6c757d;       /* Color gris estándar */
+    text-decoration: none;
+    font-size: 0.5rem;   /* Un tamaño claro y visible */
+    line-height: 1;       /* Evita alturas de línea extrañas */
+}
+
+.attachment-icons-wrapper a:hover {
+    color: #343a40; /* Un gris más oscuro al pasar el mouse */
+}
+
+/* 3. Clase para el textarea que crea el espacio para los iconos */
+.textarea-with-icons {
+    /* Padding para que el TEXTO ESCRITO no quede debajo de los iconos */
+    padding-right: 7rem !important; /* Ajusta este valor si necesitas más/menos espacio */
+}
