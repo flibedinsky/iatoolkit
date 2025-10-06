@@ -6,9 +6,15 @@
 <!-- Sección de encabezado con el usuario conectado -->
 <div class="company-section d-flex justify-content-between align-items-center">
     <!-- Izquierda: Datos del usuario -->
-    <span class="text-muted small fw-bold">
-        {{ company_short_name }} - {{ external_user_id or user.email }}
-    </span>
+    <div class="d-flex align-items-center">
+        <span class="text-muted small fw-bold">
+            {{ company_short_name }} - {{ external_user_id or user.email }}
+        </span>
+        <span class="text-muted small mx-2">|</span>
+        <span class="text-muted" style="font-size: 0.75rem;">
+            Powered by <strong>IAToolkit</strong>
+        </span>
+    </div>
 
     <!-- Derecha: Grupo de iconos de acción -->
     <div class="d-flex align-items-center">
@@ -33,8 +39,8 @@
 </div>
 
 <div id="chat-container"
-     class="mt-2 p-3 border border-2 rounded"
-    style="height: 67vh;">
+     class="mt-2 p-3 border border-2 rounded flex-grow-1"
+     style="overflow-y: auto;">
         <div id="chat-messages">
         <!-- Mensaje de bienvenida estático -->
         <div class="answer-section">
@@ -50,7 +56,7 @@
 
 <div class="input-area mt-2 mb-2">
 
-    <!-- 1. Contenido Colapsable del Asistente (AHORA SÍ ESTÁ ENVUELTO CORRECTAMENTE) -->
+    <!-- 1. Contenido Colapsable del Asistente de prompts -->
     <div class="collapse" id="prompt-assistant-collapse">
         <div class="card card-body mb-2">
             <div class="row g-2">
@@ -144,8 +150,8 @@
     window.company_ui_config = {{ company_ui_config | tojson }};
 
     {% if auth_method == 'jwt' and session_jwt %}
-    // Store session JWT if it exists, defined in the same global scope
-    window.sessionJWT = "{{ session_jwt }}";
+        // Store session JWT if it exists, defined in the same global scope
+        window.sessionJWT = "{{ session_jwt }}";
     {% endif %}
 </script>
 

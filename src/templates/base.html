@@ -13,8 +13,8 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='styles/chat_modal.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles/llm_output.css') }}">
 </head>
-<body class="d-flex flex-column p-3">
-    <main>
+<body class="d-flex flex-column p-3" style="min-height: 100vh;">
+    <main class="d-flex flex-column flex-grow-1">
         {% block content %}{% endblock %}
     </main>
 
