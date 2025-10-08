@@ -163,4 +163,18 @@
 <script src="{{ url_for('static', filename='js/chat_feedback.js') }}"></script>
 <script src="{{ url_for('static', filename='js/chat_main.js') }}"></script>
 
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const promptCollapse = document.getElementById('prompt-assistant-collapse');
+        if (promptCollapse) {
+            promptCollapse.addEventListener('shown.bs.collapse', function () {
+                // Desplazar la ventana al final de la página para mantener visible el área de entrada.
+                window.scrollTo({
+                    top: document.body.scrollHeight,
+                    behavior: 'smooth'
+                });
+            });
+        }
+    });
+</script>
 {% endblock %}

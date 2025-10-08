@@ -11,26 +11,12 @@ from services.profile_service import ProfileService
 
 def register_core_commands(app):
     """Registra los comandos CLI del núcleo de IAToolkit."""
-    
-    @app.cli.command("setup-all-companies")
-    def setup_all_companies():
-        """🗄️ Inicializa todas las compañías registradas en la base de datos."""
-        try:
-            dispatcher = IAToolkit.get_instance().get_injector().get(Dispatcher)
-            click.echo("🚀 Inicializando base de datos y compañías...")
-            dispatcher.setup_all_companies()
-            click.echo("✅ Base de datos y compañías inicializadas correctamente.")
-        except Exception as e:
-            logging.exception(e)
-            click.echo(f"❌ Error: {e}")
 
-    @app.cli.command("setup-company")
+    @app.cli.command("api-key")
     @click.argument("company_short_name")
-    def setup_company(company_short_name: str):
+    def api_key(company_short_name: str):
         """⚙️ Genera una nueva API key para una compañía ya registrada."""
         try:
-            dispatcher = IAToolkit.get_instance().get_injector().get(Dispatcher)
-            dispatcher.setup_all_companies()
             profile_service = IAToolkit.get_instance().get_injector().get(ProfileService)
             click.echo(f"🔑 Generando API key para '{company_short_name}'...")
             result = profile_service.new_api_key(company_short_name)
@@ -47,13 +33,13 @@ def register_core_commands(app):
 
     @app.cli.command("encrypt-key")
     @click.argument("key")
-    def api_key(key: str):
+    def encrypt_llm_api_key(key: str):
         from common.util import Utility
 
         util = IAToolkit.get_instance().get_injector().get(Utility)
         try:
             encrypt_key = util.encrypt_key(key)
-            click.echo(f'la clave encriptada es: {encrypt_key} \n')
+            click.echo(f'la api-key del LLM encriptada es: {encrypt_key} \n')
         except Exception as e:
             logging.exception(e)
             click.echo(f"Error: {str(e)}")

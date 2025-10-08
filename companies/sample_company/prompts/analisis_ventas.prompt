@@ -20,7 +20,4 @@ columnas: nombre cliente, volumen de compra, ingresos
 Dame una tabla con  los 10 productos mas rentables.
 columnas: nombre producto, precio, cantidad vendida, ingresos
 
-### **Sección : empleados mas importantes**
-Dame una tabla con los top 3 de empleados que mas han vendido.
-columnas: nombre empleado, cantidad de ventas, ingresos
 

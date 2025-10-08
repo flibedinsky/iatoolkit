@@ -120,6 +120,10 @@ class LoadDocumentsService:
             context (dict, optional): A context dictionary, may contain predefined metadata.
         """
 
+        if not company:
+            raise IAToolkitException(IAToolkitException.ErrorType.MISSING_PARAMETER,
+                        f"Falta configurar empresa")
+
         # check if file exist in repositories
         if self.doc_repo.get(company_id=company.id,filename=filename):
             return

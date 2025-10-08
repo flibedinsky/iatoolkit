@@ -57,13 +57,17 @@ class Dispatcher:
         return self._company_instances
 
     def start_execution(self):
+        # initialize the system functions and prompts
+        self.setup_iatoolkit_system()
+
         """Runs the startup logic for all registered companies."""
-        for company_name, company_instance in self.company_instances.items():
-            company_instance.start_execution()
+        for company in self.company_instances.values():
+            company.register_company()
+            company.start_execution()
 
         return True
 
-    def setup_all_companies(self):
+    def setup_iatoolkit_system(self):
         # create system functions
         for function in self.system_functions:
             self.llmquery_repo.create_or_update_function(
@@ -76,16 +80,16 @@ class Dispatcher:
                 )
             )
 
-            # create the system prompts
-            i = 1
-            for prompt in self.system_prompts:
-                self.prompt_service.create_prompt(
-                    prompt_name=prompt['name'],
-                    description=prompt['description'],
-                    order=1,
-                    is_system_prompt=True,
-                )
-                i += 1
+        # create the system prompts
+        i = 1
+        for prompt in self.system_prompts:
+            self.prompt_service.create_prompt(
+                prompt_name=prompt['name'],
+                description=prompt['description'],
+                order=1,
+                is_system_prompt=True,
+            )
+            i += 1
 
         # register in the database  every company class
         for company in self.company_instances.values():

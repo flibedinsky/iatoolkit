@@ -6,12 +6,66 @@
 # companies/base_company.py
 from abc import ABC, abstractmethod
 from typing import Any
+from repositories.profile_repo import ProfileRepo
+from repositories.llm_query_repo import LLMQueryRepo
+from services.prompt_manager_service import PromptService
+from repositories.models import Company, Function, PromptCategory
+from iatoolkit import IAToolkit
 
 
 class BaseCompany(ABC):
-    def __init__(self, profile_repo: Any = None, llm_query_repo: Any = None):
-        self.profile_repo = profile_repo
-        self.llm_query_repo = llm_query_repo
+    def __init__(self):
+        # Obtener el inyector global y resolver las dependencias internamente
+        injector = IAToolkit.get_instance().get_injector()
+        self.profile_repo: ProfileRepo = injector.get(ProfileRepo)
+        self.llm_query_repo: LLMQueryRepo = injector.get(LLMQueryRepo)
+        self.prompt_service: PromptService = injector.get(PromptService)
+        self.company: Company | None = None
+
+    def _load_company_by_short_name(self, short_name: str) -> Company:
+        self.company = self.profile_repo.get_company_by_short_name(short_name)
+        return self.company
+
+    def _create_company(self, name: str, short_name: str) -> Company:
+        company_obj = Company(name=name, short_name=short_name, allow_jwt=True)
+        self.company = self.profile_repo.create_company(company_obj)
+        return self.company
+
+    def _create_function(self, function_name: str, description: str, params: dict, **kwargs):
+        if not self.company:
+            raise ValueError("La compañía debe estar definida antes de crear una función.")
+
+        self.llm_query_repo.create_or_update_function(
+            Function(
+                company_id=self.company.id,
+                name=function_name,
+                description=description,
+                parameters=params,
+                system_function=False,
+                **kwargs
+            )
+        )
+
+    def _create_prompt_category(self, name: str, order: int) -> PromptCategory:
+        if not self.company:
+            raise ValueError("La compañía debe estar definida antes de crear una categoría.")
+
+        return self.llm_query_repo.create_or_update_prompt_category(
+            PromptCategory(name=name, order=order, company_id=self.company.id)
+        )
+
+    def _create_prompt(self, prompt_name: str, description: str, category: PromptCategory, order: int, **kwargs):
+        if not self.company:
+            raise ValueError("La compañía debe estar definida antes de crear un prompt.")
+
+        self.prompt_service.create_prompt(
+            prompt_name=prompt_name,
+            description=description,
+            order=order,
+            company=self.company,
+            category=category,
+            **kwargs
+        )
 
     @abstractmethod
     # initialize all the database tables  needed

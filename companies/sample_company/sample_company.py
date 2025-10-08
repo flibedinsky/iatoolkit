@@ -3,11 +3,10 @@
 #
 # IAToolkit is open source software.
 
-from iatoolkit import IAToolkit, BaseCompany, Company, Function, PromptCategory
-from iatoolkit import ProfileRepo, LLMQueryRepo, PromptService, DatabaseManager
+from iatoolkit import IAToolkit, BaseCompany, DatabaseManager
 from iatoolkit import SqlService, LoadDocumentsService, SearchService
 from injector import inject
-from companies.sample_company.configuration import FUNCTION_LIST
+from companies.sample_company.configuration import FUNCTION_LIST, PROMPT_LIST
 from companies.sample_company.sample_database import SampleCompanyDatabase
 import os
 import click
@@ -17,20 +16,16 @@ import logging
 class SampleCompany(BaseCompany):
     @inject
     def __init__(self,
-            profile_repo: ProfileRepo,
-            llm_query_repo: LLMQueryRepo,
-            prompt_service: PromptService,
             sql_service: SqlService,
             search_service: SearchService):
-        super().__init__(profile_repo, llm_query_repo)
+        super().__init__()
         self.sql_service = sql_service
         self.search_service = search_service
-        self.prompt_service = prompt_service
         self.sample_db_manager = None
         self.sample_database = None
 
         # set the company object
-        self.company = self.profile_repo.get_company_by_short_name('sample_company')
+        self._load_company_by_short_name('sample_company')
 
         # connect to Internal database
         sample_db_uri = os.getenv('NORTHWIND_DATABASE_URI')
@@ -44,78 +39,33 @@ class SampleCompany(BaseCompany):
 
     def register_company(self):
         # Initialize the company in the database if not exists
-        c = Company(name='Sample Company',
-                    short_name='sample_company',
-                    allow_jwt=True,
-                    parameters={})
-
-        # set the company object
-        self.company = self.profile_repo.create_company(c)
+        self.company = self._create_company(
+            name='Sample Company',
+            short_name='sample_company'
+        )
 
         # create or update the function list
         for function in FUNCTION_LIST:
-            self.llm_query_repo.create_or_update_function(
-                Function(
-                    company_id=self.company.id,
-                    name=function['function_name'],
-                    description=function['description'],
-                    parameters=function['params'],
-                    system_function=False
-                )
+            self._create_function(
+                function_name=function['function_name'],
+                description=function['description'],
+                params=function['params']
             )
 
-            c_general = self.llm_query_repo.create_or_update_prompt_category(
-                PromptCategory(name='General', order=1, company_id=self.company.id))
+        c_general = self._create_prompt_category(name='General', order=1)
 
-            c_comercial = self.llm_query_repo.create_or_update_prompt_category(
-                PromptCategory(name='Comercial', order=2, company_id=self.company.id))
-
-            prompt_list = [
-                {
-                    'name': 'analisis_ventas',
-                    'description': 'Analisis de ventas',
-                    'category': c_general,
-                    'order': 1,
-                    'custom_fields': [
-                        {
-                            "data_key": "init_date",
-                            "label": "Fecha desde",
-                            "type": "date",
-                        },
-                        {
-                            "data_key": "end_date",
-                            "label": "Fecha hasta",
-                            "type": "date",
-                        }
-                    ]
-                },
-                {
-                    'name': 'supplier_report',
-                    'description': 'Análisis de proveedores',
-                    'category': c_general,
-                    'order': 2,
-                    'custom_fields': [
-                        {
-                            "data_key": "supplier_id",
-                            "label": "Identificador del Proveedor",
-                        }
-                    ]
-                }
-            ]
-
-            # create the company prompts
-            for prt in prompt_list:
-                self.prompt_service.create_prompt(
-                    prompt_name=prt['name'],
-                    description=prt['description'],
-                    order=prt['order'],
-                    company=self.company,
-                    category=prt['category'],
-                    active=prt.get('active', True),
-                    custom_fields=prt.get('custom_fields', [])
-                )
-
-    # Return a global context used by this company: business description, schemas, database models
+        # create the company prompts
+        for prt in PROMPT_LIST:
+            self._create_prompt(
+                prompt_name=prt['name'],
+                description=prt['description'],
+                order=prt['order'],
+                category=c_general,
+                active=prt.get('active', True),
+                custom_fields=prt.get('custom_fields', [])
+            )
+            
+    # Return company specific context
     def get_company_context(self, **kwargs) -> str:
         company_context = ''
         if self.sample_db_manager:
@@ -237,7 +187,7 @@ class SampleCompany(BaseCompany):
                         connector_config=connector_config,
                         predefined_metadata=predefined_metadata,
                         filters={"filename_contains": ".pdf"})
-                    click.echo(f'folder {doc["folder"]}:  {result} dodumentos procesados exitosamente.')
+                    click.echo(f'folder {doc["folder"]}:  {result} documentos procesados exitosamente.')
                 except Exception as e:
                     logging.exception(e)
                     click.echo(f"Error: {str(e)}")

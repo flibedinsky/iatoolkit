@@ -5,7 +5,8 @@
 
 FUNCTION_LIST = [
         {'name': 'Acceso via SQL a la base de datos.',
-         'description': "Consultas sobre clientes, productos, ordenes , regiones, empleados",
+         'description': "Debes usar este servicio para consulta sobre Sample Company y sus "
+                        "clientes, productos, ordenes , regiones, empleados.",
          'function_name': "sql_query",
          'params': {
                     "type": "object",
@@ -30,3 +31,35 @@ FUNCTION_LIST = [
                 }
          }
     ]
+
+
+PROMPT_LIST = [
+            {
+                'name': 'analisis_ventas',
+                'description': 'Analisis de ventas',
+                'order': 1,
+                'custom_fields': [
+                    {
+                        "data_key": "init_date",
+                        "label": "Fecha desde",
+                        "type": "date",
+                    },
+                    {
+                        "data_key": "end_date",
+                        "label": "Fecha hasta",
+                        "type": "date",
+                    }
+                ]
+            },
+            {
+                'name': 'supplier_report',
+                'description': 'Análisis de proveedores',
+                'order': 2,
+                'custom_fields': [
+                    {
+                        "data_key": "supplier_id",
+                        "label": "Identificador del Proveedor",
+                    }
+                ]
+            }
+        ]
