@@ -19,7 +19,7 @@ package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
-exclude = ["iatoolkit.tests*", "app.py"]
+exclude = ["tests*"]
 
 
 [tool.setuptools.dynamic]
