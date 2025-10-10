@@ -29,12 +29,14 @@ class ExternalChatLoginView(MethodView):
         self.iauthentication = iauthentication
         self.jwt_service = jwt_service
 
+
     def post(self, company_short_name: str):
         data = request.get_json()
         if not data or 'external_user_id' not in data:
             return jsonify({"error": "Falta external_user_id"}), 400
 
         external_user_id = data['external_user_id']
+
         # 1. get access credentials
         iaut = self.iauthentication.verify(
             company_short_name,
