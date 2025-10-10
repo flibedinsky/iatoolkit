@@ -73,7 +73,7 @@ class ProfileRepo:
         company = self.session.query(Company).filter_by(name=new_company.name).first()
         if company:
             company.parameters = new_company.parameters
-            company.logo_file = new_company.logo_file
+            company.branding = new_company.branding
         else:
             self.session.add(new_company)
             company = new_company

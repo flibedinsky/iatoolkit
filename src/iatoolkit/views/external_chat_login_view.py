@@ -13,6 +13,7 @@ from iatoolkit.services.profile_service import ProfileService
 from iatoolkit.services.query_service import QueryService
 from iatoolkit.services.prompt_manager_service import PromptService
 from iatoolkit.services.jwt_service import JWTService
+from iatoolkit.services.branding_service import BrandingService
 
 class ExternalChatLoginView(MethodView):
     @inject
@@ -21,14 +22,15 @@ class ExternalChatLoginView(MethodView):
                  query_service: QueryService,
                  prompt_service: PromptService,
                  iauthentication: IAuthentication,
-                 jwt_service: JWTService
+                 jwt_service: JWTService,
+                 branding_service: BrandingService
                  ):
         self.profile_service = profile_service
         self.query_service = query_service
         self.prompt_service = prompt_service
         self.iauthentication = iauthentication
         self.jwt_service = jwt_service
-
+        self.branding_service = branding_service
 
     def post(self, company_short_name: str):
         data = request.get_json()
@@ -69,13 +71,16 @@ class ExternalChatLoginView(MethodView):
             # 3. get the prompt list from backend
             prompts = self.prompt_service.get_user_prompts(company_short_name)
 
-            # 4. render the chat page with the company/user information.
+            # 4. get the branding data
+            branding_data = self.branding_service.get_company_branding(company)
+
+            # 5. render the chat page with the company/user information.
             user_agent = request.user_agent
             is_mobile = user_agent.platform in ["android", "iphone", "ipad"] or "mobile" in user_agent.string.lower()
 
             chat_html = render_template("chat.html",
-                                        company=company,
                                         company_short_name=company_short_name,
+                                        branding=branding_data,
                                         external_user_id=external_user_id,
                                         is_mobile=is_mobile,
                                         auth_method='jwt',  # login method is JWT

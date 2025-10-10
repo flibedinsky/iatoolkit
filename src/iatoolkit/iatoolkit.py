@@ -278,6 +278,7 @@ class IAToolkit:
         from iatoolkit.services.profile_service import ProfileService
         from iatoolkit.services.jwt_service import JWTService
         from iatoolkit.services.dispatcher_service import Dispatcher
+        from iatoolkit.services.branding_service import BrandingService
 
         binder.bind(QueryService, to=QueryService)
         binder.bind(TaskService, to=TaskService)
@@ -290,6 +291,8 @@ class IAToolkit:
         binder.bind(ProfileService, to=ProfileService)
         binder.bind(JWTService, to=JWTService)
         binder.bind(Dispatcher, to=Dispatcher)
+        binder.bind(BrandingService, to=BrandingService)
+
 
     def _bind_infrastructure(self, binder: Binder):
         from iatoolkit.infra.llm_client import llmClient

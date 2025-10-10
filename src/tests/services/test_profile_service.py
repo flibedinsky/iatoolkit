@@ -38,7 +38,7 @@ class TestProfileService:
 
         self.mock_company = Company(name='my company',
                                     short_name='test_company',
-                                    logo_file='company_logo.jpg')
+                                    )
         self.repo.get_company_by_short_name.return_value = self.mock_company
 
         self.mock_user.companies = [self.mock_company, Company(id=2, name="Test Company 2")]

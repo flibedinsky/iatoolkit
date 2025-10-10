@@ -10,6 +10,7 @@ from injector import inject
 import os
 from iatoolkit.common.auth import IAuthentication
 from iatoolkit.services.prompt_manager_service import PromptService
+from iatoolkit.services.branding_service import BrandingService
 
 
 class ChatView(MethodView):
@@ -17,10 +18,13 @@ class ChatView(MethodView):
     def __init__(self,
                  iauthentication: IAuthentication,
                  prompt_service: PromptService,
-                 profile_service: ProfileService):
+                 profile_service: ProfileService,
+                 branding_service: BrandingService
+                 ):
         self.iauthentication = iauthentication
         self.profile_service = profile_service
         self.prompt_service = prompt_service
+        self.branding_service = branding_service
 
     def get(self, company_short_name: str):
         # get access credentials
@@ -40,8 +44,11 @@ class ChatView(MethodView):
         # 2. get the company prompts
         prompts = self.prompt_service.get_user_prompts(company_short_name)
 
+        # 3. get the  branding data
+        branding_data = self.branding_service.get_company_branding(company)
+
         return render_template("chat.html",
-                               company=company,
+                               branding=branding_data,
                                company_short_name=company_short_name,
                                is_mobile=is_mobile,
                                alert_message=alert_message,

@@ -21,9 +21,8 @@ class TestUserFeedbackService:
             google_chat_app=self.google_chat_app
         )
 
-        self.company = Company(name='my company',
-                                    short_name='test_company',
-                                    logo_file='company_logo.jpg')
+        self.company = Company(name='my company', short_name='test_company')
+
         self.profile_repo.get_company_by_short_name.return_value = self.company
 
         self.user_feedback = UserFeedback(

@@ -13,6 +13,7 @@ from iatoolkit.common.session_manager import SessionManager
 from datetime import datetime, timezone
 from iatoolkit.common.auth import IAuthentication
 from iatoolkit.services.prompt_manager_service import PromptService
+from iatoolkit.services.branding_service import BrandingService
 
 
 class TestChatView:
@@ -31,6 +32,7 @@ class TestChatView:
         self.profile_service = MagicMock(spec=ProfileService)
         self.iauthentication = MagicMock(spec=IAuthentication)
         self.prompt_service = MagicMock(spec=PromptService)
+        self.branding_service = MagicMock(spec=BrandingService)
 
         self.iauthentication.verify.return_value = {
             'success': True,
@@ -45,8 +47,7 @@ class TestChatView:
         self.test_company = Company(
             id=1,
             name="Empresa de Prueba",
-            short_name="test_company",
-            logo_file="test_logo.png"
+            short_name="test_company"
         )
         self.profile_service.get_company_by_short_name.return_value = self.test_company
 
@@ -55,6 +56,7 @@ class TestChatView:
                                 profile_service=self.profile_service,
                                 iauthentication=self.iauthentication,
                                 prompt_service=self.prompt_service,
+                                branding_service=self.branding_service
                                 )
         self.app.add_url_rule("/<company_short_name>/chat", view_func=view, methods=["GET"])
 

@@ -5,9 +5,11 @@ from iatoolkit.views.external_chat_login_view import ExternalChatLoginView
 from iatoolkit.services.profile_service import ProfileService
 from iatoolkit.services.query_service import QueryService
 from iatoolkit.services.prompt_manager_service import PromptService
-from iatoolkit.services.jwt_service import JWTService  # <-- Importar JWTService
+from iatoolkit.services.branding_service import BrandingService
+from iatoolkit.services.jwt_service import JWTService
 from iatoolkit.common.auth import IAuthentication
 from iatoolkit.repositories.models import Company
+
 
 
 # --- Constantes para los Tests ---
@@ -31,6 +33,7 @@ class TestExternalChatLoginView:
         self.mock_prompt_service = MagicMock(spec=PromptService)
         self.mock_iauthentication = MagicMock(spec=IAuthentication)
         self.mock_jwt_service = MagicMock(spec=JWTService)
+        self.branding_service = MagicMock(spec=BrandingService)
 
         # Configurar el mock de la compañía que se devolverá
         self.mock_company = Company(id=1, name="Test Company", short_name=MOCK_COMPANY_SHORT_NAME)
@@ -42,8 +45,9 @@ class TestExternalChatLoginView:
             profile_service=self.mock_profile_service,
             query_service=self.mock_query_service,
             prompt_service=self.mock_prompt_service,
+            branding_service=self.branding_service,
             iauthentication=self.mock_iauthentication,
-            jwt_service=self.mock_jwt_service  # <-- 2. Inyectar el mock de JWTService
+            jwt_service=self.mock_jwt_service
         )
 
         self.app.add_url_rule('/<company_short_name>/chat_login', view_func=view_func, methods=['POST'])

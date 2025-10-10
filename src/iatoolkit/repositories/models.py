@@ -57,10 +57,10 @@ class Company(Base):
     openai_api_key = Column(String, nullable=True)
     gemini_api_key = Column(String, nullable=True)
 
-    logo_file = Column(String(128), nullable=True, default='')
+    branding = Column(JSON, nullable=True)
     parameters = Column(JSON, nullable=True, default={})
     created_at = Column(DateTime, default=datetime.now)
-    allow_jwt = Column(Boolean, default=False, nullable=True)
+    allow_jwt = Column(Boolean, default=True, nullable=True)
 
     documents = relationship("Document",
                              back_populates="company",

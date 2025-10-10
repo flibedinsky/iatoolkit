@@ -26,8 +26,10 @@ class BaseCompany(ABC):
         self.company = self.profile_repo.get_company_by_short_name(short_name)
         return self.company
 
-    def _create_company(self, name: str, short_name: str) -> Company:
-        company_obj = Company(name=name, short_name=short_name, allow_jwt=True)
+    def _create_company(self, short_name: str, name: str, branding: dict | None = None) -> Company:
+        company_obj = Company(short_name=short_name,
+                              name=name,
+                              branding=branding)
         self.company = self.profile_repo.create_company(company_obj)
         return self.company
 
@@ -66,6 +68,7 @@ class BaseCompany(ABC):
             category=category,
             **kwargs
         )
+
 
     @abstractmethod
     # initialize all the database tables  needed

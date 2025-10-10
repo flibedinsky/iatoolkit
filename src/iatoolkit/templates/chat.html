@@ -4,39 +4,49 @@
 
 {% block content %}
 <!-- Sección de encabezado con el usuario conectado -->
-<div class="company-section d-flex justify-content-between align-items-center">
-    <!-- Izquierda: Datos del usuario -->
-    <span class="text-muted small fw-bold">
-        {{ company_short_name }} - {{ external_user_id or user.email }}
+<div class="company-section d-flex justify-content-between align-items-center px-3 py-2"
+     style="{{ branding.header_style }}">
+
+    <!-- Izquierda: Nombre de la Empresa -->
+    <span style="{{ branding.company_name_style }}">
+        {{ branding.name }}
     </span>
 
     <!-- Derecha: Grupo de iconos de acción -->
+    <!-- Derecha: Grupo de información y acciones del usuario -->
     <div class="d-flex align-items-center">
-        <!-- "Powered by"  -->
-        <span class="text-muted" style="font-size: 0.75rem;">
-            Powered by <strong>IAToolkit</strong>
+        <!-- 1. ID de Usuario -->
+        <span class="small fw-semibold">
+            {{ external_user_id or user.email }}
         </span>
 
-        <!-- Icono de Historial -->
+        <!-- 2. Separador Vertical -->
+        <div class="vr mx-3"></div>
+
+        <!-- 3. Iconos de Acción -->
         <a href="javascript:void(0);" id="history-button"
-           class="ms-3 action-icon-style" title="Historial con mis consultas">
+           class="action-icon-style" title="Historial con mis consultas" style="color: inherit;">
             <i class="bi bi-clock-history"></i>
         </a>
-
-        <!-- Icono de Feedback -->
         <a href="javascript:void(0);" id="send-feedback-button"
-           class="ms-3 action-icon-style" title="Tu feedback es muy importante">
+           class="ms-3 action-icon-style" title="Tu feedback es muy importante" style="color: inherit;">
             <i class="bi bi-emoji-smile"></i>
         </a>
 
-        <!-- Icono de cerrar sesión -->
+        <!-- 4. Powered by (con mayor separación) -->
+        <span class="text-muted ms-4" style="font-size: 0.75rem;">
+            Powered by <strong>IAToolkit</strong>
+        </span>
+
+        <!-- 5. Icono de cerrar sesión (al final) -->
         {% if user.email %}
             <a href="{{ url_for('logout', company_short_name=company_short_name) }}"
-                 class="ms-3 action-icon-style" title="Cerrar sesión">
+                 class="ms-3 action-icon-style" title="Cerrar sesión" style="color: inherit;">
                 <i class="bi bi-box-arrow-right"></i>
             </a>
         {% endif %}
     </div>
+
 </div>
 
 <div id="chat-container"

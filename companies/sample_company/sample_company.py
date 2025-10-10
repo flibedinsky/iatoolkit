@@ -49,9 +49,19 @@ class SampleCompany(BaseCompany):
 
     def register_company(self):
         # Initialize the company in the database if not exists
+
+        # 1. define the branding style
+        sample_company_branding = {
+            "header_background_color": "#EFF6FF",  # Un azul pastel muy claro
+            "header_text_color": "#1E3A8A",  # Un azul oscuro y profesional
+            "company_name_font_weight": "600",  # Semibold, para un look refinado
+            "company_name_font_size": "1.1rem"  # Ligeramente más grande para jerarquía
+        }
+
         self.company = self._create_company(
             name='Sample Company',
-            short_name='sample_company'
+            short_name='sample_company',
+            branding=sample_company_branding
         )
 
         # create or update the function list

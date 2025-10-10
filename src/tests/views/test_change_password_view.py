@@ -40,8 +40,7 @@ class TestChangePasswordView:
         self.test_company = Company(
             id=1,
             name="Empresa de Prueba",
-            short_name="test_company",
-            logo_file="test_logo.png"
+            short_name="test_company"
         )
         self.profile_service.get_company_by_short_name.return_value = self.test_company
 
