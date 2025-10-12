@@ -164,6 +164,7 @@
     window.iatoolkit_base_url = "{{ iatoolkit_base_url }}";
     window.externalUserId = "{{ external_user_id }}";
     window.availablePrompts = {{ prompts.message | tojson }};
+    window.sendButtonColor = "{{ branding.send_button_color }}";
 
     {% if auth_method == 'jwt' and session_jwt %}
         // Store session JWT if it exists, defined in the same global scope

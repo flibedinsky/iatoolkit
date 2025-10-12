@@ -92,6 +92,7 @@ $(document).ready(function () {
             
             // Copiar el texto al textarea del chat
             $('#question').val(queryText);
+            $('#send-button').removeClass('disabled');
             
             // Cerrar el modal
             $('#historyModal').modal('hide');

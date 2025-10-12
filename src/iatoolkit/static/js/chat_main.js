@@ -1,6 +1,6 @@
 // Global variables for request management
-let currentAbortController = null;
 let isRequestInProgress = false;
+let abortController = null;
 
 let selectedPrompt = null; // Will hold a lightweight prompt object
 
@@ -8,6 +8,8 @@ $(document).ready(function () {
     // --- MAIN EVENT HANDLERS ---
     $('#send-button').on('click', handleChatMessage);
     $('#stop-button').on('click', abortCurrentRequest);
+    if (window.sendButtonColor)
+        $('#send-button i').css('color', window.sendButtonColor);
 
 // --- PROMPT ASSISTANT FUNCTIONALITY ---
     $('.input-area').on('click', '.dropdown-menu a.dropdown-item', function (event) {
@@ -118,74 +120,98 @@ function renderDynamicInputs(fields) {
 }
 
 
+
 /**
  * Main function to handle sending a chat message.
  */
 const handleChatMessage = async function () {
-    if (isRequestInProgress || $('#send-button').hasClass('disabled')) return;
-
-    const question = $('#question').val().trim();
-    const promptName = selectedPrompt ? selectedPrompt.prompt : null;
-
-    let displayMessage = question;
-    let isEditable = true;
-    const clientData = {};
-
-    if (selectedPrompt) {
-        displayMessage = selectedPrompt.description;
-        isEditable = false; // Prompts are not editable
-
-        (selectedPrompt.custom_fields || []).forEach(field => {
-            const value = $('#' + field.data_key + '-id').val().trim();
-            if (value) {
-                clientData[field.data_key] = value;
-            }
-        });
-
-        // Append the collected parameter values to the display message
-        const paramsString = Object.values(clientData).join(', ');
-        if (paramsString) {
-            displayMessage += `: ${paramsString}`;
-        }
+    if (isRequestInProgress || $('#send-button').hasClass('disabled')) {
+        return;
     }
 
-    // Si no hay pregunta libre Y no se ha seleccionado un prompt, no hacer nada.
-    if (!displayMessage) return;
-
-    displayUserMessage(displayMessage, isEditable, question);
-    showSpinner();
+    isRequestInProgress = true;
     toggleSendStopButtons(true);
 
-    resetAllInputs();
-
-    const files = window.filePond.getFiles();
-    const filesBase64 = await Promise.all(files.map(fileItem => toBase64(fileItem.file)));
-
-    // Prepare data payload
-    const data = {
-        question: question,
-        prompt_name: promptName,
-        client_data: clientData,
-        files: filesBase64.map(f => ({ filename: f.name, content: f.base64 })),
-        external_user_id: window.externalUserId
-    };
-
     try {
+        const question = $('#question').val().trim();
+        const promptName = selectedPrompt ? selectedPrompt.prompt : null;
+
+        let displayMessage = question;
+        let isEditable = true;
+        const clientData = {};
+
+        if (selectedPrompt) {
+            displayMessage = selectedPrompt.description;
+            isEditable = false;
+
+            (selectedPrompt.custom_fields || []).forEach(field => {
+                const value = $('#' + field.data_key + '-id').val().trim();
+                if (value) {
+                    clientData[field.data_key] = value;
+                }
+            });
+
+            const paramsString = Object.values(clientData).join(', ');
+            if (paramsString) { displayMessage += `: ${paramsString}`; }
+        }
+
+        // Simplificado: Si no hay mensaje, el 'finally' se encargará de limpiar.
+        // Simplemente salimos de la función.
+        if (!displayMessage) {
+            return;
+        }
+
+        displayUserMessage(displayMessage, isEditable, question);
+        showSpinner();
+        resetAllInputs();
+
+        const files = window.filePond.getFiles();
+        const filesBase64 = await Promise.all(files.map(fileItem => toBase64(fileItem.file)));
+
+        const data = {
+            question: question,
+            prompt_name: promptName,
+            client_data: clientData,
+            files: filesBase64.map(f => ({ filename: f.name, content: f.base64 })),
+            external_user_id: window.externalUserId
+        };
+
         const responseData = await callLLMAPI("/llm_query", data, "POST");
         if (responseData && responseData.answer) {
             const answerSection = $('<div>').addClass('answer-section llm-output').append(responseData.answer);
             displayBotMessage(answerSection);
         }
     } catch (error) {
-        console.error("Error in handleChatMessage:", error);
-        // Implement error display logic as needed
+        if (error.name === 'AbortError') {
+            console.log('Petición abortada por el usuario.');
+
+            // Usando jQuery estándar para construir el elemento ---
+            const icon = $('<i>').addClass('bi bi-stop-circle me-2'); // Icono sin "fill" para un look más ligero
+            const textSpan = $('<span>').text('La generación de la respuesta ha sido detenida.');
+
+            const abortMessage = $('<div>')
+                .addClass('system-message')
+                .append(icon)
+                .append(textSpan);
+
+            displayBotMessage(abortMessage);
+        } else {
+            console.error("Error in handleChatMessage:", error);
+            const errorSection = $('<div>').addClass('error-section').append('<p>Ocurrió un error al procesar la solicitud.</p>');
+            displayBotMessage(errorSection);
+        }
     } finally {
+        // Este bloque se ejecuta siempre, garantizando que el estado se limpie.
+        isRequestInProgress = false;
         hideSpinner();
         toggleSendStopButtons(false);
         updateSendButtonState();
-        window.filePond.removeFiles();
+        if (window.filePond) {
+             window.filePond.removeFiles();
+        }
     }
 };
+
 
 /**
  * Resets all inputs to their initial state.
@@ -274,16 +300,15 @@ const callLLMAPI = async function(apiPath, data, method, timeoutMs = 500000) {
         headers['X-Chat-Token'] = window.sessionJWT;
     }
 
-    const controller = new AbortController();
-    currentAbortController = controller;
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    abortController = new AbortController();
+    const timeoutId = setTimeout(() => abortController.abort(), timeoutMs);
 
     try {
         const response = await fetch(url, {
             method: method,
             headers: headers,
             body: JSON.stringify(data),
-            signal: controller.signal,
+            signal: abortController.signal, // Se usa el signal del controlador global
             credentials: 'include'
         });
         clearTimeout(timeoutId);
@@ -325,7 +350,8 @@ const displayUserMessage = function(message, isEditable, originalQuestion) {
         const editIcon = $('<i>').addClass('p-2 bi bi-pencil-fill edit-icon').attr('title', 'Edit query').on('click', function () {
             $('#question').val(originalQuestion).focus();
             autoResizeTextarea($('#question')[0]);
-            updateSendButtonState();
+
+            $('#send-button').removeClass('disabled');
         });
         userMessage.append(editIcon);
     }
@@ -347,9 +373,8 @@ function displayBotMessage(section) {
  * Aborts the current in-progress API request.
  */
 const abortCurrentRequest = function () {
-    if (currentAbortController && isRequestInProgress) {
-        window.isManualAbort = true;
-        currentAbortController.abort();
+    if (isRequestInProgress && abortController) {
+        abortController.abort();
     }
 };
 
