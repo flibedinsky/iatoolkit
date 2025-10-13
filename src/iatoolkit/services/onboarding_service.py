@@ -19,13 +19,10 @@ class OnboardingService:
         """
         self._default_cards = [
             {'icon': 'fas fa-users', 'title': 'Clientes',
-             'text': 'Conozco en detalle a tus clientes: antigüedad, contactos, apoderados, historial de operaciones.<br><br><strong>Ejemplo:</strong> ¿cuántos clientes nuevos se incorporaron a mi cartera este año?'},
+             'text': 'Conozco en detalle a nuestros clientes: antigüedad, contactos, historial de operaciones.<br><br><strong>Ejemplo:</strong> ¿cuántos clientes nuevos se incorporaron a mi cartera este año?'},
             {'icon': 'fas fa-cubes', 'title': 'Productos',
-             'text': 'Productos contratados por los clientes: características, condiciones, historial.<br><br><strong>Ejemplo:</strong> ¿Cuántos clientes de software tengo en cartera?'},
-            {'icon': 'fas fa-exchange-alt', 'title': 'Operaciones',
-             'text': 'Operaciones de la empresa: tasas, comisiones, acreedores, fondos, cobranza, etc.<br><br><strong>Ejemplo:</strong> Dame una tabla con los clientes que han emitido más de 20 garantías este año.'},
-            {'icon': 'fas fa-comments', 'title': 'Equipos Comerciales',
-             'text': 'Conozco los equipos comerciales y su rendimiento.<br><br><strong>Ejemplo:</strong> dime las 10 licitaciones más grandes que han ganado clientes de mi cartera este año.'},
+             'text': 'Productos: características, condiciones, historial.'},
+
             {'icon': 'fas fa-cogs', 'title': 'Personaliza tus Prompts',
              'text': 'Utiliza la varita mágica y podrás explorar los prompts predefinidos que he preparado para ti.'},
             {'icon': 'fas fa-table', 'title': 'Tablas y Excel',

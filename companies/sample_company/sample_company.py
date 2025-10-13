@@ -7,7 +7,7 @@ from iatoolkit import IAToolkit, BaseCompany, DatabaseManager
 from iatoolkit import SqlService, LoadDocumentsService, SearchService
 from injector import inject
 from companies.sample_company.configuration import (FUNCTION_LIST,
-                PROMPT_LIST, ONBOARDING_CARDS)
+                PROMPT_LIST, ONBOARDING_CARDS, BRANDING)
 from companies.sample_company.sample_database import SampleCompanyDatabase
 import os
 import click
@@ -50,27 +50,11 @@ class SampleCompany(BaseCompany):
 
     def register_company(self):
         # Initialize the company in the database if not exists
-
-        # 1. define the branding style
-        sample_company_branding = {
-            "header_background_color": "#EFF6FF",  # Un azul pastel muy claro
-            "header_text_color": "#1E3A8A",  # Un azul oscuro y profesional
-            "primary_font_weight": "600",  # Semibold, para un look refinado
-            "primary_font_size": "1.1rem",  # Ligeramente más grande para jerarquía
-
-            # for modals and buttons
-            "brand_primary_color": "#1E3A8A",  # Mismo azul oscuro del texto para consistencia
-            "brand_text_on_primary": "#FFFFFF",  # Texto blanco para el botón primario
-            "brand_secondary_color": "#6c757d",  # Un gris neutro y profesional para acciones secundarias
-            "brand_text_on_secondary": "#FFFFFF",  # Texto blanco para el botón secundario
-        }
-
-
         self.company = self._create_company(
             name='Sample Company',
             short_name='sample_company',
-            branding=sample_company_branding,
-            onboarding_cards=ONBOARDING_CARDS
+            branding=BRANDING,
+            onboarding_cards={}
         )
 
         # create or update the function list
