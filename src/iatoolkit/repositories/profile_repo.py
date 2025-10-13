@@ -74,6 +74,7 @@ class ProfileRepo:
         if company:
             company.parameters = new_company.parameters
             company.branding = new_company.branding
+            company.onboarding_cards = new_company.onboarding_cards
         else:
             self.session.add(new_company)
             company = new_company

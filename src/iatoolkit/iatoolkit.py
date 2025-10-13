@@ -371,7 +371,7 @@ class IAToolkit:
                 'iatoolkit_version': self.version,
                 'app_name': 'IAToolkit',
                 'user': SessionManager.get('user'),
-                'user_company': SessionManager.get('company_short_name'),
+                'company_short_name': SessionManager.get('company_short_name'),
             }
 
     def _get_default_static_folder(self) -> str:

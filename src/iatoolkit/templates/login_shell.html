@@ -3,7 +3,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Iniciando Maxxa IA...</title>
+    <title>Iniciando {{ branding.name | default('IAToolkit') }} IA...</title>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 
@@ -78,10 +78,8 @@
     <div id="loader-wrapper">
 
         <h1 id="brand-header">
-            <span class="brand-name">Maxxa</span><span>IA</span>
+            <span class="brand-name">{{ branding.name | default('IAToolkit') }}</span>  <span>IA</span>
         </h1>
-
-        <!-- ELIMINADO: El subtítulo de carga que estaba aquí -->
 
         <div id="card-container">
             <div id="card-icon" class="icon"><i class="fas fa-lightbulb"></i></div>
