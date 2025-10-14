@@ -65,10 +65,13 @@ class InitiateExternalChatView(MethodView):
         onboarding_cards = self.onboarding_service.get_onboarding_cards(company)
 
         # 4. Generate the URL for the iframe's SRC, now with the secure token.
+        environment = os.environ.get("FLASK_ENV", "dev")
+        scheme='http' if environment != "dev" else "https"
         target_url = url_for('external_login',
                              company_short_name=company_short_name,
                              init_token=initiation_token,
-                             _external=True)
+                             _external=True,
+                             _scheme=scheme)
 
         # 5. Render the shell.
         return render_template("onboarding_shell.html",
