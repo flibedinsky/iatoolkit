@@ -19,8 +19,9 @@ def create_app():
     return toolkit.create_iatoolkit()
 
 
+app = create_app()
+
 if __name__ == "__main__":
-    app = create_app()
     if app:
         base_url = os.getenv('IATOOLKIT_BASE_URL')
         run_port = 5001

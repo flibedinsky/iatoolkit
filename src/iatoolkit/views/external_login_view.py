@@ -15,7 +15,7 @@ from iatoolkit.services.prompt_manager_service import PromptService
 from iatoolkit.services.jwt_service import JWTService
 from iatoolkit.services.branding_service import BrandingService
 from iatoolkit.services.onboarding_service import OnboardingService
-from iatoolkit.common.session_manager import SessionManager
+from iatoolkit.services.jwt_service import JWTService
 
 
 class InitiateExternalChatView(MethodView):
@@ -24,12 +24,14 @@ class InitiateExternalChatView(MethodView):
                  iauthentication: IAuthentication,
                  branding_service: BrandingService,
                  profile_service: ProfileService,
-                 onboarding_service: OnboardingService
+                 onboarding_service: OnboardingService,
+                 jwt_service: JWTService
                  ):
         self.iauthentication = iauthentication
         self.branding_service = branding_service
         self.profile_service = profile_service
         self.onboarding_service = onboarding_service
+        self.jwt_service = jwt_service
 
     def post(self, company_short_name: str):
         data = request.get_json()
@@ -50,22 +52,27 @@ class InitiateExternalChatView(MethodView):
         if not iaut.get("success"):
             return jsonify(iaut), 401
 
-        # 2. Authentication successful, create a temporary server-side session using SessionManager
-        SessionManager.set('external_user_id', external_user_id)
-        SessionManager.set('is_external_auth_complete', True)
+        # 2. Generate a short-lived initiation token.
+        initiation_token = self.jwt_service.generate_chat_jwt(
+            company_id=company.id,
+            company_short_name=company.short_name,
+            external_user_id=external_user_id,
+            expires_delta_seconds=180
+        )
 
-        # 3. Get branding and onboarding data for the shell page
+        # 2. Get branding and onboarding data for the shell page
         branding_data = self.branding_service.get_company_branding(company)
         onboarding_cards = self.onboarding_service.get_onboarding_cards(company)
 
-        # 4. Generate the URL for the iframe's SRC.
-        target_url = url_for('external_login',  # Apunta a la vista del chat
+        # 4. Generate the URL for the iframe's SRC, now with the secure token.
+        target_url = url_for('external_login',
                              company_short_name=company_short_name,
+                             init_token=initiation_token,
                              _external=True)
 
         # 5. Render the shell.
         return render_template("onboarding_shell.html",
-                               iframe_src_url=target_url,  # Le cambiamos el nombre para más claridad
+                               iframe_src_url=target_url,
                                branding=branding_data,
                                onboarding_cards=onboarding_cards
                                )
@@ -88,16 +95,20 @@ class ExternalChatLoginView(MethodView):
         self.branding_service = branding_service
 
     def get(self, company_short_name: str):
-        # 1. Check for the temporary session flag and get user ID from SessionManager
-        if not SessionManager.get('is_external_auth_complete'):
-            return "Acceso no autorizado.", 401
+        # 1. Validate the initiation token from the URL
+        init_token = request.args.get('init_token')
+        if not init_token:
+            return "Falta el token de iniciación.", 401
 
-        external_user_id = SessionManager.get('external_user_id')
+        # Reutilizamos el validador de JWT, ya que el token tiene la misma estructura
+        payload = self.jwt_service.validate_chat_jwt(init_token, company_short_name)
+        if not payload:
+            return "Token de iniciación inválido o expirado.", 401
+
+        # 2. Extract user ID securely from the validated token
+        external_user_id = payload.get('external_user_id')
         if not external_user_id:
-            return "Falta el ID de usuario en la sesión.", 400
-
-        # Clear the temporary session flag to prevent reuse
-        SessionManager.set('is_external_auth_complete', None)
+            return "Token con formato incorrecto.", 400
 
         company = self.profile_service.get_company_by_short_name(company_short_name)
         if not company:
@@ -105,8 +116,7 @@ class ExternalChatLoginView(MethodView):
             return jsonify({"error": "Empresa no encontrada"}), 404
 
         try:
-
-            # 2. generate a new JWT, our secure access token.
+            # 3. Generate a new long-lived session JWT.
             token = self.jwt_service.generate_chat_jwt(
                 company_id=company.id,
                 company_short_name=company.short_name,
@@ -116,7 +126,7 @@ class ExternalChatLoginView(MethodView):
             if not token:
                 raise Exception("No se pudo generar el token de sesión (JWT).")
 
-            # 3. init the company/user LLM context.
+            # 4. Init the company/user LLM context.
             self.query_service.llm_init_context(
                 company_short_name=company_short_name,
                 external_user_id=external_user_id
@@ -125,10 +135,10 @@ class ExternalChatLoginView(MethodView):
             # 5. get the prompt list from backend
             prompts = self.prompt_service.get_user_prompts(company_short_name)
 
-            # 5. get the branding data
+            # 6. get the branding data
             branding_data = self.branding_service.get_company_branding(company)
 
-            # 6. render the chat page with the company/user information.
+            # 7. render the chat page with the company/user information.
             return render_template("chat.html",
                                         company_short_name=company_short_name,
                                         auth_method='jwt',

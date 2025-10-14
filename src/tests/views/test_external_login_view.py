@@ -1,7 +1,7 @@
 import pytest
 from flask import Flask
 from unittest.mock import MagicMock, patch, call
-from iatoolkit.views.login_external_id_view import InitiateExternalChatView, ExternalChatLoginView
+from iatoolkit.views.external_login_view import InitiateExternalChatView, ExternalChatLoginView
 from iatoolkit.services.profile_service import ProfileService
 from iatoolkit.services.query_service import QueryService
 from iatoolkit.services.prompt_manager_service import PromptService

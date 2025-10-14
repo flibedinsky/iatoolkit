@@ -44,6 +44,19 @@ class BrandingService:
             "brand_info_text": "#055160",  # Texto azul oscuro
             "brand_info_border": "#b6effb",
 
+            # Estilos para el Asistente de Prompts ---
+            "prompt_assistant_bg": "#f8f9fa",
+            "prompt_assistant_border": "#dee2e6",
+            "prompt_assistant_icon_color": "#6c757d",
+            "prompt_assistant_button_bg": "#FFFFFF",
+            "prompt_assistant_button_text": "#495057",
+            "prompt_assistant_button_border": "#ced4da",
+            "prompt_assistant_dropdown_bg": "#f8f9fa",
+            "prompt_assistant_header_bg": "#e9ecef",
+            "prompt_assistant_header_text": "#495057",
+            "prompt_assistant_item_hover_bg": None,  # Usará el primario por defecto
+            "prompt_assistant_item_hover_text": None,  # Usará el texto sobre primario
+
             # Color para el botón de Enviar ---
             "send_button_color": "#212529"  # Gris oscuro/casi negro por defecto
         }
@@ -93,6 +106,17 @@ class BrandingService:
                 --brand-info-bg: {final_branding_values['brand_info_bg']};
                 --brand-info-text: {final_branding_values['brand_info_text']};
                 --brand-info-border: {final_branding_values['brand_info_border']};
+                --brand-prompt-assistant-bg: {final_branding_values['prompt_assistant_bg']};
+                --brand-prompt-assistant-border: {final_branding_values['prompt_assistant_border']};
+                --brand-prompt-assistant-icon-color: {final_branding_values['prompt_assistant_icon_color']};
+                --brand-prompt-assistant-button-bg: {final_branding_values['prompt_assistant_button_bg']};
+                --brand-prompt-assistant-button-text: {final_branding_values['prompt_assistant_button_text']};
+                --brand-prompt-assistant-button-border: {final_branding_values['prompt_assistant_button_border']};
+                --brand-prompt-assistant-dropdown-bg: {final_branding_values['prompt_assistant_dropdown_bg']};
+                --brand-prompt-assistant-header-bg: {final_branding_values['prompt_assistant_header_bg']};
+                --brand-prompt-assistant-header-text: {final_branding_values['prompt_assistant_header_text']};
+                --brand-prompt-assistant-item-hover-bg: {final_branding_values['prompt_assistant_item_hover_bg'] or final_branding_values['brand_primary_color']};
+                --brand-prompt-assistant-item-hover-text: {final_branding_values['prompt_assistant_item_hover_text'] or final_branding_values['brand_text_on_primary']};
 
             }}
         """

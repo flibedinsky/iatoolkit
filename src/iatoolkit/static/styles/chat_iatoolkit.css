@@ -168,7 +168,7 @@
 
 /* 1. La caja principal que envuelve toda el área de entrada */
 .input-area {
-    background-color: #f8f9fa;
+    background-color: var(--brand-prompt-assistant-bg, #f8f9fa);
 }
 
 /* 2. La barra "cápsula" que envuelve el texto y los iconos */
@@ -202,7 +202,7 @@
 
 #prompt-assistant-collapse .card {
     border-radius: 1.5rem;      /* Mismo radio que el chat-input-bar */
-    border: 1px solid #dee2e6; /* Mismo borde que el chat-input-bar */
+    border: 1px solid var(--brand-prompt-assistant-border, #dee2e6); /* Mismo borde que el chat-input-bar */
     box-shadow: none;           /* Eliminamos la sombra por defecto del card */
 }
 
@@ -241,6 +241,12 @@
     color: #6c757d;
     transition: color 0.2s ease-in-out;
 }
+
+/* Anulación específica para el icono de la varita mágica */
+.chat-input-bar a[href="#prompt-assistant-collapse"] i {
+    color: var(--brand-prompt-assistant-icon-color, #6c757d);
+}
+
 .chat-input-bar .d-flex a:hover i {
     color: #343a40;
 }
@@ -302,8 +308,8 @@
 }
 
 .dropdown-menu-soft {
-    background-color: #f8f9fa;
-    border-color: #dee2e6;
+    background-color: var(--brand-prompt-assistant-dropdown-bg, #f8f9fa);
+    border-color: var(--brand-prompt-assistant-border, #dee2e6);
 }
 
 .dropdown-menu-soft .dropdown-item {
@@ -312,15 +318,15 @@
 
 .dropdown-menu-soft .dropdown-item:hover,
 .dropdown-menu-soft .dropdown-item:focus {
-    color: #ffffff;
-    background-color: #495057;
+    color: var(--brand-prompt-assistant-item-hover-text, #ffffff);
+    background-color: var(--brand-prompt-assistant-item-hover-bg, #495057);
     padding-left: 1.5rem;
     transition: all 0.15s ease-in-out;
 }
 
 .dropdown-menu-soft .dropdown-header {
-    background-color: #495057;
-    color: #ffffff;
+    background-color: var(--brand-prompt-assistant-header-bg, #495057);
+    color: var(--brand-prompt-assistant-header-text, #ffffff);
     font-weight: 600;
     margin: 4px;
     padding: 0.4rem 1rem;
@@ -330,6 +336,14 @@
     letter-spacing: normal;
     border-bottom: none;
 }
+
+/* Estilo para el botón principal del asistente de prompts */
+#prompt-select-button {
+    background-color: var(--brand-prompt-assistant-button-bg, #FFFFFF);
+    color: var(--brand-prompt-assistant-button-text, #495057);
+    border-color: var(--brand-prompt-assistant-button-border, #ced4da);
+}
+
 
 #clear-selection-button {
     position: absolute;

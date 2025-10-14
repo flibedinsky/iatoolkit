@@ -27,7 +27,7 @@ def register_views(injector, app):
     from iatoolkit.views.tasks_review_view import TaskReviewView
     from iatoolkit.views.home_view import HomeView
     from iatoolkit.views.login_view import LoginView, InitiateLoginView
-    from iatoolkit.views.login_external_id_view import InitiateExternalChatView, ExternalChatLoginView
+    from iatoolkit.views.external_login_view import InitiateExternalChatView, ExternalChatLoginView
     from iatoolkit.views.signup_view import SignupView
     from iatoolkit.views.verify_user_view import VerifyAccountView
     from iatoolkit.views.forgot_password_view import ForgotPasswordView
