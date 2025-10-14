@@ -151,4 +151,4 @@ class ExternalChatLoginView(MethodView):
 
         except Exception as e:
             logging.exception(f"Error al inicializar el chat para {company_short_name}/{external_user_id}: {e}")
-            return jsonify({"error": "Error interno al iniciar el chat"}), 500
+            return jsonify({"error": f"Error interno al iniciar el chat. {str(e)}"}), 500
