@@ -6,6 +6,7 @@
 from flask.views import MethodView
 from flask import request, jsonify
 from iatoolkit.services.load_documents_service import LoadDocumentsService
+from iatoolkit.common.auth import IAuthentication
 from iatoolkit.repositories.profile_repo import ProfileRepo
 from injector import inject
 import base64
@@ -14,8 +15,10 @@ import base64
 class FileStoreView(MethodView):
     @inject
     def __init__(self,
+                 iauthentication: IAuthentication,
                  doc_service: LoadDocumentsService,
                  profile_repo: ProfileRepo,):
+        self.iauthentication = iauthentication
         self.doc_service = doc_service
         self.profile_repo = profile_repo
 
@@ -29,6 +32,7 @@ class FileStoreView(MethodView):
                     return jsonify({"error": f"El campo {field} es requerido"}), 400
 
             company_short_name = req_data.get('company', '')
+            requested_name = req_data.get('username', 'external_user')
             filename = req_data.get('filename', False)
             base64_content = req_data.get('content', '')
             metadata = req_data.get('metadata', {})
@@ -37,6 +41,11 @@ class FileStoreView(MethodView):
             company = self.profile_repo.get_company_by_short_name(company_short_name)
             if not company:
                 return jsonify({"error": f"La empresa {company_short_name} no existe"}), 400
+
+            # get access credentials
+            iaut = self.iauthentication.verify(company_short_name, requested_name)
+            if not iaut.get("success"):
+                return jsonify(iaut), 401
 
             # get the file content from base64
             content = base64.b64decode(base64_content)

@@ -200,6 +200,7 @@ class Dispatcher:
         # default values
         normalized_user = {
             "id": raw_data.get("id", 0),
+            "username": raw_data.get("id", 0),
             "user_email": raw_data.get("email", ""),
             "user_fullname": raw_data.get("user_fullname", ""),
             "company_id": raw_data.get("company_id", 0),

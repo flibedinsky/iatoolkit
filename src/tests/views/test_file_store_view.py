@@ -9,6 +9,7 @@ from flask import Flask
 from iatoolkit.views.file_store_view import FileStoreView
 from iatoolkit.services.load_documents_service import LoadDocumentsService
 from iatoolkit.repositories.profile_repo import ProfileRepo
+from iatoolkit.common.auth import IAuthentication
 import base64
 
 
@@ -21,12 +22,15 @@ class TestFileStoreView:
         # Mock the services
         self.mock_doc_service = MagicMock(spec=LoadDocumentsService)
         self.mock_profile_repo = MagicMock(spec=ProfileRepo)
+        self.mock_auth = MagicMock(spec=IAuthentication)
 
         # Instantiate the view with mocked services
         self.file_store_view = FileStoreView.as_view("load",
                                                     doc_service=self.mock_doc_service,
-                                                    profile_repo=self.mock_profile_repo)
+                                                    profile_repo=self.mock_profile_repo,
+                                                     iauthentication=self.mock_auth)
         self.app.add_url_rule('/load', view_func=self.file_store_view, methods=["POST"])
+        self.mock_auth.verify.return_value = {"success": True}
 
     @pytest.mark.parametrize("missing_field", ["company", "filename", "content"])
     def test_post_when_missing_required_fields(self, missing_field):
@@ -66,6 +70,24 @@ class TestFileStoreView:
         }
 
         self.mock_profile_repo.get_company_by_short_name.assert_called_once_with("nonexistent_company")
+        self.mock_doc_service.load_file_callback.assert_not_called()
+
+
+    def test_post_when_company_not_auth(self):
+        # Mock the profile repo to return None for the company
+        self.mock_auth.verify.return_value = {"success": False}
+
+        payload = {
+            "company": "nonexistent_company",
+            "filename": "test_file.txt",
+            "content": base64.b64encode(b"test content").decode('utf-8'),
+            "metadata": {"key": "value"}
+        }
+
+        response = self.client.post('/load', json=payload)
+        assert response.status_code == 401
+
+
         self.mock_doc_service.load_file_callback.assert_not_called()
 
     def test_post_when_internal_exception_error(self):

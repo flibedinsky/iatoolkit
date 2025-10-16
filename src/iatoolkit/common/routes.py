@@ -40,22 +40,27 @@ def register_views(injector, app):
     # iatoolkit home page
     app.add_url_rule('/<company_short_name>', view_func=IndexView.as_view('index'))
 
-    # init (ir reset) the  context (with api-key)
+    # init (reset) the company context (with api-key)
     app.add_url_rule('/<company_short_name>/<external_user_id>/init-context',
                          view_func=InitContextView.as_view('init-context'))
 
-    # external login (with api-key)
+    # this functions are for login external users (with api-key)
+    # only the first one should be used from an external app
     app.add_url_rule('/<company_short_name>/initiate_external_chat',
                      view_func=InitiateExternalChatView.as_view('initiate_external_chat'))
     app.add_url_rule('/<company_short_name>/external_login',
                      view_func=ExternalChatLoginView.as_view('external_login'))
+
+    # this endpoint is for requesting a chat token for external users
     app.add_url_rule('/auth/chat_token',
                      view_func=ChatTokenRequestView.as_view('chat-token'))
 
     # login for the iatoolkit integrated frontend
-    app.add_url_rule('/<company_short_name>/login', view_func=LoginView.as_view('login'))
+    # this is the main login endpoint for the frontend
     app.add_url_rule('/<company_short_name>/initiate_login', view_func=InitiateLoginView.as_view('initiate_login'))
+    app.add_url_rule('/<company_short_name>/login', view_func=LoginView.as_view('login'))
 
+    # register new user, account verification and forgot password
     app.add_url_rule('/<company_short_name>/signup',view_func=SignupView.as_view('signup'))
     app.add_url_rule('/<company_short_name>/logout', 'logout', logout)
     app.add_url_rule('/logout', 'logout', logout)
@@ -63,13 +68,24 @@ def register_views(injector, app):
     app.add_url_rule('/<company_short_name>/forgot-password', view_func=ForgotPasswordView.as_view('forgot_password'))
     app.add_url_rule('/<company_short_name>/change-password/<token>', view_func=ChangePasswordView.as_view('change_password'))
 
-    # this are backend endpoints mainly
+    # main chat query, used by the JS in the browser (with credentials)
+    # can be used also for executing iatoolkit prompts
     app.add_url_rule('/<company_short_name>/llm_query', view_func=LLMQueryView.as_view('llm_query'))
-    app.add_url_rule('/<company_short_name>/feedback', view_func=UserFeedbackView.as_view('feedback'))
+
+    # chat buttons are here
+
+    # open the promt directory
     app.add_url_rule('/<company_short_name>/prompts', view_func=PromptView.as_view('prompt'))
+
+    # feedback and history
+    app.add_url_rule('/<company_short_name>/feedback', view_func=UserFeedbackView.as_view('feedback'))
     app.add_url_rule('/<company_short_name>/history', view_func=HistoryView.as_view('history'))
+
+    # tasks management endpoints: create task, and review answer
     app.add_url_rule('/tasks', view_func=TaskView.as_view('tasks'))
     app.add_url_rule('/tasks/review/<int:task_id>', view_func=TaskReviewView.as_view('tasks-review'))
+
+    # this endpoint is for upload documents into the vector store (api-key)
     app.add_url_rule('/load', view_func=FileStoreView.as_view('load'))
 
     # login testing /login_testing
