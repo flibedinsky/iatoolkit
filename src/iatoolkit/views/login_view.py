@@ -55,7 +55,7 @@ class InitiateLoginView(MethodView):
                     "email": email,
                     "password": password,
                 },
-                alert_message=response["error"]), 400
+                alert_message=response["message"]), 400
 
         # 2. Get branding and onboarding data for the shell page
         branding_data = self.branding_service.get_company_branding(company)
