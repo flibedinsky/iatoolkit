@@ -13,10 +13,7 @@ import os
 def logout(company_short_name: str):
     SessionManager.clear()
     flash("Has cerrado sesión correctamente", "info")
-    if company_short_name:
-        return redirect(url_for('login', company_short_name=company_short_name))
-    else:
-        return redirect(url_for('home'))
+    return redirect(url_for('index', company_short_name=company_short_name))
 
 
 # this function register all the views
