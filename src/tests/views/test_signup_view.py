@@ -17,6 +17,7 @@ class TestSignupView:
     def create_app():
         """Configura la aplicación Flask para pruebas."""
         app = Flask(__name__)
+        app.config['SECRET_KEY'] = 'test-secret-key'
         app.testing = True
 
         return app
@@ -40,6 +41,15 @@ class TestSignupView:
                                   profile_service=self.profile_service,
                                   branding_service=self.branding_service,)
         self.app.add_url_rule("/<company_short_name>/signup", view_func=view, methods=["GET", "POST"])
+
+        # Añadir rutas dummy para que url_for() no falle en las pruebas
+        @self.app.route("/<company_short_name>/")
+        def index(company_short_name):
+            return "Página de índice", 200
+
+        @self.app.route("/<company_short_name>/verify/<token>")
+        def verify_account(company_short_name, token):
+            return "Página de verificación", 200
 
     @patch("iatoolkit.views.signup_view.render_template")
     @patch("iatoolkit.views.signup_view.URLSafeTimedSerializer")
@@ -91,39 +101,41 @@ class TestSignupView:
 
         assert response.status_code == 400
 
-    @patch("iatoolkit.views.signup_view.render_template")
-    @patch("iatoolkit.views.signup_view.url_for")
     @patch("iatoolkit.views.signup_view.URLSafeTimedSerializer")
-    def test_post_when_ok(self, mock_serializer, mock_url_for, mock_render_template):
-        mock_render_template.return_value = "<html><body></body></html>"
-        mock_serializer.return_value.loads.return_value = "nonexistent@email.com"
-        mock_url_for.return_value = 'http://verification'
-        self.profile_service.signup.return_value = \
-            {"message": "User created"}
+    def test_post_when_ok(self, mock_serializer_class):
+        """Prueba un POST exitoso que crea un usuario y establece el mensaje en sesión."""
+        # Configurar mocks
+        success_message = "¡Cuenta creada! Revisa tu correo para verificarla."
+        mock_serializer_class.return_value.dumps.return_value = 'some-secure-token'
+        self.profile_service.signup.return_value = {"message": success_message}
 
-        response = self.client.post("/test_company/signup",
-                                    data={
-                                        "first_name": "Juan",
-                                        "last_name": "Perez",
-                                        "email": "juan@email.com",
-                                        "password": "password123",
-                                        "confirm_password": "password123"
-                                    },
-                                    content_type="application/x-www-form-urlencoded")
+        # Usar el cliente de prueba dentro de un contexto para manejar la sesión
+        with self.client:
+            response = self.client.post("/test_company/signup",
+                                        data={
+                                            "first_name": "Juan",
+                                            "last_name": "Perez",
+                                            "email": "juan@email.com",
+                                            "password": "password123",
+                                            "confirm_password": "password123"
+                                        })
 
-        assert response.status_code == 200
-        mock_render_template.assert_called_once_with(
-            "login.html",
-            company=self.test_company,
-            company_short_name='test_company',
-            alert_message="User created",
-            alert_icon='success'
-        )
+            # 1. Verificar que se produjo una redirección (302) a la página correcta
+            assert response.status_code == 302
+            assert response.location == "/test_company/"
+
+            # 2. Abrir la sesión resultante para verificar su contenido
+            with self.client.session_transaction() as sess:
+                assert sess['alert_message'] == success_message
+                assert sess['alert_icon'] == 'success'
 
     @patch("iatoolkit.views.signup_view.render_template")
     @patch("iatoolkit.views.signup_view.URLSafeTimedSerializer")
-    def test_post_unexpected_error(self, mock_serializer, mock_render_template):
-        mock_serializer.return_value.loads.side_effect = Exception('an error')
+    def test_post_unexpected_error(self, mock_serializer_class, mock_render_template):
+        # Corregir el mock: la vista llama a .dumps() para crear el token.
+        # Es aquí donde debemos simular el error.
+        mock_serializer_class.return_value.dumps.side_effect = Exception('an error')
+
         response = self.client.post("/test_company/signup",
                                     data={
                                         "first_name": "Juan",

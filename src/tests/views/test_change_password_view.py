@@ -7,6 +7,7 @@ import pytest
 from flask import Flask
 from unittest.mock import MagicMock, patch
 from iatoolkit.services.profile_service import ProfileService
+from iatoolkit.services.branding_service import BrandingService
 from iatoolkit.views.change_password_view import ChangePasswordView
 from itsdangerous import SignatureExpired
 import os
@@ -29,6 +30,7 @@ class TestChangePasswordView:
         """Configura la aplicación Flask para pruebas."""
         app = Flask(__name__)
         app.testing = True
+        app.config['SECRET_KEY'] = 'test-secret-key'  # Clave para firmar la sesión
         return app
 
     @pytest.fixture(autouse=True)
@@ -37,6 +39,9 @@ class TestChangePasswordView:
         self.app = self.create_app()
         self.client = self.app.test_client()
         self.profile_service = MagicMock(spec=ProfileService)
+        self.branding_service = MagicMock(spec=BrandingService)
+        self.branding_service.get_company_branding.return_value = {}
+
         self.test_company = Company(
             id=1,
             name="Empresa de Prueba",
@@ -45,9 +50,15 @@ class TestChangePasswordView:
         self.profile_service.get_company_by_short_name.return_value = self.test_company
 
         # Registrar la vista
-        view = ChangePasswordView.as_view("change_password", profile_service=self.profile_service)
+        view = ChangePasswordView.as_view("change_password",
+                                          profile_service=self.profile_service,
+                                          branding_service=self.branding_service,)
         self.app.add_url_rule("/<company_short_name>/change_password/<token>", view_func=view, methods=["GET", "POST"])
 
+        # Añadir una ruta 'index' para que url_for() no falle en la prueba
+        @self.app.route("/<company_short_name>/")
+        def index(company_short_name):
+            return "Página de índice", 200
 
     @patch("iatoolkit.views.change_password_view.render_template")
     def test_get_and_post_invalid_company(self, mock_render):
@@ -78,6 +89,7 @@ class TestChangePasswordView:
 
             mock_render_template.assert_called_once_with(
                 "forgot_password.html",
+                branding={},
                 alert_message="El enlace de cambio de contraseña ha expirado. Por favor, solicita uno nuevo."
             )
             assert response.status_code == 200
@@ -95,6 +107,7 @@ class TestChangePasswordView:
             mock_render_template.assert_called_once_with(
                 "change_password.html",
                 company=self.test_company,
+                branding={},
                 company_short_name='test_company',
                 token="valid_token",
                 email="valid@email.com"
@@ -119,6 +132,7 @@ class TestChangePasswordView:
         mock_render_template.assert_called_once_with(
             "forgot_password.html",
             company=self.test_company,
+            branding={},
             company_short_name='test_company',
             alert_message="El enlace de cambio de contraseña ha expirado. Por favor, solicita uno nuevo."
         )
@@ -142,6 +156,7 @@ class TestChangePasswordView:
         mock_render_template.assert_called_once_with(
                 "change_password.html",
             company=self.test_company,
+            branding={},
             company_short_name='test_company',
                 form_data={"temp_code": "123456", "new_password": "password123", "confirm_password": "password456"},
                 alert_message='password missmatch',
@@ -149,30 +164,33 @@ class TestChangePasswordView:
             )
         assert response.status_code == 400
 
-    @patch("iatoolkit.views.change_password_view.render_template")
     @patch("iatoolkit.views.change_password_view.URLSafeTimedSerializer")
-    def test_post_ok(self, mock_serializer, mock_render_template):
-        mock_serializer.return_value.return_value = "valid@email.com"
-        mock_render_template.return_value = "<html><body></body></html>"
-        self.profile_service.change_password.return_value = \
-            {'message': 'password changed'}
+    def test_post_ok(self, mock_serializer_class):
+        """Prueba un POST exitoso que cambia la contraseña y redirige."""
+        # Configurar mocks
+        mock_serializer_class.return_value.loads.return_value = "valid@email.com"
+        self.profile_service.change_password.return_value = {'message': 'password changed'}
 
-        response = self.client.post("/test_company/change_password/valid_token",
-                                    data={
-                                        "temp_code": "123456",
-                                        "new_password": "password123",
-                                        "confirm_password": "password456"
-                                    },
-                                    content_type="application/x-www-form-urlencoded")
+        # Usar el cliente de prueba para hacer la petición POST
+        # El with asegura que la sesión se pueda modificar
+        with self.client:
+            response = self.client.post("/test_company/change_password/valid_token",
+                                        data={
+                                            "temp_code": "123456",
+                                            "new_password": "password123",
+                                            "confirm_password": "password123"
+                                        })
 
-        mock_render_template.assert_called_once_with(
-            "login.html",
-            company=self.test_company,
-            company_short_name='test_company',
-            alert_icon='success',
-            alert_message="Tu contraseña ha sido restablecida exitosamente. Ahora puedes iniciar sesión."
-        )
-        assert response.status_code == 200
+            # 1. Verificar la redirección
+            assert response.status_code == 302
+            assert response.location == "/test_company/"
+
+            # 2. Verificar el contenido de la sesión después de la redirección
+            # `session_transaction` abre la sesión resultante de la petición anterior
+            with self.client.session_transaction() as sess:
+                assert sess[
+                           'alert_message'] == "Tu contraseña ha sido restablecida exitosamente. Ahora puedes iniciar sesión."
+                assert sess['alert_icon'] == 'success'
 
     @patch("iatoolkit.views.change_password_view.render_template")
     @patch("iatoolkit.views.change_password_view.URLSafeTimedSerializer")

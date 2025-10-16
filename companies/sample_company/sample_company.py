@@ -80,7 +80,6 @@ class SampleCompany(BaseCompany):
             
     # Return company specific context
     def get_company_context(self, **kwargs) -> str:
-        return ''
         if not self.sample_db_manager:
             return ''
 
