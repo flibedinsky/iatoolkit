@@ -1,7 +1,8 @@
 ## Copyright (c) 2024 Fernando Libedinsky
 
 from dotenv import load_dotenv
-from iatoolkit import IAToolkit, register_company
+from iatoolkit import IAToolkit
+from iatoolkit.company_registry import register_company
 from companies.sample_company.sample_company import SampleCompany
 from urllib.parse import urlparse
 import os
