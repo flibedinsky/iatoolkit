@@ -49,8 +49,35 @@ body {
 }
 
 .hero-title {
-    font-weight: 700;
-    color: #111827;
+  font-size: 3rem;
+  font-weight: 700;
+  background: linear-gradient(90deg, #4F46E5, #818CF8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  line-height: 1.1;
+  letter-spacing: -0.5px;
+}
+
+.hero-bullets {
+  list-style: none;
+  padding-left: 2rem;
+  margin-top: 1.5rem;
+}
+
+.hero-bullets li {
+  font-size: 1.15rem;
+  color: #4b5563;
+  margin-bottom: 0.8rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  line-height: 1.5;
+}
+
+.hero-bullets i {
+  color: #4F46E5;
+  font-size: 1.3rem;
+  margin-top: 0.2rem;
 }
 
 .value-proposition .hero-subtitle {
