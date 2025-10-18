@@ -4,14 +4,14 @@ from unittest.mock import MagicMock, patch
 import os
 
 # Asegúrate de que las importaciones sean correctas y existan
-from iatoolkit.views.home_view import HomeView
+from iatoolkit.views.login_test_view import LoginTest
 from iatoolkit.services.profile_service import ProfileService
 from iatoolkit.repositories.models import Company
 
 
 # Ya no necesitamos JWTService, ChatTokenRequestView, etc.
 
-class TestHomeView:
+class TestLoginTestView:
     @staticmethod
     def create_app():
         """Configura la aplicación Flask para pruebas."""
@@ -30,10 +30,10 @@ class TestHomeView:
 
         # Registrar únicamente la vista que estamos probando.
         # No necesitamos registrar las otras vistas que han sido eliminadas.
-        view = HomeView.as_view("home", profile_service=self.profile_service)
+        view = LoginTest.as_view("home", profile_service=self.profile_service)
         self.app.add_url_rule("/", view_func=view, methods=["GET"])
 
-    @patch("iatoolkit.views.home_view.render_template")
+    @patch("iatoolkit.views.login_test_view.render_template")
     @patch.dict(os.environ, {"IATOOLKIT_API_KEY": "una_api_key_de_prueba_segura"})
     def test_get_home_page(self, mock_render_template):
         """
@@ -49,13 +49,9 @@ class TestHomeView:
 
         # La aserción ahora debe reflejar los argumentos actuales de render_template en HomeView
         mock_render_template.assert_called_once_with(
-            "home.html",
+            "login_test.html",
             companies=[self.test_company],
-            is_mobile=False,
             alert_icon=None,
             alert_message=None,
             api_key="una_api_key_de_prueba_segura",
-            # Hemos eliminado los siguientes parámetros obsoletos:
-            # chat_token_request_url=...
-            # public_chat_url_template=...
         )

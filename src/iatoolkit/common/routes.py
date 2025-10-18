@@ -24,7 +24,7 @@ def register_views(injector, app):
     from iatoolkit.views.llmquery_view import LLMQueryView
     from iatoolkit.views.tasks_view import TaskView
     from iatoolkit.views.tasks_review_view import TaskReviewView
-    from iatoolkit.views.home_view import HomeView
+    from iatoolkit.views.login_test_view import LoginTest
     from iatoolkit.views.login_view import LoginView, InitiateLoginView
     from iatoolkit.views.external_login_view import InitiateExternalChatView, ExternalChatLoginView
     from iatoolkit.views.signup_view import SignupView
@@ -89,7 +89,7 @@ def register_views(injector, app):
     app.add_url_rule('/load', view_func=FileStoreView.as_view('load'))
 
     # login testing (old home page)
-    app.add_url_rule('/login_testing', view_func=HomeView.as_view('home'))
+    app.add_url_rule('/login_test', view_func=LoginTest.as_view('login_test'))
 
     app.add_url_rule(
         '/about',  # URL de la ruta

@@ -330,9 +330,7 @@ class IAToolkit:
     def _bind_views(self, binder: Binder):
         """Vincula las vistas después de que el injector ha sido creado"""
         from iatoolkit.views.llmquery_view import LLMQueryView
-        from iatoolkit.views.home_view import HomeView
 
-        binder.bind(HomeView, to=HomeView)
         binder.bind(LLMQueryView, to=LLMQueryView)
 
         logging.info("✅ Views configuradas correctamente")

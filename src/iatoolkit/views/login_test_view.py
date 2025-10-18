@@ -10,24 +10,21 @@ from iatoolkit.services.profile_service import ProfileService
 import os
 
 
-class HomeView(MethodView):
+class LoginTest(MethodView):
     @inject
     def __init__(self,
                  profile_service: ProfileService):
         self.profile_service = profile_service
 
     def get(self):
-        user_agent = request.user_agent
-        is_mobile = user_agent.platform in ["android", "iphone", "ipad"] or "mobile" in user_agent.string.lower()
         alert_message = request.args.get('alert_message', None)
         companies = self.profile_service.get_companies()
 
         # Esta API_KEY para el login
         api_key_for_login = os.getenv("IATOOLKIT_API_KEY", "tu_api_key_por_defecto_o_error")
 
-        return render_template('home.html',
+        return render_template('login_test.html',
                                companies=companies,
-                               is_mobile=is_mobile,
                                alert_message=alert_message,
                                alert_icon='success' if alert_message else None,
                                api_key=api_key_for_login

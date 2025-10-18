@@ -7,60 +7,20 @@
   <!-- Contenido principal con espaciado adicional respecto al header -->
   <div class="row flex-fill mt-5 flex-wrap">
 
-    {% if not user or user_company != company_short_name %}
-    <!-- Sección de login (se coloca primero en el HTML para mobile) -->
+
+    <!-- login desde sistema  externo -->
     <div class="col-12 col-lg-5 offset-lg-1">
       <div class="border rounded p-4 shadow-sm bg-light">
-        <h4 class="text-muted fw-semibold text-start mb-3">login integrado (IAToolkit)</h4>
-        <form id="login-form"
-              action="{{ url_for('chat', company_short_name=company_short_name, external_login=True) }}"
-              method="post">
-          <div class="mb-3">
-            <label for="company_short_name" class="form-label d-block text-muted">Empresa</label>
-            <select id="company_short_name" name="company_short_name" class="form-select" required>
-              <option value="" disabled selected>Selecciona una empresa</option>
-                {% for company in companies %}
-                    <option value="{{ company.short_name }}"
-                            {% if company.short_name == company_short_name %}selected{% endif %}>
-                        {{ company.short_name }}
-                    </option>
-                {% endfor %}
-            </select>
+        <h3 class="text-muted fw-semibold text-start mb-3">login externo (api-key)</h3>
+          <div class="text-center mb-4">
+            <p class="text-muted widget-intro-text">
+            Este formulario permite testear el acceso a IAToolkit desde un portal externo utilizando una api-key.
+                El external user ID es el nombre del usuario ya autentificado en algún portal interno de la empresa.
+            </p>
         </div>
-
-          <div class="mb-3">
-            <label for="email" class="form-label d-block text-muted">Correo Electrónico</label>
-            <input type="email" id="email" name="email" class="form-control" required>
-          </div>
-          <div class="mb-3">
-            <label for="password" class="form-label d-block text-muted">Contraseña</label>
-            <input type="password" id="password" name="password" class="form-control" required>
-          </div>
-          <button type="submit" class="btn btn-primary w-100">
-              Iniciar Sesión</button>
-        </form>
-
-        <div class="text-center mt-3">
-    <a href="{% if company_short_name %}{{ url_for('signup', company_short_name=company_short_name) }}{% else %}#{% endif %}"
-       id="signup-link"
-       class="btn btn-outline-primary w-100">Registrarse</a>
-</div>
-        <div class="text-center mt-3">
-          <a href="{{ url_for('forgot_password', company_short_name=company_short_name) }}" class="text-decoration-none text-muted fw-semibold">
-            ¿Olvidaste tu contraseña?
-          </a>
-        </div>
-      </div>
-    </div>
-    {% endif %}
-
-    <!-- Sección de JWT -->
-    <div class="col-12 col-lg-5 offset-lg-1">
-      <div class="border rounded p-4 shadow-sm bg-light">
-        <h4 class="text-muted fw-semibold text-start mb-3">login externo (api-key)</h4>
         <form id="jwt-form"  method="post">
           <div class="mb-3">
-            <label for="company_name" class="form-label d-block text-muted">Empresa</label>
+            <label for="company_name" class="form-label d-block">Empresa</label>
             <select id="company_name" name="company_short_name" class="form-select" required>
               <option value="" disabled selected>Selecciona una empresa</option>
                 {% for company in companies %}
@@ -73,7 +33,7 @@
         </div>
 
           <div class="mb-3">
-            <label for="external_user_id" class="form-label d-block text-muted">External user ID</label>
+            <label for="external_user_id" class="form-label d-block">External user ID</label>
             <input type="text" id="external_user_id" name="external_user_id" class="form-control" required>
           </div>
 
@@ -81,7 +41,7 @@
                   id="initiateJwtChatButton"
                   class="ml-5 btn btn-primary">
               <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
-              Iniciar Sesión JWT
+              Iniciar Sesión
           </button>
         </form>
       </div>
