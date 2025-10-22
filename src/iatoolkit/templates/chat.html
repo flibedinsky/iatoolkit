@@ -188,7 +188,8 @@
 <script src="{{ url_for('static', filename='js/chat_main.js', _external=True) }}"></script>
 
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 
 <script>
@@ -220,51 +221,58 @@
         const originalIconClass = 'bi bi-arrow-clockwise';
         const spinnerIconClass = 'spinner-border spinner-border-sm';
 
+        // Configuración de Toastr para que aparezca abajo a la derecha
+        toastr.options = { "positionClass": "toast-bottom-right", "preventDuplicates": true };
+
         reloadButton.addEventListener('click', function(event) {
             event.preventDefault();
 
+            if (reloadButton.disabled) return; // Prevenir doble clic
+
             // 1. Deshabilitar y mostrar spinner
-            reloadButton.style.pointerEvents = 'none';
+            reloadButton.disabled = true;
             const icon = reloadButton.querySelector('i');
             icon.className = spinnerIconClass;
             toastr.info('Iniciando recarga de contexto en segundo plano...');
 
             // 2. Construir la URL dinámicamente
             const company = window.companyShortName;
-            const params = new URLSearchParams(); // Ya no necesita source=webapp
+            const params = new URLSearchParams();
 
-            if (window.externalUserId) {
+            // Solo añadir el external_user_id si existe y no es una cadena vacía
+            if (window.externalUserId && window.externalUserId.trim() !== '') {
                 params.append('external_user_id', window.externalUserId);
             }
 
-            const reloadUrl = `/${company}/init-context?${params.toString()}`;
+            const queryString = params.toString();
+            // Construir la URL final. Si no hay params, no añade '?'
+            const reloadUrl = `/${company}/init-context${queryString ? '?' + queryString : ''}`;
 
-            // 3. Hacer la llamada AJAX "fire and forget"
+            // 3. Hacer la llamada AJAX
             fetch(reloadUrl, { method: 'GET' })
                 .then(response => {
                     if (!response.ok) {
-                        throw new Error(`El servidor respondió con estado: ${response.status}`);
+                        return response.json().then(err => { throw new Error(err.error_message || `Error del servidor: ${response.status}`) });
                     }
                     return response.json();
                 })
                 .then(data => {
                     if (data.status === 'OK') {
-                        toastr.success('El contexto ha sido recargado exitosamente.');
+                        toastr.success(data.message || 'Contexto recargado exitosamente.');
                     } else {
-                        toastr.error(data.error_message || 'Error al recargar el contexto.');
+                        toastr.error(data.error_message || 'Ocurrió un error desconocido.');
                     }
                 })
                 .catch(error => {
                     console.error('Error durante la recarga del contexto:', error);
-                    toastr.error('Error de red al intentar recargar el contexto.');
+                    toastr.error(error.message || 'Error de red al intentar recargar.');
                 })
                 .finally(() => {
-                    // 4. Restaurar el botón sin importar el resultado
-                    reloadButton.style.pointerEvents = 'auto';
+                    // 4. Restaurar el botón
+                    reloadButton.disabled = false;
                     icon.className = originalIconClass;
                 });
         });
     });
-
 </script>
 {% endblock %}

@@ -9,8 +9,6 @@ from iatoolkit.common.exceptions import IAToolkitException
 from injector import inject
 import os
 from jinja2 import Environment, FileSystemLoader
-from iatoolkit.services.profile_service import ProfileService
-from iatoolkit.common.session_manager import SessionManager
 from datetime import datetime, date
 from decimal import Decimal
 import yaml
@@ -20,29 +18,9 @@ import base64
 
 class Utility:
     @inject
-    def __init__(self, profile_service: ProfileService):
-        self.profile_service = profile_service
+    def __init__(self):
         self.encryption_key = os.getenv('FERNET_KEY')
 
-    def resolve_user_identifier(self, external_user_id: str = None, local_user_id: int = 0) -> tuple[str, bool]:
-        """
-        Resuelve un identificador único de usuario desde external_user_id o local_user_id.
-
-        Lógica:
-        - Si external_user_id existe y no está vacío: usar external_user_id
-        - Si no, y local_user_id > 0: obtener email de la sesión actual y retornarlo como ID
-        - Si ninguno: retornar string vacío
-
-        """
-        if external_user_id and external_user_id.strip():
-            return external_user_id.strip(), False
-        elif local_user_id and local_user_id > 0:
-            # get the user information from the session
-            user_profile = self.profile_service.get_current_user_profile()
-            if user_profile:
-                return user_profile.get('email', ''), True
-
-        return "", False
 
     def render_prompt_from_template(self,
                                     template_pathname: str,

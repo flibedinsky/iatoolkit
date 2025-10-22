@@ -4,6 +4,7 @@
 # IAToolkit is open source software.
 
 from iatoolkit.infra.llm_client import llmClient
+from iatoolkit.services.profile_service import ProfileService
 from iatoolkit.repositories.document_repo import DocumentRepo
 from iatoolkit.repositories.profile_repo import ProfileRepo
 from iatoolkit.services.document_service import DocumentService
@@ -30,6 +31,7 @@ class QueryService:
     @inject
     def __init__(self,
                  llm_client: llmClient,
+                 profile_service: ProfileService,
                  document_service: DocumentService,
                  document_repo: DocumentRepo,
                  llmquery_repo: LLMQueryRepo,
@@ -39,6 +41,7 @@ class QueryService:
                  dispatcher: Dispatcher,
                  session_context: UserSessionContextService
                  ):
+        self.profile_service = profile_service
         self.document_service = document_service
         self.document_repo = document_repo
         self.llmquery_repo = llmquery_repo
@@ -55,20 +58,17 @@ class QueryService:
             raise IAToolkitException(IAToolkitException.ErrorType.API_KEY,
                                "La variable de entorno 'LLM_MODEL' no está configurada.")
 
-    def _build_context_and_profile(self, company_short_name: str, user_identifier: str, is_local_user: bool) -> tuple:
+    def _build_context_and_profile(self, company_short_name: str, user_identifier: str) -> tuple:
         # this method read the user/company context from the database and renders the system prompt
         company = self.profile_repo.get_company_by_short_name(company_short_name)
         if not company:
             return None, None
 
-        # get user specific context information.from
-        # use dispatcher for reading user info from company db, include used logged in idenfier
-        user_profile = self.dispatcher.get_user_info(
-            company_name=company_short_name,
-            user_identifier=user_identifier,
-            is_local_user=is_local_user
-        )
-        user_profile['user_id'] = user_identifier
+        # Get the user profile from the single source of truth.
+        user_profile = self.profile_service.get_profile_by_identifier(company_short_name, user_identifier)
+        if not user_profile:
+            # This might happen if a session exists for a user that was deleted.
+            return None, None
 
         # render the iatoolkit main system prompt with the company/user information
         system_prompt_template = self.prompt_service.get_system_prompt()
@@ -88,17 +88,15 @@ class QueryService:
 
         return final_system_context, user_profile
 
-    def prepare_context(self, company_short_name: str, external_user_id: str = None, local_user_id: int = 0) -> dict:
+    def prepare_context(self, company_short_name: str, user_identifier: str) -> dict:
         # prepare the context and decide if it needs to be rebuilt
         # save the generated context in the session context for later use
-        user_identifier, is_local_user = self.util.resolve_user_identifier(external_user_id, local_user_id)
         if not user_identifier:
-            # if not user_identifier, force the rebuild of the context
             return {'rebuild_needed': True, 'error': 'Invalid user identifier'}
 
         # create the company/user context and compute its version
         final_system_context, user_profile = self._build_context_and_profile(
-            company_short_name, user_identifier, is_local_user)
+            company_short_name, user_identifier)
 
         # save the user information in the session context
         # it's needed for the jinja predefined prompts (filtering)
@@ -126,17 +124,11 @@ class QueryService:
 
         return {'rebuild_needed': rebuild_is_needed}
 
-    def finalize_context_rebuild(self, company_short_name: str, external_user_id: str = None, local_user_id: int = 0,
-                                 model: str = ''):
+    def finalize_context_rebuild(self, company_short_name: str, user_identifier: str, model: str = ''):
+
         # end the initilization, if there is a prepare context send it to llm
         if not model:
             model = self.model
-
-        user_identifier, _ = self.util.resolve_user_identifier(external_user_id, local_user_id)
-        if not user_identifier:
-            logging.error("No se pudo resolver el identificador de usuario en finalize_context_rebuild.")
-            return
-
 
         # --- Lógica de Bloqueo ---
         lock_key = f"lock:context:{company_short_name}/{user_identifier}"
@@ -184,50 +176,15 @@ class QueryService:
             # --- Liberar el Bloqueo ---
             self.session_context.release_lock(lock_key)
 
-
-    def _init_context_on_the_fly(self, company_short_name: str, external_user_id: str = None, local_user_id: int = 0) -> \
-    Optional[str]:
-        """
-        Intenta inicializar o reconstruir el contexto durante una llamada a llm_query.
-        ADVERTENCIA: Esta operación puede ser síncrona y durar hasta 30 segundos.
-        """
-        logging.warning(f"Contexto no encontrado para {company_short_name}. Iniciando reconstrucción 'on-the-fly'...")
-        user_identifier, _ = self.util.resolve_user_identifier(external_user_id, local_user_id)
-        lock_key = f"lock:context:{company_short_name}/{user_identifier}"
-
-        # Esperar si otro proceso ya está reconstruyendo
-        wait_time = 0
-        while self.session_context.is_locked(lock_key) and wait_time < 45:
-            logging.info(f"Contexto para {user_identifier} está siendo reconstruido por otro proceso. Esperando...")
-            time.sleep(2)
-            wait_time += 2
-
-        # 1. Preparar el contexto y ver si se necesita reconstrucción
-        prep_result = self.prepare_context(company_short_name, external_user_id, local_user_id)
-
-        # 2. Si la preparación indica que se necesita un rebuild, lo finalizamos.
-        if prep_result.get('rebuild_needed'):
-            self.finalize_context_rebuild(company_short_name, external_user_id, local_user_id)
-
-        # 3. Después de una posible reconstrucción, el ID de respuesta ya debería estar en la sesión.
-        user_identifier, _ = self.util.resolve_user_identifier(external_user_id, local_user_id)
-        return self.session_context.get_last_response_id(company_short_name, user_identifier)
-
     def llm_query(self,
                   company_short_name: str,
-                  external_user_id: Optional[str] = None,
-                  local_user_id: int = 0,
+                  user_identifier: str,
                   task: Optional[Task] = None,
                   prompt_name: str = None,
                   question: str = '',
                   client_data: dict = {},
                   files: list = []) -> dict:
         try:
-            user_identifier, is_local_user = self.util.resolve_user_identifier(external_user_id, local_user_id)
-            if not user_identifier:
-                return {"error": True,
-                        "error_message": "No se pudo identificar al usuario"}
-
             company = self.profile_repo.get_company_by_short_name(short_name=company_short_name)
             if not company:
                 return {"error": True,
@@ -245,12 +202,9 @@ class QueryService:
                 # get user context
                 previous_response_id = self.session_context.get_last_response_id(company.short_name, user_identifier)
                 if not previous_response_id:
-                    # try to initialize the company/user context
-                    previous_response_id = self._init_context_on_the_fly(company.short_name, external_user_id, local_user_id)
-                    if not previous_response_id:
-                        return {'error': True,
-                                "error_message": f"FATAL: No se encontró 'previous_response_id' para '{company.short_name}/{user_identifier}'. La conversación no puede continuar."
-                                }
+                    return {'error': True,
+                            "error_message": f"FATAL: No se encontró 'previous_response_id' para '{company.short_name}/{user_identifier}'. La conversación no puede continuar."
+                            }
             elif self.util.is_gemini_model(self.model):
                 # check the length of the context_history and remove old messages
                 self._trim_context_history(context_history)
@@ -279,7 +233,7 @@ class QueryService:
                     template_string=prompt_content,
                     question=question,
                     client_data=final_client_data,
-                    external_user_id=external_user_id,
+                    user_identifier=user_identifier,
                     company=company,
                 )
 

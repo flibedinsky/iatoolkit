@@ -6,10 +6,10 @@
 import pytest
 from unittest.mock import MagicMock
 from flask import Flask
-from iatoolkit.views.file_store_view import FileStoreView
+from iatoolkit.views.file_store_api_view import FileStoreApiView
 from iatoolkit.services.load_documents_service import LoadDocumentsService
 from iatoolkit.repositories.profile_repo import ProfileRepo
-from iatoolkit.common.auth import IAuthentication
+from iatoolkit.services.auth_service import AuthService
 import base64
 
 
@@ -22,10 +22,10 @@ class TestFileStoreView:
         # Mock the services
         self.mock_doc_service = MagicMock(spec=LoadDocumentsService)
         self.mock_profile_repo = MagicMock(spec=ProfileRepo)
-        self.mock_auth = MagicMock(spec=IAuthentication)
+        self.mock_auth = MagicMock(spec=AuthService)
 
         # Instantiate the view with mocked services
-        self.file_store_view = FileStoreView.as_view("load",
+        self.file_store_view = FileStoreApiView.as_view("load",
                                                     doc_service=self.mock_doc_service,
                                                     profile_repo=self.mock_profile_repo,
                                                      iauthentication=self.mock_auth)

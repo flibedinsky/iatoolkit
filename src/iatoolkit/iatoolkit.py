@@ -257,7 +257,6 @@ class IAToolkit:
             self._bind_repositories(binder)
             self._bind_services(binder)
             self._bind_infrastructure(binder)
-            self._bind_views(binder)
 
             logging.info("✅ Dependencias configuradas correctamente")
 
@@ -314,23 +313,15 @@ class IAToolkit:
         from iatoolkit.infra.llm_proxy import LLMProxy
         from iatoolkit.infra.google_chat_app import GoogleChatApp
         from iatoolkit.infra.mail_app import MailApp
-        from iatoolkit.common.auth import IAuthentication
+        from iatoolkit.services.auth_service import AuthService
         from iatoolkit.common.util import Utility
 
         binder.bind(LLMProxy, to=LLMProxy, scope=singleton)
         binder.bind(llmClient, to=llmClient, scope=singleton)
         binder.bind(GoogleChatApp, to=GoogleChatApp)
         binder.bind(MailApp, to=MailApp)
-        binder.bind(IAuthentication, to=IAuthentication)
+        binder.bind(AuthService, to=AuthService)
         binder.bind(Utility, to=Utility)
-
-    def _bind_views(self, binder: Binder):
-        """Vincula las vistas después de que el injector ha sido creado"""
-        from iatoolkit.views.llmquery_view import LLMQueryView
-
-        binder.bind(LLMQueryView, to=LLMQueryView)
-
-        logging.info("✅ Views configuradas correctamente")
 
     def _setup_additional_services(self):
         Bcrypt(self.app)

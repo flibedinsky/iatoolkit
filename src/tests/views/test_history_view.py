@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 from flask import Flask
 from iatoolkit.views.history_view import HistoryView
 from iatoolkit.services.history_service import HistoryService
-from iatoolkit.common.auth import IAuthentication
+from iatoolkit.services.auth_service import AuthService
 
 
 class TestHistoryView:
@@ -23,7 +23,7 @@ class TestHistoryView:
         self.app = self.create_app()
         self.client = self.app.test_client()
         self.history_service = MagicMock(spec=HistoryService)
-        self.iauthentication = MagicMock(spec=IAuthentication)
+        self.iauthentication = MagicMock(spec=AuthService)
 
         self.iauthentication.verify.return_value = {
             'success': True,
@@ -214,7 +214,6 @@ class TestHistoryView:
         )
 
 
-
     def test_post_authentication_verification_called(self):
         """Test that authentication verification is called correctly"""
         mock_history = {
@@ -231,6 +230,6 @@ class TestHistoryView:
         assert response.status_code == 200
 
         # Verify authentication was called correctly
-        self.iauthentication.verify.assert_called_once_with('my_company', 'test_user')
+        self.iauthentication.verify.assert_called_once()
 
 

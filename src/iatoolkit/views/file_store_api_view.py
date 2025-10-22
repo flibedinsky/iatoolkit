@@ -6,16 +6,16 @@
 from flask.views import MethodView
 from flask import request, jsonify
 from iatoolkit.services.load_documents_service import LoadDocumentsService
-from iatoolkit.common.auth import IAuthentication
+from iatoolkit.services.auth_service import AuthService
 from iatoolkit.repositories.profile_repo import ProfileRepo
 from injector import inject
 import base64
 
 
-class FileStoreView(MethodView):
+class FileStoreApiView(MethodView):
     @inject
     def __init__(self,
-                 iauthentication: IAuthentication,
+                 iauthentication: AuthService,
                  doc_service: LoadDocumentsService,
                  profile_repo: ProfileRepo,):
         self.iauthentication = iauthentication

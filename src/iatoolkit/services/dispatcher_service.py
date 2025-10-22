@@ -5,7 +5,6 @@
 
 from iatoolkit.common.exceptions import IAToolkitException
 from iatoolkit.services.prompt_manager_service import PromptService
-from iatoolkit.services.profile_service import ProfileService
 from iatoolkit.repositories.llm_query_repo import LLMQueryRepo
 
 from iatoolkit.repositories.models import Company, Function
@@ -21,13 +20,11 @@ class Dispatcher:
     @inject
     def __init__(self,
                  prompt_service: PromptService,
-                 profile_service: ProfileService,
                  llmquery_repo: LLMQueryRepo,
                  util: Utility,
                  excel_service: ExcelService,
                  mail_service: MailService):
         self.prompt_service = prompt_service
-        self.profile_service = profile_service
         self.llmquery_repo = llmquery_repo
         self.util = util
         self.excel_service = excel_service
@@ -173,29 +170,24 @@ class Dispatcher:
             tools.append(ai_tool)
         return tools
 
-    def get_user_info(self, company_name: str, user_identifier: str, is_local_user: bool) -> dict:
+    def get_user_info(self, company_name: str, user_identifier: str) -> dict:
         if company_name not in self.company_instances:
             raise IAToolkitException(IAToolkitException.ErrorType.EXTERNAL_SOURCE_ERROR,
                                      f"Empresa no configurada: {company_name}")
 
-        raw_user_data = {}
-        if is_local_user:
-            # source 1: local user login into IAToolkit
-            raw_user_data = self.profile_service.get_current_user_profile()
-        else:
-            # source 2: external company user
-            company_instance = self.company_instances[company_name]
-            try:
-                raw_user_data = company_instance.get_user_info(user_identifier)
-            except Exception as e:
-                logging.exception(e)
-                raise IAToolkitException(IAToolkitException.ErrorType.EXTERNAL_SOURCE_ERROR,
-                                         f"Error en get_user_info de {company_name}: {str(e)}") from e
+        # source 2: external company user
+        company_instance = self.company_instances[company_name]
+        try:
+            raw_user_data = company_instance.get_user_info(user_identifier)
+        except Exception as e:
+            logging.exception(e)
+            raise IAToolkitException(IAToolkitException.ErrorType.EXTERNAL_SOURCE_ERROR,
+                                     f"Error en get_user_info de {company_name}: {str(e)}") from e
 
         # always normalize the data for consistent structure
-        return self._normalize_user_data(raw_user_data, is_local_user)
+        return self._normalize_user_data(raw_user_data)
 
-    def _normalize_user_data(self, raw_data: dict, is_local: bool) -> dict:
+    def _normalize_user_data(self, raw_data: dict) -> dict:
         """
         Asegura que los datos del usuario siempre tengan una estructura consistente.
         """
@@ -208,7 +200,6 @@ class Dispatcher:
             "company_id": raw_data.get("company_id", 0),
             "company_name": raw_data.get("company", ""),
             "company_short_name": raw_data.get("company_short_name", ""),
-            "is_local": is_local,
             "extras": raw_data.get("extras", {})
         }
 

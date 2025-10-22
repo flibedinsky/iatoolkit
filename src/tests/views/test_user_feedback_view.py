@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 from flask import Flask
 from iatoolkit.views.user_feedback_view import UserFeedbackView
 from iatoolkit.services.user_feedback_service import UserFeedbackService
-from iatoolkit.common.auth import IAuthentication
+from iatoolkit.services.auth_service import AuthService
 
 
 class TestUserFeedbackView:
@@ -23,7 +23,7 @@ class TestUserFeedbackView:
         self.app = self.create_app()
         self.client = self.app.test_client()
         self.feedback_service = MagicMock(spec=UserFeedbackService)
-        self.iauthentication = MagicMock(spec=IAuthentication)
+        self.iauthentication = MagicMock(spec=AuthService)
 
         self.iauthentication.verify.return_value = {
             'success': True,

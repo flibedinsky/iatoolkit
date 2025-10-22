@@ -16,7 +16,7 @@ from iatoolkit.services.onboarding_service import OnboardingService
 
 class InitiateLoginView(MethodView):
     """
-    Handles the initial, fast part of the login process.
+    Handles the initial part of the login process.
     Authenticates, decides the login path (fast or slow), and renders
     either the chat page directly or the loading shell.
     """
@@ -42,7 +42,7 @@ class InitiateLoginView(MethodView):
         email = request.form.get('email')
         password = request.form.get('password')
 
-        # 1. Autenticar al usuario
+        # 1. Authenticate user and create the unified session.
         auth_response = self.profile_service.login(
             company_short_name=company_short_name,
             email=email,
@@ -51,20 +51,23 @@ class InitiateLoginView(MethodView):
 
         if not auth_response['success']:
             return render_template(
-                'login.html', company_short_name=company_short_name, company=company,
-                form_data={"email": email}, alert_message=auth_response["message"]
+                'index.html',
+                company_short_name=company_short_name,
+                company=company,
+                form_data={"email": email},
+                alert_message=auth_response["message"]
             ), 400
 
         user_id = auth_response['user'].id
 
-        # 2. PREPARAR y DECIDIR: Llamar a prepare_context para determinar el camino.
+        # 2. PREPARE and DECIDE: Call prepare_context to determine the path.
         prep_result = self.query_service.prepare_context(
-            company_short_name=company_short_name, local_user_id=user_id
+            company_short_name=company_short_name, user_identifier=str(user_id)
         )
 
         if prep_result.get('rebuild_needed'):
-            # --- CAMINO LENTO: Se necesita reconstrucción ---
-            # Mostramos el shell, que llamará a LoginView para el trabajo pesado.
+            # --- SLOW PATH: Context rebuild is needed ---
+            # Render the shell, which will call LoginView for the heavy lifting.
             branding_data = self.branding_service.get_company_branding(company)
             onboarding_cards = self.onboarding_service.get_onboarding_cards(company)
             target_url = url_for('login', company_short_name=company_short_name, _external=True)
@@ -77,8 +80,8 @@ class InitiateLoginView(MethodView):
                 onboarding_cards=onboarding_cards
             )
         else:
-            # --- CAMINO RÁPIDO: El contexto ya está en caché ---
-            # Renderizamos el chat directamente.
+            # --- FAST PATH: Context is already cached ---
+            # Render chat.html directly.
             try:
                 prompts = self.prompt_service.get_user_prompts(company_short_name)
                 branding_data = self.branding_service.get_company_branding(company)
@@ -94,7 +97,7 @@ class InitiateLoginView(MethodView):
                                        ), 200
             except Exception as e:
                 return render_template("error.html", company=company, company_short_name=company_short_name,
-                                       message=f"Error inesperado en el camino rápido: {str(e)}"), 500
+                                       message=f"Error in fast path: {str(e)}"), 500
 
 
 class LoginView(MethodView):
@@ -115,13 +118,13 @@ class LoginView(MethodView):
         self.branding_service = branding_service
 
     def get(self, company_short_name: str):
-        """
-        Handles the finalization of the context rebuild.
-        """
-        user_profile = self.profile_service.get_current_user_profile()
-        user_id = user_profile.get('id')
-        if not user_id:
-            # Si la sesión expira en medio del proceso, redirigir al login
+        # 1. Use the new centralized method to get session info.
+        session_info = self.profile_service.get_current_session_info()
+        user_identifier = session_info.get('user_identifier')
+        user_profile = session_info.get('profile', {})
+
+        if not user_identifier:
+            # This can happen if the session expires or is invalid.
             return redirect(url_for('login_page', company_short_name=company_short_name))
 
         company = self.profile_service.get_company_by_short_name(company_short_name)
@@ -129,21 +132,24 @@ class LoginView(MethodView):
             return render_template('error.html', message="Empresa no encontrada"), 404
 
         try:
-            # 1. Ejecutar la finalización (la operación potencialmente LENTA de 30s)
+            # 2. Finalize the context rebuild (the potentially long-running task).
+            # We pass the identifier, and the service resolves if it's local or external.
             self.query_service.finalize_context_rebuild(
                 company_short_name=company_short_name,
-                local_user_id=user_id
+                user_identifier=user_identifier
             )
 
-            # 2. Obtener datos y renderizar el chat
+            # 3. Get the necessary data for the chat page.
             prompts = self.prompt_service.get_user_prompts(company_short_name)
             branding_data = self.branding_service.get_company_branding(company)
 
+            # 4. Render the final chat page.
             return render_template("chat.html",
                                    company_short_name=company_short_name,
                                    auth_method="Session",
                                    session_jwt=None,
-                                   user_email=user_profile.get('email'),
+                                   user_email=user_profile.get('email', user_identifier),
+                                   external_user_id=user_identifier if not user_profile.get('user_is_local') else '',
                                    branding=branding_data,
                                    prompts=prompts,
                                    iatoolkit_base_url=os.getenv('IATOOLKIT_BASE_URL'),
@@ -153,4 +159,4 @@ class LoginView(MethodView):
             return render_template("error.html",
                                    company=company,
                                    company_short_name=company_short_name,
-                                   message=f"Ha ocurrido un error inesperado durante la carga del contexto: {str(e)}"), 500
+                                   message=f"An unexpected error occurred during context loading: {str(e)}"), 500

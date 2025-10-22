@@ -8,7 +8,7 @@ from unittest.mock import MagicMock
 from flask import Flask
 from iatoolkit.views.prompt_view import PromptView
 from iatoolkit.services.prompt_manager_service import PromptService
-from iatoolkit.common.auth import IAuthentication
+from iatoolkit.services.auth_service import AuthService
 
 
 class TestPromptView:
@@ -25,7 +25,7 @@ class TestPromptView:
         self.app = self.create_app()
         self.client = self.app.test_client()
         self.prompt_service = MagicMock(spec=PromptService)
-        self.iauthentication = MagicMock(spec=IAuthentication)
+        self.iauthentication = MagicMock(spec=AuthService)
 
         # Default to successful authentication
         self.iauthentication.verify.return_value = {'success': True}

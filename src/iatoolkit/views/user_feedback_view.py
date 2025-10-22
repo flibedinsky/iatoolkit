@@ -6,7 +6,7 @@
 from flask import request, jsonify, render_template
 from flask.views import MethodView
 from iatoolkit.services.user_feedback_service import UserFeedbackService
-from iatoolkit.common.auth import IAuthentication
+from iatoolkit.services.auth_service import AuthService
 from injector import inject
 import logging
 
@@ -14,7 +14,7 @@ import logging
 class UserFeedbackView(MethodView):
     @inject
     def __init__(self,
-                 iauthentication: IAuthentication,
+                 iauthentication: AuthService,
                  user_feedback_service: UserFeedbackService ):
         self.iauthentication = iauthentication
         self.user_feedback_service = user_feedback_service

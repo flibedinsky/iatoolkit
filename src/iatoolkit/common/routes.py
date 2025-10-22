@@ -20,18 +20,19 @@ def logout(company_short_name: str):
 def register_views(injector, app):
 
     from iatoolkit.views.index_view import IndexView
-    from iatoolkit.views.init_context_view import InitContextView
-    from iatoolkit.views.llmquery_view import LLMQueryView
+    from iatoolkit.views.init_context_api_view import InitContextApiView
+    from iatoolkit.views.llmquery_web_view import LLMQueryWebView
+    from iatoolkit.views.llmquery_api_view import LLMQueryApiView
     from iatoolkit.views.tasks_view import TaskView
     from iatoolkit.views.tasks_review_view import TaskReviewView
     from iatoolkit.views.login_test_view import LoginTest
     from iatoolkit.views.login_view import LoginView, InitiateLoginView
-    from iatoolkit.views.external_login_view import InitiateExternalChatView, ExternalChatLoginView
+    from iatoolkit.views.external_login_view import InitiateExternalChatView
     from iatoolkit.views.signup_view import SignupView
     from iatoolkit.views.verify_user_view import VerifyAccountView
     from iatoolkit.views.forgot_password_view import ForgotPasswordView
     from iatoolkit.views.change_password_view import ChangePasswordView
-    from iatoolkit.views.file_store_view import FileStoreView
+    from iatoolkit.views.file_store_api_view import FileStoreApiView
     from iatoolkit.views.user_feedback_view import UserFeedbackView
     from iatoolkit.views.prompt_view import PromptView
     from iatoolkit.views.chat_token_request_view import ChatTokenRequestView
@@ -40,15 +41,13 @@ def register_views(injector, app):
     app.add_url_rule('/<company_short_name>', view_func=IndexView.as_view('index'))
 
     # init (reset) the company context (with api-key)
-    app.add_url_rule('/<company_short_name>//init-context',
-                         view_func=InitContextView.as_view('init-context'))
+    app.add_url_rule('/<company_short_name>/api/init_context_api',
+                     view_func=InitContextApiView.as_view('init_context_api'))
 
     # this functions are for login external users (with api-key)
     # only the first one should be used from an external app
     app.add_url_rule('/<company_short_name>/initiate_external_chat',
                      view_func=InitiateExternalChatView.as_view('initiate_external_chat'))
-    app.add_url_rule('/<company_short_name>/external_login',
-                     view_func=ExternalChatLoginView.as_view('external_login'))
 
     # this endpoint is for requesting a chat token for external users
     app.add_url_rule('/auth/chat_token',
@@ -69,7 +68,10 @@ def register_views(injector, app):
 
     # main chat query, used by the JS in the browser (with credentials)
     # can be used also for executing iatoolkit prompts
-    app.add_url_rule('/<company_short_name>/llm_query', view_func=LLMQueryView.as_view('llm_query'))
+    app.add_url_rule('/<company_short_name>/llm_query', view_func=LLMQueryWebView.as_view('llm_query_web'))
+
+    # this is the same function as above, but with api-key
+    app.add_url_rule('/<company_short_name>/api/llm_query', view_func=LLMQueryApiView.as_view('llm_query_api'))
 
     # chat buttons are here
 
@@ -85,7 +87,7 @@ def register_views(injector, app):
     app.add_url_rule('/tasks/review/<int:task_id>', view_func=TaskReviewView.as_view('tasks-review'))
 
     # this endpoint is for upload documents into the vector store (api-key)
-    app.add_url_rule('/load', view_func=FileStoreView.as_view('load'))
+    app.add_url_rule('/api/load', view_func=FileStoreApiView.as_view('load_api'))
 
 
     @app.route('/download/<path:filename>')

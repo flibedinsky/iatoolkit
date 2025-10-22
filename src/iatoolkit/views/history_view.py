@@ -6,7 +6,7 @@
 from flask import request, jsonify, render_template
 from flask.views import MethodView
 from iatoolkit.services.history_service import HistoryService
-from iatoolkit.common.auth import IAuthentication
+from iatoolkit.services.auth_service import AuthService
 from injector import inject
 import logging
 
@@ -14,7 +14,7 @@ import logging
 class HistoryView(MethodView):
     @inject
     def __init__(self,
-                 iauthentication: IAuthentication,
+                 iauthentication: AuthService,
                  history_service: HistoryService ):
         self.iauthentication = iauthentication
         self.history_service = history_service
@@ -29,7 +29,7 @@ class HistoryView(MethodView):
             return jsonify({"error_message": "Cuerpo de la solicitud JSON inválido o faltante"}), 400
 
         # get access credentials
-        iaut = self.iauthentication.verify(company_short_name, data.get("external_user_id"))
+        iaut = self.iauthentication.verify()
         if not iaut.get("success"):
             return jsonify(iaut), 401
 

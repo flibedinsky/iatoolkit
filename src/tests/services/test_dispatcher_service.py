@@ -91,7 +91,6 @@ class TestDispatcher:
         # Initialize the Dispatcher within the patched context
         self.dispatcher = Dispatcher(
             prompt_service=self.mock_prompt_manager,
-            profile_service=self.profile_service,
             llmquery_repo=self.mock_llm_query_repo,
             util=self.util,
             excel_service=self.excel_service,
@@ -190,36 +189,22 @@ class TestDispatcher:
         expected_user_data = {"email": "external@example.com"}
         self.mock_sample_company_instance.get_user_info.return_value = expected_user_data
 
-        result = self.dispatcher.get_user_info("sample", user_identifier, is_local_user=False)
+        result = self.dispatcher.get_user_info("sample", user_identifier)
 
         self.mock_sample_company_instance.get_user_info.assert_called_once_with(user_identifier)
         assert result["user_email"] == "external@example.com"
-        assert not result["is_local"]
 
     def test_get_user_info_external_user_company_exception(self):
         """Tests get_user_info for an external user when the company method fails."""
         self.mock_sample_company_instance.get_user_info.side_effect = Exception("DB error")
         with pytest.raises(IAToolkitException) as excinfo:
-            self.dispatcher.get_user_info("sample", "ext_user_123", is_local_user=False)
+            self.dispatcher.get_user_info("sample", "ext_user_123")
         assert "Error en get_user_info de sample" in str(excinfo.value)
-
-    def test_get_user_info_local_user(self):
-        """Tests get_user_info for a local user from session."""
-        user_identifier = "local_user_1"
-        session_data = {"email": "local@iatoolkit.com", "user_fullname": "Local User"}
-        self.profile_service.get_current_user_profile.return_value = session_data
-
-        result = self.dispatcher.get_user_info("sample", user_identifier, is_local_user=True)
-
-        self.mock_sample_company_instance.get_user_info.assert_not_called()
-        assert result["user_email"] == "local@iatoolkit.com"
-        assert result["user_fullname"] == "Local User"
-        assert result["is_local"]
 
     def test_get_user_info_invalid_company(self):
         """Tests get_user_info with an invalid company."""
         with pytest.raises(IAToolkitException) as excinfo:
-            self.dispatcher.get_user_info("invalid_company", "any_user", is_local_user=False)
+            self.dispatcher.get_user_info("invalid_company", "any_user")
         assert "Empresa no configurada: invalid_company" in str(excinfo.value)
 
     def test_get_company_services(self):
@@ -259,7 +244,6 @@ class TestDispatcher:
         with patch('iatoolkit.iatoolkit.IAToolkit.get_instance', return_value=toolkit_mock):
             dispatcher = Dispatcher(
                 prompt_service=self.mock_prompt_manager,
-                profile_service=self.profile_service,
                 llmquery_repo=self.mock_llm_query_repo,
                 util=self.util,
                 excel_service=self.excel_service,

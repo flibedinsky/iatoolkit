@@ -5,6 +5,7 @@
 
 from injector import inject
 from iatoolkit.repositories.profile_repo import ProfileRepo
+from iatoolkit.services.dispatcher_service import Dispatcher
 from iatoolkit.repositories.models import User, Company, ApiKey
 from flask_bcrypt import check_password_hash
 from iatoolkit.common.session_manager import SessionManager
@@ -17,6 +18,7 @@ import re
 import secrets
 import string
 from datetime import datetime, timezone
+from iatoolkit.services.dispatcher_service import Dispatcher
 
 
 class ProfileService:
@@ -24,8 +26,10 @@ class ProfileService:
     def __init__(self,
                  profile_repo: ProfileRepo,
                  session_context_service: UserSessionContextService,
+                 dispatcher: Dispatcher,
                  mail_app: MailApp):
         self.profile_repo = profile_repo
+        self.dispatcher = dispatcher
         self.session_context = session_context_service
         self.mail_app = mail_app
         self.bcrypt = Bcrypt()
@@ -42,7 +46,7 @@ class ProfileService:
             if not check_password_hash(user.password, password):
                 return {'success': False, "message": "Contraseña inválida"}
 
-            company = self.get_company_by_short_name(company_short_name)
+            company = self.profile_repo.get_company_by_short_name(company_short_name)
             if not company:
                 return {'success': False, "message": "Empresa no encontrada"}
 
@@ -54,69 +58,79 @@ class ProfileService:
                 return {'success': False,
                         "message": "Tu cuenta no ha sido verificada. Por favor, revisa tu correo."}
 
-            # save user data into session manager
-            self.set_user_session(user=user, company=company)
+            # 1. Build the local user profile dictionary here.
+            user_profile = {
+                "id": user.id,
+                "user_id": str(user.id),
+                "email": user.email,
+                "user_fullname": f'{user.first_name} {user.last_name}',
+                "company_id": company.id,
+                "company": company.name,
+                "company_short_name": company.short_name,
+                "user_is_local": True,
+                "extras": {}
+            }
 
+            # 2. Call the session creation helper with the pre-built profile.
+            self.create_web_session(company, str(user.id), user_profile)
             return {'success': True, "user": user, "message": "Login exitoso"}
         except Exception as e:
             return {'success': False, "message": str(e)}
 
+    def create_external_user_session(self, company: Company, external_user_id: str):
+        """
+        Public method for views to create a web session for an external user.
+        """
+        # 1. Fetch the profile from the external system via Dispatcher.
+        user_profile = self.dispatcher.get_user_info(
+            company_name=company.short_name,
+            user_identifier=external_user_id
+        )
+        user_profile['user_id'] = external_user_id
+        # 2. Call the session creation helper.
+        self.create_web_session(company, external_user_id, user_profile)
 
-    def set_user_session(self, user: User, company: Company):
-
-        # define the user data dictionary here
-        user_profile = {
-            "id": user.id,
-            "user_id": user.id,
-            "email": user.email,
-            "user_fullname": f'{user.first_name} {user.last_name}',
-            "company_id": company.id,
-            "company": company.name,
-            "company_short_name": company.short_name,
-            "user_is_local": True,
-            "last_activity": datetime.now(timezone.utc).timestamp(),
-            "extras": {}
-        }
-
-        # save the user_profile in the persistent context
-        self.session_context.save_profile_data(company.short_name, str(user.id), user_profile)
-
-        # this should be deleted
-        SessionManager.set('user', user_profile)
-
-        # save time session was activated (in timestamp format)
-        SessionManager.set('last_activity', datetime.now(timezone.utc).timestamp())
-
-        # save minimum identifiers in the Flask session for identify the user on every request
-        SessionManager.set('user_id', user.id)
+    def create_web_session(self, company: Company, user_identifier: str, user_profile: dict):
+        """
+        Private helper: Takes a pre-built profile, saves it to Redis, and sets the Flask cookie.
+        """
+        user_profile['last_activity'] = datetime.now(timezone.utc).timestamp()
+        self.session_context.save_profile_data(company.short_name, user_identifier, user_profile)
+        SessionManager.set('user_identifier', user_identifier)
         SessionManager.set('company_short_name', company.short_name)
-        SessionManager.set('company_id', company.id)
 
-
-    def get_current_user_profile(self) -> dict:
+    def get_current_session_info(self) -> dict:
         """
-        Devuelve el perfil del usuario para la solicitud actual, sin importar si es una sesión
-        antigua (solo en Flask Session) o nueva (en Redis Hash).
-        """
-        user_id = SessionManager.get('user_id')
+         Gets the current web user's profile from the unified session.
+         This is the standard way to access user data for web requests.
+         """
+        # 1. Get identifiers from the simple Flask session cookie.
+        # BUG FIX: Read 'user_identifier' to match what is written by _create_unified_session.
+        user_identifier = SessionManager.get('user_identifier')
         company_short_name = SessionManager.get('company_short_name')
 
-        if not user_id or not company_short_name:
-            return {}       # No hay sesión activa
+        if not user_identifier or not company_short_name:
+            # No authenticated web user.
+            return {}
 
-        # Prioridad 1: Leer del nuevo sistema unificado
-        profile = self.session_context.get_profile_data(company_short_name, str(user_id))
-        if profile:
-            return profile
+        # 2. Use the identifiers to fetch the full, authoritative profile from Redis.
+        profile = self.session_context.get_profile_data(company_short_name, user_identifier)
 
-        # Prioridad 2 (Fallback): Es una sesión antigua, leer de Flask Session
-        legacy_profile = SessionManager.get('user', {})
-        if legacy_profile:
-            # Auto-migración: Guardar en el nuevo sistema para la próxima vez
-            self.session_context.save_profile_data(company_short_name, str(user_id), legacy_profile)
-            return legacy_profile
+        return {
+            "user_identifier": user_identifier,
+            "company_short_name": company_short_name,
+            "profile": profile
+        }
 
-        return {}
+    def get_profile_by_identifier(self, company_short_name: str, user_identifier: str) -> dict:
+        """
+        Fetches a user profile directly by their identifier, bypassing the Flask session.
+        This is ideal for API-side checks.
+        """
+        if not company_short_name or not user_identifier:
+            return {}
+        return self.session_context.get_profile_data(company_short_name, user_identifier)
+
 
     def signup(self,
                company_short_name: str,
@@ -129,7 +143,7 @@ class ProfileService:
         try:
 
             # get company info
-            company = self.get_company_by_short_name(company_short_name)
+            company = self.profile_repo.get_company_by_short_name(company_short_name)
             if not company:
                 return {"error": f"la empresa {company_short_name} no existe"}
 

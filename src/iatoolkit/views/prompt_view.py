@@ -6,7 +6,7 @@
 from flask import jsonify
 from flask.views import MethodView
 from iatoolkit.services.prompt_manager_service import PromptService
-from iatoolkit.common.auth import IAuthentication
+from iatoolkit.services.auth_service import AuthService
 from injector import inject
 import logging
 
@@ -14,7 +14,7 @@ import logging
 class PromptView(MethodView):
     @inject
     def __init__(self,
-                 iauthentication: IAuthentication,
+                 iauthentication: AuthService,
                  prompt_service: PromptService ):
         self.iauthentication = iauthentication
         self.prompt_service = prompt_service
