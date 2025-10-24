@@ -1,150 +1,118 @@
 {% extends "base.html" %}
 
-{% block title %}Inicio - IAToolkit{% endblock %}
+{% block title %}Prueba de Login para {{ branding.name }}{% endblock %}
+
+{% block styles %}
+{# Este bloque asegura que los colores de la marca estén disponibles como variables CSS #}
+{% if branding and branding.css_variables %}
+<style>
+  {{ branding.css_variables|safe }}
+  /* Usa la variable de CSS para el color primario del botón */
+  #initiateJwtChatButton {
+    background-color: var(--brand-primary-color, #0d6efd);
+    border-color: var(--brand-primary-color, #0d6efd);
+  }
+</style>
+{% endif %}
+{% endblock %}
 
 {% block content %}
-
-  <!-- Contenido principal con espaciado adicional respecto al header -->
-  <div class="row flex-fill mt-5 flex-wrap">
-
-
-    <!-- login desde sistema  externo -->
-    <div class="col-12 col-lg-5 offset-lg-1">
-      <div class="border rounded p-4 shadow-sm bg-light">
-        <h3 class="text-muted fw-semibold text-start mb-3">login externo (api-key)</h3>
-          <div class="text-center mb-4">
-            <p class="text-muted widget-intro-text">
-            Este formulario permite testear el acceso a IAToolkit desde un portal externo utilizando una api-key.
-                El external user ID es el nombre del usuario ya autentificado en algún portal interno de la empresa.
-            </p>
+<div class="container-fluid">
+  <div class="row flex-fill mt-5 justify-content-center">
+    <!-- login desde sistema externo -->
+    <div class="col-12 col-lg-6">
+      <div class="border rounded p-4 p-md-5 shadow-sm bg-light">
+        {# El título ahora muestra dinámicamente el nombre de la empresa #}
+        <h3 class="text-muted fw-semibold text-start mb-3">
+          Login Externo para <span style="color: var(--brand-primary-color, #0d6efd);">{{ branding.name }}</span>
+        </h3>
+        <div class="text-center mb-4">
+          <p class="text-muted widget-intro-text">
+            Este formulario permite testear el acceso a IAToolkit desde un portal externo utilizando una api-key. El external user ID es el nombre del usuario ya autentificado en algún portal interno de la empresa.
+          </p>
         </div>
-        <form id="jwt-form"  method="post">
-          <div class="mb-3">
-            <label for="company_name" class="form-label d-block">Empresa</label>
-            <select id="company_name" name="company_short_name" class="form-select" required>
-              <option value="" disabled selected>Selecciona una empresa</option>
-                {% for company in companies %}
-                    {% if company.allow_jwt %}
-                      <option value="{{ company.short_name }}"> {{ company.short_name }}
-                      </option>
-                  {% endif %}
-                {% endfor %}
-            </select>
-        </div>
+
+        {# El 'action' y 'method' son manejados por JS, pero el id es crucial #}
+        <form id="jwt-form">
 
           <div class="mb-3">
             <label for="external_user_id" class="form-label d-block">External user ID</label>
             <input type="text" id="external_user_id" name="external_user_id" class="form-control" required>
           </div>
 
-          <button type="button"
-                  id="initiateJwtChatButton"
-                  class="ml-5 btn btn-primary">
-              <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
-              Iniciar Sesión
+          <button type="submit" id="initiateJwtChatButton" class="btn btn-primary">
+            <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+            Iniciar Sesión
           </button>
         </form>
       </div>
     </div>
-
   </div>
-
+</div>
 {% endblock %}
 
 {% block scripts %}
-
 <script>
-  // Variables pasadas desde Flask (HomeView)
-  const API_KEY = "{{ api_key|safe }}";
+  document.addEventListener('DOMContentLoaded', function() {
+    const companyShortName = "{{ company_short_name }}";
+    const apiKey = "{{ api_key }}";
+    const loginForm = document.getElementById('jwt-form');
+    const userIdInput = document.getElementById('external_user_id');
+    const submitButton = document.getElementById('initiateJwtChatButton');
+    const spinner = submitButton.querySelector('.spinner-border');
 
-  $(document).ready(function () {
-      // Función para actualizar el enlace de "Registrarse" y el action del formulario "Iniciar Sesión"
-      function updateLinksAndForm() {
-          const selectedCompany = $('#company_short_name').val(); // Obtenemos el valor del select
+    loginForm.addEventListener('submit', function(event) {
+      event.preventDefault();
+      const userIdentifier = userIdInput.value.trim();
+      if (!userIdentifier) return;
 
-          // Actualizar enlace "Registrarse"
-          if (selectedCompany && selectedCompany.trim() !== '') {
-              const signupUrl = '/' + selectedCompany + '/signup';
-              $('#signup-link').attr('href', signupUrl); // Actualizamos el href del botón "Registrarse"
-          } else {
-              $('#signup-link').attr('href', '#'); // Enlace a "#" si no hay empresa seleccionada
-          }
+      // Deshabilitar botón y mostrar spinner
+      submitButton.disabled = true;
+      spinner.classList.remove('d-none');
 
-          // Actualizar action del formulario "Iniciar Sesión"
-          if (selectedCompany && selectedCompany.trim() !== '') {
-              const loginAction = '/' + selectedCompany + '/external_login';
-              $('#login-form').attr('action', loginAction); // Actualizamos la URL del form
-          } else {
-              $('#login-form').attr('action', '#'); // URL genérica si no hay selección
-          }
-      }
+      const newWindow = window.open('', '_blank');
+      const apiUrl = `/${companyShortName}/external_login`;
 
-      // Actualizamos al cargar la página
-      updateLinksAndForm();
-
-      // Escuchamos el evento de cambio en el dropdown para actualizar dinámicamente
-      $('#company_short_name').on('change', function () {
-          updateLinksAndForm();
-      });
-
-      // Interceptamos el click en "Registrarse"
-    $('#signup-link').on('click', function (e) {
-        const selectedCompany = $('#company_short_name').val();
-
-        if (!selectedCompany || selectedCompany.trim() === '') {
-            e.preventDefault(); // evitar navegación al #
-            Swal.fire({
-                icon: 'warning',
-                title: 'Empresa no seleccionada',
-                text: 'Por favor, selecciona una empresa antes de registrarte.'
-            });
-        }
-    });
-
-      // Event listener para el botón de "Abrir Chat (JWT)"
-      $('#initiateJwtChatButton').on('click', function() {
-
-          const selectedCompany = $('#company_name').val();
-          const externalUserId = $('#external_user_id').val();
-
-          if (!selectedCompany || !externalUserId.trim()) {
-              Swal.fire({ icon: 'warning', title: 'Campos Requeridos', text: 'Por favor, selecciona una empresa e ingresa un ID de usuario.' });
-              return;
-          }
-          if (!API_KEY || API_KEY.includes("defecto")) {
-              Swal.fire({ icon: 'error', title: 'Error de Configuración', text: 'La API Key de la aplicación no está disponible.' });
-              return;
-          }
-
-          fetch(`/${selectedCompany}/external_login`, {
-              method: 'POST',
-              headers: {
+      fetch(apiUrl, {
+        method: 'POST',
+        headers: {
                   'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${API_KEY}`
+                  'Authorization': `Bearer ${apiKey}`
               },
-              body: JSON.stringify({
-                  external_user_id: externalUserId
-              })
-          })
-          .then(async response => {
-              if (response.ok) { // Si el status es 200, la respuesta es el HTML
-                  return response.text();
-              } else { // Si hay un error, el cuerpo es JSON
-                  const errorData = await response.json();
-                  throw new Error(errorData.error || 'Ocurrió un error desconocido.');
-              }
-          })
-          .then(htmlContent => {
-              // Éxito: Abrimos el HTML que nos devolvió el servidor en una nueva pestaña.
-              const newTab = window.open();
-              newTab.document.write(htmlContent);
-              newTab.document.close();
-          })
-          .catch(error => {
-              Swal.fire({ icon: 'error', title: 'Error de Inicio de Sesión', text: error.message });
-          })
+        body: JSON.stringify({ external_user_id: userIdentifier })
+      })
+      .then(response => response.ok ? response.text() : response.text().then(text => { throw new Error(text) }))
+      .then(html => {
+          newWindow.document.documentElement.innerHTML = html;
+                  // Buscamos todos los scripts en el HTML inyectado y los re-ejecutamos.
+        const scripts = newWindow.document.querySelectorAll('script');
+        scripts.forEach(oldScript => {
+          const newScript = newWindow.document.createElement('script');
 
-       });
+          // Copiamos los atributos (como 'src' para archivos externos)
+          Array.from(oldScript.attributes).forEach(attr => {
+            newScript.setAttribute(attr.name, attr.value);
+          });
+
+          // Copiamos el contenido para scripts inline
+          newScript.appendChild(newWindow.document.createTextNode(oldScript.innerHTML));
+
+          // Reemplazamos el script viejo por el nuevo para que se ejecute.
+          oldScript.parentNode.replaceChild(newScript, oldScript);
+        });
+
+      })
+      .catch(error => {
+        console.error("Falló la prueba de login externo:", error);
+        const errorMessage = error.message || "Error desconocido.";
+        newWindow.document.body.innerHTML = `<div style="padding: 20px; font-family: monospace;"><h2>Error</h2><pre>${errorMessage}</pre></div>`;
+      })
+      .finally(() => {
+        // Volver a habilitar el botón y ocultar el spinner
+        submitButton.disabled = false;
+        spinner.classList.add('d-none');
+      });
+    });
   });
 </script>
 {% endblock %}

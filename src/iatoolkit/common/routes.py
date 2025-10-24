@@ -25,7 +25,7 @@ def register_views(injector, app):
     from iatoolkit.views.llmquery_api_view import LLMQueryApiView
     from iatoolkit.views.tasks_view import TaskView
     from iatoolkit.views.tasks_review_view import TaskReviewView
-    from iatoolkit.views.login_test_view import LoginTest
+    from iatoolkit.views.login_simulation_view import LoginSimulationView
     from iatoolkit.views.login_view import LoginView, FinalizeContextView
     from iatoolkit.views.external_login_view import ExternalLoginView
     from iatoolkit.views.signup_view import SignupView
@@ -112,7 +112,8 @@ def register_views(injector, app):
             abort(404)
 
     # login testing (old home page)
-    app.add_url_rule('/login_test', view_func=LoginTest.as_view('login_test'))
+    app.add_url_rule('/login_test/<company_short_name>/<external_user_id>',
+                     view_func=LoginSimulationView.as_view('login_test'))
 
     app.add_url_rule(
         '/about',  # URL de la ruta

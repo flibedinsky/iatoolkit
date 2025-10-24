@@ -3,9 +3,20 @@
 {% block title %}Iniciando {{ branding.name | default('IAToolkit') }} IA...{% endblock %}
 
 {% block styles %}
+{% endblock %}
+
+{% block content %}
+
 <link rel="stylesheet" href="{{ url_for('static', filename='styles/llm_output.css', _external=True) }}?v=6">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/onboarding.css', _external=True) }}?v=6">
+<link rel="stylesheet" href="{{ url_for('static', filename='styles/onboarding.css', _external=True) }}?v=6">
+
 <style>
+  {# 1. Definimos las variables de la marca PRIMERO #}
+  {% if branding and branding.css_variables %}
+    {{ branding.css_variables|safe }}
+  {% endif %}
+
+  {# 2. Ahora definimos las reglas que usan esas variables #}
   .onboarding-shell-root { position: relative; height: 100vh; }
   .onboarding-shell-root #loader-wrapper { position: absolute; inset: 0; background: #f4f7f6; z-index: 1000; display:flex; align-items:center; justify-content:center; padding:20px; box-sizing:border-box; transition: opacity .5s; }
   .onboarding-shell-root .ob-stack { width:100%; max-width:520px; display:flex; flex-direction:column; gap:16px; }
@@ -22,14 +33,7 @@
   .onboarding-shell-root .ob-btn { background-color: var(--brand-secondary-color, #06326B) !important; color: var(--brand-text-on-secondary, #FFFFFF) !important; border:none !important; }
   .onboarding-shell-root .ob-dots > div.active { background-color: var(--brand-primary-color, #FF5100) !important; }
 </style>
-{% if branding and branding.css_variables %}
-<style>
-  {{ branding.css_variables|safe }}
-</style>
-{% endif %}
-{% endblock %}
 
-{% block content %}
 <div class="onboarding-shell-root ob-root">
   <div id="loader-wrapper">
     <div class="ob-stack">

@@ -84,7 +84,7 @@ class FinalizeContextView(MethodView):
 
         if not user_identifier:
             # This can happen if the session expires or is invalid.
-            return redirect(url_for('login_page', company_short_name=company_short_name))
+            return redirect(url_for('index', company_short_name=company_short_name))
 
         company = self.profile_service.get_company_by_short_name(company_short_name)
         if not company:

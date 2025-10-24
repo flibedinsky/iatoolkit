@@ -4,12 +4,15 @@
 
 {% block content %}
 
-<style>
-    {{ branding.css_variables | safe }}
-</style>
-<link rel="stylesheet" href="{{ url_for('static', filename='css/onboarding.css', _external=True) }}">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+{% block styles %}
+    {# Movemos los estilos y los links aquí para que se rendericen en el <head> #}
+    <style>
+        {{ branding.css_variables | safe }}
+    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/onboarding.css', _external=True) }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+{% endblock %}
 
 <!-- Sección de encabezado con el usuario conectado -->
 <div id="company-section" class="company-section d-flex justify-content-between align-items-center px-3 py-2"
@@ -59,12 +62,10 @@
         </a>
 
         <!-- Icono de cerrar sesión (al final) -->
-        {% if user_is_local %}
-            <a href="{{ url_for('logout', company_short_name=company_short_name, _external=True) }}"
-                 class="ms-3 action-icon-style" title="Cerrar sesión" style="color: {{ branding.header_text_color }} !important;">
-                <i class="bi bi-box-arrow-right"></i>
-            </a>
-        {% endif %}
+        <a href="{{ url_for('logout', company_short_name=company_short_name, _external=True) }}"
+           class="ms-3 action-icon-style" title="Cerrar sesión" style="color: {{ branding.header_text_color }} !important;">
+            <i class="bi bi-box-arrow-right"></i>
+        </a>
     </div>
 
 </div>

@@ -71,9 +71,9 @@ class TestLoginView:
         )
 
         # Minimal endpoint used by FinalizeContextView redirect
-        @self.app.route("/<company_short_name>/login_page", endpoint="login_page")
-        def login_page(company_short_name):
-            return "Login Page", 200
+        @self.app.route("/<company_short_name>/index", endpoint="index")
+        def index(company_short_name):
+            return "Index Page", 200
 
         # Common test values
         self.company_short_name = "acme"
@@ -169,7 +169,7 @@ class TestLoginView:
         resp = self.client.get(f"/{self.company_short_name}/login")
 
         assert resp.status_code == 302
-        assert resp.headers["Location"].endswith(f"/{self.company_short_name}/login_page")
+        assert resp.headers["Location"].endswith(f"/{self.company_short_name}/index")
 
     def test_finalize_exception_renders_error_with_500(self):
         """If finalize fails, it should render error.html with 500."""
