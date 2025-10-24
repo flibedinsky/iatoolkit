@@ -36,15 +36,18 @@ class BaseLoginView(MethodView):
         """
         Centralized logic to decide between the fast path and the slow path.
         """
+        # --- Get the company branding ---
+        branding_data = self.branding_service.get_company_branding(company)
+
+        # this service decides is the context needs to be rebuilt or not
         prep_result = self.query_service.prepare_context(
             company_short_name=company_short_name, user_identifier=user_identifier
         )
-
-        branding_data = self.branding_service.get_company_branding(company)
-
         if prep_result.get('rebuild_needed'):
             # --- SLOW PATH: Render the loading shell ---
             onboarding_cards = self.onboarding_service.get_onboarding_cards(company)
+
+            # callback url to call when the context finish loading
             target_url = url_for('finalize_context_load', company_short_name=company_short_name, _external=True)
 
             return render_template(
@@ -56,8 +59,10 @@ class BaseLoginView(MethodView):
         else:
             # --- FAST PATH: Render the chat page directly ---
             prompts = self.prompt_service.get_user_prompts(company_short_name)
+            onboarding_cards = self.onboarding_service.get_onboarding_cards(company)
             return render_template(
                 "chat.html",
                 branding=branding_data,
                 prompts=prompts,
+                onboarding_cards=onboarding_cards
             )

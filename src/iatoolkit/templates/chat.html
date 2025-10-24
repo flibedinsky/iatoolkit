@@ -7,6 +7,9 @@
 <style>
     {{ branding.css_variables | safe }}
 </style>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/onboarding.css', _external=True) }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
 <!-- Sección de encabezado con el usuario conectado -->
 <div id="company-section" class="company-section d-flex justify-content-between align-items-center px-3 py-2"
@@ -48,6 +51,11 @@
         <a href="javascript:void(0);" id="send-feedback-button"
            class="ms-3 action-icon-style" title="Tu feedback es muy importante" style="color: {{ branding.header_text_color }};">
             <i class="bi bi-emoji-smile"></i>
+        </a>
+        <a href="javascript:void(0);" id="onboarding-button"
+           class="ms-3 action-icon-style" title="Ver onboarding"
+           style="color: {{ branding.header_text_color }};">
+            <i class="bi bi-lightbulb"></i>
         </a>
 
         <!-- Icono de cerrar sesión (al final) -->
@@ -174,19 +182,15 @@
     window.iatoolkit_base_url = "{{ iatoolkit_base_url }}";
     window.availablePrompts = {{ prompts.message | tojson }};
     window.sendButtonColor = "{{ branding.send_button_color }}";
-
-    {% if auth_method == 'jwt' and session_jwt %}
-        // Store session JWT if it exists, defined in the same global scope
-        window.sessionJWT = "{{ session_jwt }}";
-    {% endif %}
+    window.onboardingCards = {{ onboarding_cards | tojson }};
 </script>
 
 <!-- Carga de los scripts JS externos después de definir las variables globales -->
+<script src="{{ url_for('static', filename='js/chat_onboarding.js', _external=True) }}"></script>
 <script src="{{ url_for('static', filename='js/chat_filepond.js', _external=True) }}"></script>
 <script src="{{ url_for('static', filename='js/chat_history.js', _external=True) }}"></script>
 <script src="{{ url_for('static', filename='js/chat_feedback.js', _external=True) }}"></script>
 <script src="{{ url_for('static', filename='js/chat_main.js', _external=True) }}"></script>
-
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
@@ -273,6 +277,45 @@ document.addEventListener('DOMContentLoaded', function() {
             icon.className = originalIconClass;
         });
     });
+});
+
+// Inicialización del modal de onboarding
+document.addEventListener('DOMContentLoaded', function () {
+  const btn = document.getElementById('onboarding-button');
+  if (!btn) return;
+
+  const modalEl = document.getElementById('onboardingModal');
+  const modal = new bootstrap.Modal(modalEl);
+
+  if (!window.initOnboarding) {
+    console.error('initOnboarding no disponible. Verifica chat_onboarding.js');
+    return;
+  }
+
+  const onboarding = initOnboarding({
+    mode: 'modal',
+    cards: Array.isArray(window.onboardingCards) ? window.onboardingCards : [],
+    ui: {
+      icon: '#ob-icon',
+      title: '#ob-title',
+      text: '#ob-text',
+      dots: '#ob-dots',
+      prev: '#ob-prev',
+      next: '#ob-next'
+    },
+    autoRotateMs: 5000
+  });
+
+  modalEl.addEventListener('hidden.bs.modal', () => onboarding.stop());
+
+  btn.addEventListener('click', () => {
+    if (!onboarding.hasCards()) {
+      toastr.info('No hay información de onboarding disponible.');
+      return;
+    }
+    onboarding.start();
+    modal.show();
+  });
 });
 </script>
 {% endblock %}

@@ -10,6 +10,7 @@ from iatoolkit.services.profile_service import ProfileService
 from iatoolkit.services.query_service import QueryService
 from iatoolkit.services.prompt_manager_service import PromptService
 from iatoolkit.services.branding_service import BrandingService
+from iatoolkit.services.onboarding_service import OnboardingService
 from iatoolkit.views.base_login_view import BaseLoginView
 
 
@@ -67,12 +68,14 @@ class FinalizeContextView(MethodView):
                  profile_service: ProfileService,
                  query_service: QueryService,
                  prompt_service: PromptService,
-                 branding_service: BrandingService
+                 branding_service: BrandingService,
+                 onboarding_service: OnboardingService
                  ):
         self.profile_service = profile_service
         self.query_service = query_service
         self.prompt_service = prompt_service
         self.branding_service = branding_service
+        self.onboarding_service = onboarding_service
 
     def get(self, company_short_name: str):
         # 1. Use the centralized method to get session info.
@@ -97,11 +100,13 @@ class FinalizeContextView(MethodView):
             # 3. render the chat page.
             prompts = self.prompt_service.get_user_prompts(company_short_name)
             branding_data = self.branding_service.get_company_branding(company)
+            onboarding_cards = self.onboarding_service.get_onboarding_cards(company)
 
             return render_template(
                 "chat.html",
                 branding=branding_data,
                 prompts=prompts,
+                onboarding_cards=onboarding_cards
             )
 
         except Exception as e:
