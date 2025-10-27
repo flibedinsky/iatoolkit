@@ -25,6 +25,7 @@ class TestBaseLoginView:
             "prompt_service": MagicMock(),
             "onboarding_service": MagicMock(),
             "query_service": MagicMock(),
+            "jwt_service": MagicMock(),
         }
         self.view_instance = BaseLoginView(**self.mock_services)
 
@@ -50,7 +51,7 @@ class TestBaseLoginView:
         # Flask app context required for url_for and render_template
         app = Flask(__name__)
         # Register route to satisfy url_for('chat', ...)
-        app.add_url_rule("/<company_short_name>/finalize_context_load", endpoint="finalize_context_load")
+        app.add_url_rule("/<company_short_name>/finalize_no_token", endpoint="finalize_no_token")
 
         with app.test_request_context():
             with patch("iatoolkit.views.base_login_view.render_template") as mock_rt:

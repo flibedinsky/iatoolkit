@@ -99,12 +99,15 @@ class ProfileService:
         user_profile['company_id'] = company.id
         user_profile['company'] = company.name
 
-        # user_profile['last_activity'] = datetime.now(timezone.utc).timestamp()
+        # save user_profile in Redis session
         self.session_context.save_profile_data(company.short_name, user_identifier, user_profile)
 
-        # save this values into Flask session cookie
+        # save a min Flask session cookie for this user
+        self.set_session_for_user(company.short_name, user_identifier)
+
+    def set_session_for_user(self, company_short_name: str, user_identifier:str ):
+        SessionManager.set('company_short_name', company_short_name)
         SessionManager.set('user_identifier', user_identifier)
-        SessionManager.set('company_short_name', company.short_name)
 
     def get_current_session_info(self) -> dict:
         """

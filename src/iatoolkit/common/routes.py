@@ -26,8 +26,6 @@ def register_views(injector, app):
     from iatoolkit.views.tasks_view import TaskView
     from iatoolkit.views.tasks_review_view import TaskReviewView
     from iatoolkit.views.login_simulation_view import LoginSimulationView
-    from iatoolkit.views.login_view import LoginView, FinalizeContextView
-    from iatoolkit.views.external_login_view import ExternalLoginView
     from iatoolkit.views.signup_view import SignupView
     from iatoolkit.views.verify_user_view import VerifyAccountView
     from iatoolkit.views.forgot_password_view import ForgotPasswordView
@@ -36,39 +34,42 @@ def register_views(injector, app):
     from iatoolkit.views.user_feedback_api_view import UserFeedbackApiView
     from iatoolkit.views.prompt_api_view import PromptApiView
     from iatoolkit.views.chat_token_request_view import ChatTokenRequestView
+    from iatoolkit.views.login_view import LoginView, FinalizeContextView
+    from iatoolkit.views.external_login_view import ExternalLoginView, RedeemTokenApiView
 
     # iatoolkit home page
     app.add_url_rule('/<company_short_name>', view_func=IndexView.as_view('index'))
 
-    # init (reset) the company context (with api-key)
-    app.add_url_rule('/<company_short_name>/api/init_context_api',
-                     view_func=InitContextApiView.as_view('init_context_api'))
+    # login for the iatoolkit integrated frontend
+    app.add_url_rule('/<company_short_name>/login', view_func=LoginView.as_view('login'))
 
-    # this functions are for login external users (with api-key)
-    # only the first one should be used from an external app
+    # this is the login for external users
     app.add_url_rule('/<company_short_name>/external_login',
                      view_func=ExternalLoginView.as_view('external_login'))
+
+    # this endpoint is called when onboarding_shell finish the context load
+    app.add_url_rule(
+        '/<company_short_name>/finalize',
+        view_func=FinalizeContextView.as_view('finalize_no_token')
+    )
+
+    app.add_url_rule(
+        '/<company_short_name>/finalize/<token>',
+        view_func=FinalizeContextView.as_view('finalize_with_token')
+    )
+
+    # this endpoint is called by the JS for changing the token for a session
+    app.add_url_rule('/<string:company_short_name>/api/redeem_token',
+                     view_func = RedeemTokenApiView.as_view('redeem_token'))
 
     # this endpoint is for requesting a chat token for external users
     app.add_url_rule('/auth/chat_token',
                      view_func=ChatTokenRequestView.as_view('chat-token'))
 
-    # login for the iatoolkit integrated frontend
-    # this is the main login endpoint for the frontend
-    app.add_url_rule('/<company_short_name>/login', view_func=LoginView.as_view('login'))
+    # init (reset) the company context (with api-key)
+    app.add_url_rule('/<company_short_name>/api/init_context_api',
+                     view_func=InitContextApiView.as_view('init_context_api'))
 
-    # Registramos dos veces la misma vista para manejar el parámetro opcional
-    # Esta ruta es para el flujo de login local (sin user_identifier en la URL)
-    app.add_url_rule(
-        '/<company_short_name>/finalize_context_load',
-        defaults={'user_identifier': None},
-        view_func=FinalizeContextView.as_view('finalize_context_load_default')
-    )
-    # Esta ruta es para el flujo de login externo (con user_identifier en la URL)
-    app.add_url_rule(
-        '/<company_short_name>/finalize_context_load/<user_identifier>',
-        view_func=FinalizeContextView.as_view('finalize_context_load')
-    )
     # register new user, account verification and forgot password
     app.add_url_rule('/<company_short_name>/signup',view_func=SignupView.as_view('signup'))
     app.add_url_rule('/<company_short_name>/logout', 'logout', logout)

@@ -99,5 +99,5 @@ class TestAuthService:
 
         # Assert
         assert result['success'] is False
-        assert result['status_code'] == 401
-        assert "No session cookie or API Key provided" in result['error']
+        assert result['status_code'] == 402
+        assert "Authentication required. No session cookie or API Key " in result['error']

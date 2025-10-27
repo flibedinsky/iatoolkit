@@ -12,6 +12,7 @@ from iatoolkit.services.query_service import QueryService
 from iatoolkit.services.branding_service import BrandingService
 from iatoolkit.services.onboarding_service import OnboardingService
 from iatoolkit.services.prompt_manager_service import PromptService
+from iatoolkit.services.jwt_service import JWTService
 
 
 class BaseLoginView(MethodView):
@@ -22,15 +23,19 @@ class BaseLoginView(MethodView):
     @inject
     def __init__(self,
                  profile_service: ProfileService,
+                 jwt_service: JWTService,
                  branding_service: BrandingService,
                  prompt_service: PromptService,
                  onboarding_service: OnboardingService,
-                 query_service: QueryService):
+                 query_service: QueryService
+                 ):
         self.profile_service = profile_service
+        self.jwt_service = jwt_service
         self.branding_service = branding_service
         self.prompt_service = prompt_service
         self.onboarding_service = onboarding_service
         self.query_service = query_service
+
 
     def _handle_login_path(self, company_short_name: str, user_identifier: str, company):
         """
@@ -43,18 +48,33 @@ class BaseLoginView(MethodView):
         prep_result = self.query_service.prepare_context(
             company_short_name=company_short_name, user_identifier=user_identifier
         )
+
+        # generate continuation token for external login
+        redeem_token = ''
+        if self.__class__.__name__ == 'ExternalLoginView':
+            redeem_token = self.jwt_service.generate_chat_jwt(
+                company_short_name=company_short_name,
+                user_identifier=user_identifier,
+                expires_delta_seconds=300
+            )
+
+            if not redeem_token:
+                return "Error al generar el redeem_token para login externo.", 500
+
         if prep_result.get('rebuild_needed'):
             # --- SLOW PATH: Render the loading shell ---
             onboarding_cards = self.onboarding_service.get_onboarding_cards(company)
 
             # callback url to call when the context finish loading
-            target_url = url_for(
-                'finalize_context_load',
-                company_short_name=company_short_name,
-                user_identifier=user_identifier,
-                _external=True
-            )
-
+            if redeem_token:
+                target_url = url_for('finalize_with_token',
+                                     company_short_name=company_short_name,
+                                     token=redeem_token,
+                                     _external=True)
+            else:
+                target_url = url_for('finalize_no_token',
+                                     company_short_name=company_short_name,
+                                     _external=True)
             return render_template(
                 "onboarding_shell.html",
                 iframe_src_url=target_url,
@@ -67,7 +87,10 @@ class BaseLoginView(MethodView):
             onboarding_cards = self.onboarding_service.get_onboarding_cards(company)
             return render_template(
                 "chat.html",
+                company_short_name=company_short_name,
+                user_identifier=user_identifier,
                 branding=branding_data,
                 prompts=prompts,
-                onboarding_cards=onboarding_cards
+                onboarding_cards=onboarding_cards,
+                redeem_token=redeem_token
             )

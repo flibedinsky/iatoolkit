@@ -25,6 +25,7 @@ class TestLoginView:
         self.branding_service = MagicMock()
         self.onboarding_service = MagicMock()
         self.prompt_service = MagicMock()
+        self.jwt_service = MagicMock()
 
         # Patch BaseLoginView.__init__ to inject mocks before as_view is called
         original_base_init = BaseLoginView.__init__
@@ -34,6 +35,7 @@ class TestLoginView:
             return original_base_init(
                 instance,
                 profile_service=self.profile_service,
+                jwt_service=self.jwt_service,
                 branding_service=self.branding_service,
                 prompt_service=self.prompt_service,
                 onboarding_service=self.onboarding_service,
@@ -54,6 +56,7 @@ class TestLoginView:
                 prompt_service=self.prompt_service,
                 branding_service=self.branding_service,
                 onboarding_service=self.onboarding_service,
+                jwt_service=self.jwt_service,
             )
 
         monkeypatch.setattr(FinalizeContextView, "__init__", patched_finalize_init)
@@ -68,6 +71,16 @@ class TestLoginView:
             "/<company_short_name>/login",
             view_func=FinalizeContextView.as_view("login"),
             methods=["GET"],
+        )
+
+        self.app.add_url_rule(
+            '/<company_short_name>/finalize',
+            view_func=FinalizeContextView.as_view('finalize_no_token')
+        )
+
+        self.app.add_url_rule(
+            '/<company_short_name>/finalize/<token>',
+            view_func=FinalizeContextView.as_view('finalize_with_token')
         )
 
         # Minimal endpoint used by FinalizeContextView redirect
@@ -185,3 +198,52 @@ class TestLoginView:
         assert resp.status_code == 500
         mock_rt.assert_called_once()
         assert mock_rt.call_args[0][0] == "error.html"
+
+    def test_finalize_with_token_success_renders_chat(self):
+        """Si no hay sesión pero llega token válido, debe validar JWT, finalizar contexto y renderizar chat."""
+        # No hay sesión
+        self.profile_service.get_current_session_info.return_value = {}
+        # JWT válido
+        self.jwt_service.validate_chat_jwt.return_value = {"user_identifier": self.user_identifier}
+        # Datos auxiliares
+        self.prompt_service.get_user_prompts.return_value = [{"id": "p1"}]
+        self.branding_service.get_company_branding.return_value = {"logo": "x.png"}
+        self.onboarding_service.get_onboarding_cards.return_value = [{"title": "card1"}]
+
+        with patch("iatoolkit.views.login_view.render_template") as mock_rt:
+            mock_rt.return_value = "CHAT", 200
+            resp = self.client.get(f"/{self.company_short_name}/finalize/abc123")
+
+        assert resp.status_code == 200
+        assert resp.data == b"CHAT"
+
+        # Debe haberse validado el token y usado el user_identifier del payload
+        self.jwt_service.validate_chat_jwt.assert_called_once_with("abc123")
+        self.query_service.finalize_context_rebuild.assert_called_once_with(
+            company_short_name=self.company_short_name,
+            user_identifier=self.user_identifier,
+        )
+        self.prompt_service.get_user_prompts.assert_called_once_with(self.company_short_name)
+        self.branding_service.get_company_branding.assert_called_once()
+        self.onboarding_service.get_onboarding_cards.assert_called_once()
+
+        mock_rt.assert_called_once()
+        assert mock_rt.call_args[0][0] == "chat.html"
+        ctx = mock_rt.call_args[1]
+        assert ctx["user_identifier"] == self.user_identifier
+        assert ctx["redeem_token"] == "abc123"
+
+    def test_finalize_with_token_invalid_redirects_index(self):
+        """Si no hay sesión y el token es inválido, debe redirigir a index."""
+        # No hay sesión
+        self.profile_service.get_current_session_info.return_value = {}
+        # Token inválido
+        self.jwt_service.validate_chat_jwt.return_value = None
+
+        resp = self.client.get(f"/{self.company_short_name}/finalize/bad")
+
+        assert resp.status_code == 302
+        assert resp.headers["Location"].endswith(f"/{self.company_short_name}/index")
+        self.jwt_service.validate_chat_jwt.assert_called_once_with("bad")
+        # No debe intentar finalizar el contexto
+        self.query_service.finalize_context_rebuild.assert_not_called()

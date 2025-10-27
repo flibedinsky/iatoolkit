@@ -111,8 +111,11 @@
                                                data-custom-fields='{{ prompt.custom_fields | tojson  }}'>
                                                 {{ prompt.description }}
                                             </a>
-                                        </li>                                    {% endfor %}
-                                    {% if not loop.last %}<li><hr class="dropdown-divider"></li>{% endif %}
+                                        </li>
+                                    {% endfor %}
+                                    {% if not loop.last %}
+                                        <li><hr class="dropdown-divider"></li>
+                                    {% endif %}
                                 {% endfor %}
                                 {% endif %}
                             </ul>
@@ -180,10 +183,11 @@
     // --- Global Configuration from Backend ---
     window.companyShortName = "{{ company_short_name }}";
     window.user_identifier = "{{ user_identifier }}";
+    window.redeemToken = "{{ redeem_token }}";
     window.iatoolkit_base_url = "{{ iatoolkit_base_url }}";
     window.availablePrompts = {{ prompts.message | tojson }};
-    window.sendButtonColor = "{{ branding.send_button_color }}";
     window.onboardingCards = {{ onboarding_cards | tojson }};
+    window.sendButtonColor = "{{ branding.send_button_color }}";
 </script>
 
 <!-- Carga de los scripts JS externos después de definir las variables globales -->
