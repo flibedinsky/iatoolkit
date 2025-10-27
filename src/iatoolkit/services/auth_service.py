@@ -7,6 +7,7 @@ from flask import request
 from injector import inject
 from iatoolkit.services.profile_service import ProfileService
 from flask import request
+import logging
 
 
 class AuthService:
@@ -52,6 +53,7 @@ class AuthService:
         if api_key:
             api_key_entry = self.profile_service.get_active_api_key_entry(api_key)
             if not api_key_entry:
+                logging.info(f"Invalid or inactive API Key {api_key}")
                 return {"success": False, "error": "Invalid or inactive API Key", "status_code": 401}
 
             # obtain the company from the api_key_entry
@@ -61,7 +63,7 @@ class AuthService:
             user_identifier = ''
             if request.is_json:
                 data = request.get_json() or {}
-                user_identifier = data.get('external_user_id', '')
+                user_identifier = data.get('user_identifier', '')
 
             return {
                 "success": True,
@@ -70,5 +72,6 @@ class AuthService:
             }
 
         # --- Failure: No valid credentials found ---
+        logging.info(f"Authentication required. No session cookie or API Key provided.")
         return {"success": False, "error": "Authentication required. No session cookie or API Key provided.",
-                "status_code": 401}
+                "status_code": 402}

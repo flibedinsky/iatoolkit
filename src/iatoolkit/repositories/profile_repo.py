@@ -72,10 +72,14 @@ class ProfileRepo:
     def create_company(self, new_company: Company):
         company = self.session.query(Company).filter_by(name=new_company.name).first()
         if company:
-            company.parameters = new_company.parameters
-            company.branding = new_company.branding
-            company.onboarding_cards = new_company.onboarding_cards
+            if company.parameters != new_company.parameters:
+                company.parameters = new_company.parameters
+            if company.branding != new_company.branding:
+                company.branding = new_company.branding
+            if company.onboarding_cards != new_company.onboarding_cards:
+                company.onboarding_cards = new_company.onboarding_cards
         else:
+            # Si la compañía no existe, la añade a la sesión.
             self.session.add(new_company)
             company = new_company
 

@@ -5,6 +5,13 @@ let abortController = null;
 let selectedPrompt = null; // Will hold a lightweight prompt object
 
 $(document).ready(function () {
+    // Gatilla el redeem sin esperar ni manejar respuesta aquí
+        if (window.redeemToken !== '') {
+            const url = `/api/redeem_token`;
+            // No await: dejamos que callToolkit maneje todo internamente
+            callToolkit(url, {'token': window.redeemToken}, "POST").catch(() => {});
+        }
+
     // --- MAIN EVENT HANDLERS ---
     $('#send-button').on('click', handleChatMessage);
     $('#stop-button').on('click', abortCurrentRequest);
@@ -176,7 +183,7 @@ const handleChatMessage = async function () {
             user_identifier: window.user_identifier
         };
 
-        const responseData = await callLLMAPI("/llm_query", data, "POST");
+        const responseData = await callToolkit("/llm_query", data, "POST");
         if (responseData && responseData.answer) {
             const answerSection = $('<div>').addClass('answer-section llm-output').append(responseData.answer);
             displayBotMessage(answerSection);
@@ -292,28 +299,39 @@ function resetSpecificDataInput() {
  * @param {number} timeoutMs - Timeout in milliseconds.
  * @returns {Promise<object|null>} The response data or null on error.
  */
-const callLLMAPI = async function(apiPath, data, method, timeoutMs = 500000) {
+const callToolkit = async function(apiPath, data, method, timeoutMs = 500000) {
     const url = `${window.iatoolkit_base_url}/${window.companyShortName}${apiPath}`;
-
-    const headers = {"Content-Type": "application/json"};
-    if (window.sessionJWT) {
-        headers['X-Chat-Token'] = window.sessionJWT;
-    }
 
     abortController = new AbortController();
     const timeoutId = setTimeout(() => abortController.abort(), timeoutMs);
 
     try {
-        const response = await fetch(url, {
-            method: method,
-            headers: headers,
-            body: JSON.stringify(data),
-            signal: abortController.signal, // Se usa el signal del controlador global
-            credentials: 'include'
-        });
+        const fetchOptions = {
+                method: method,
+                signal: abortController.signal,
+                credentials: 'include'
+            };
+
+        // Solo agrega body si el método lo soporta y hay datos
+        const methodUpper = (method || '').toUpperCase();
+        const canHaveBody = !['GET', 'HEAD'].includes(methodUpper);
+        if (canHaveBody && data !== undefined && data !== null) {
+            fetchOptions.body = JSON.stringify(data);
+            fetchOptions.headers = {"Content-Type": "application/json"};
+
+        }
+        const response = await fetch(url, fetchOptions);
+
         clearTimeout(timeoutId);
 
         if (!response.ok) {
+            if (response.status === 401) {
+                const errorMessage = `Tu sesión ha expirado. `;
+                const errorIcon = '<i class="bi bi-exclamation-triangle"></i>';
+                const infrastructureError = $('<div>').addClass('error-section').html(errorIcon + `<p>${errorMessage}</p>`);
+                displayBotMessage(infrastructureError);
+                return null;
+                }
             try {
                 // Intentamos leer el error como JSON, que es el formato esperado de nuestra API.
                 const errorData = await response.json();
@@ -337,6 +355,14 @@ const callLLMAPI = async function(apiPath, data, method, timeoutMs = 500000) {
         if (error.name === 'AbortError') {
             throw error; // Re-throw to be handled by handleChatMessage
         } else {
+            // Log detallado en consola
+                console.error('Error de red en callToolkit:', {
+                    url,
+                    method,
+                    error,
+                    message: error?.message,
+                    stack: error?.stack,
+                });
             const friendlyMessage = "Ocurrió un error de red. Por favor, inténtalo de nuevo en unos momentos.";
             const errorIcon = '<i class="bi bi-exclamation-triangle"></i>';
             const commError = $('<div>').addClass('error-section').html(errorIcon + `<p>${friendlyMessage}</p>`);

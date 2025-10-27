@@ -40,7 +40,7 @@ $(document).ready(function () {
         historyContent.hide();
 
         try {
-            const responseData = await callLLMAPI("/api/history", {}, "POST");
+            const responseData = await callToolkit("/api/history", {}, "POST");
 
             if (responseData && responseData.history) {
                 // Guardar datos globalmente

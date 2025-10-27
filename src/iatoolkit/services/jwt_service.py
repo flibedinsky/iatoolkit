@@ -24,16 +24,18 @@ class JWTService:
             raise RuntimeError(f"Configuración JWT esencial faltante: {e}")
 
     def generate_chat_jwt(self,
-                          company_id: int,
                           company_short_name: str,
-                          external_user_id: str,
+                          user_identifier: str,
                           expires_delta_seconds: int) -> Optional[str]:
         # generate a JWT for a chat session
         try:
+            if not company_short_name or not user_identifier:
+                logging.error(f"Missing token ID: {company_short_name}/{user_identifier}")
+                return None
+
             payload = {
-                'company_id': company_id,
                 'company_short_name': company_short_name,
-                'external_user_id': external_user_id,
+                'user_identifier': user_identifier,
                 'exp': time.time() + expires_delta_seconds,
                 'iat': time.time(),
                 'type': 'chat_session'  # Identificador del tipo de token
@@ -41,10 +43,10 @@ class JWTService:
             token = jwt.encode(payload, self.secret_key, algorithm=self.algorithm)
             return token
         except Exception as e:
-            logging.error(f"Error al generar JWT para company {company_id}, user {external_user_id}: {e}")
+            logging.error(f"Error al generar JWT para {company_short_name}/{user_identifier}: {e}")
             return None
 
-    def validate_chat_jwt(self, token: str, expected_company_short_name: str) -> Optional[Dict[str, Any]]:
+    def validate_chat_jwt(self, token: str) -> Optional[Dict[str, Any]]:
         """
         Valida un JWT de sesión de chat.
         Retorna el payload decodificado si es válido y coincide con la empresa, o None.
@@ -59,33 +61,22 @@ class JWTService:
                 logging.warning(f"Validación JWT fallida: tipo incorrecto '{payload.get('type')}'")
                 return None
 
-            if payload.get('company_short_name') != expected_company_short_name:
-                logging.warning(
-                    f"Validación JWT fallida: company_short_name no coincide. "
-                    f"Esperado: {expected_company_short_name}, Obtenido: {payload.get('company_short_name')}"
-                )
+            # user_identifier debe estar presente
+            if not payload.get('user_identifier'):
+                logging.warning(f"Validación JWT fallida: user_identifier ausente o vacío.")
                 return None
 
-            # external_user_id debe estar presente
-            if 'external_user_id' not in payload or not payload['external_user_id']:
-                logging.warning(f"Validación JWT fallida: external_user_id ausente o vacío.")
-                return None
-
-            # company_id debe estar presente
-            if 'company_id' not in payload or not isinstance(payload['company_id'], int):
-                logging.warning(f"Validación JWT fallida: company_id ausente o tipo incorrecto.")
+            if not payload.get('company_short_name'):
+                logging.warning(f"Validación JWT fallida: company_short_name ausente.")
                 return None
 
             logging.debug(
                 f"JWT validado exitosamente para company: {payload.get('company_short_name')}, user: {payload.get('external_user_id')}")
             return payload
 
-        except jwt.ExpiredSignatureError:
-            logging.info(f"Validación JWT fallida: token expirado para {expected_company_short_name}")
-            return None
         except jwt.InvalidTokenError as e:
-            logging.warning(f"Validación JWT fallida: token inválido para {expected_company_short_name}. Error: {e}")
+            logging.warning(f"Validación JWT fallida: token inválido . Error: {e}")
             return None
         except Exception as e:
-            logging.error(f"Error inesperado durante validación de JWT para {expected_company_short_name}: {e}")
+            logging.error(f"Error inesperado durante validación de JWT : {e}")
             return None

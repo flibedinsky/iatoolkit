@@ -19,7 +19,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from injector import Binder, singleton, Injector
 from importlib.metadata import version as _pkg_version, PackageNotFoundError
 
-IATOOLKIT_VERSION = "0.55.1"
+IATOOLKIT_VERSION = "0.56.0"
 
 # global variable for the unique instance of IAToolkit
 _iatoolkit_instance: Optional['IAToolkit'] = None
@@ -155,10 +155,9 @@ class IAToolkit:
 
         self.app.config.update({
             'VERSION': self.version,
-            'SERVER_NAME': domain,
             'SECRET_KEY': self._get_config_value('FLASK_SECRET_KEY', 'iatoolkit-default-secret'),
-            'SESSION_COOKIE_SAMESITE': "None" if is_https else "Lax",
-            'SESSION_COOKIE_SECURE': is_https,
+            'SESSION_COOKIE_SAMESITE': "None",
+            'SESSION_COOKIE_SECURE': True,
             'SESSION_PERMANENT': False,
             'SESSION_USE_SIGNER': True,
             'JWT_SECRET_KEY': self._get_config_value('JWT_SECRET_KEY', 'iatoolkit-jwt-secret'),

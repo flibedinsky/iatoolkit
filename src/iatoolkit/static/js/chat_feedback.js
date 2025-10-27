@@ -106,7 +106,7 @@ const sendFeedback = async function(message) {
     };
     try {
         // Asumiendo que callLLMAPI está definido globalmente en otro archivo (ej. chat_main.js)
-        const responseData = await callLLMAPI('/feedback', data, "POST");
+        const responseData = await callToolkit('/feedback', data, "POST");
         return responseData;
     } catch (error) {
         console.error("Error al enviar feedback:", error);

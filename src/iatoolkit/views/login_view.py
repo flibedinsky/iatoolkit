@@ -7,6 +7,7 @@ from flask.views import MethodView
 from flask import request, redirect, render_template, url_for
 from injector import inject
 from iatoolkit.services.profile_service import ProfileService
+from iatoolkit.services.jwt_service import JWTService
 from iatoolkit.services.query_service import QueryService
 from iatoolkit.services.prompt_manager_service import PromptService
 from iatoolkit.services.branding_service import BrandingService
@@ -29,7 +30,7 @@ class LoginView(BaseLoginView):
         email = request.form.get('email')
         password = request.form.get('password')
 
-        # 1. Authenticate user and create the unified session.
+        # 1. Authenticate user and create the session for internal user
         auth_response = self.profile_service.login(
             company_short_name=company_short_name,
             email=email,
@@ -63,32 +64,38 @@ class FinalizeContextView(MethodView):
     Finalizes context loading in the slow path.
     This view is invoked by the iframe inside onboarding_shell.html.
     """
-
     @inject
     def __init__(self,
                  profile_service: ProfileService,
                  query_service: QueryService,
                  prompt_service: PromptService,
                  branding_service: BrandingService,
-                 onboarding_service: OnboardingService
+                 onboarding_service: OnboardingService,
+                 jwt_service: JWTService,
                  ):
         self.profile_service = profile_service
+        self.jwt_service = jwt_service
         self.query_service = query_service
         self.prompt_service = prompt_service
         self.branding_service = branding_service
         self.onboarding_service = onboarding_service
 
-    def get(self, company_short_name: str, user_identifier: str = None):
-        # 1. Use the centralized method to get session info.
+    def get(self, company_short_name: str, token: str = None):
         session_info = self.profile_service.get_current_session_info()
-        final_user_identifier = session_info.get('user_identifier')
+        if session_info:
+            # session exists, internal user
+            user_identifier = session_info.get('user_identifier')
+            token = ''
+        elif token:
+            # user identified by api-key
+            payload = self.jwt_service.validate_chat_jwt(token)
+            if not payload:
+                logging.warning("Fallo crítico: No se pudo leer el auth token.")
+                return redirect(url_for('index', company_short_name=company_short_name))
 
-        # 2. only if there is no user_identifier in the session, use the user_identifier from the URL as fallback.
-        if not final_user_identifier:
-            final_user_identifier = user_identifier
-
-        if not final_user_identifier:
-            logging.warning("Fallo crítico: No se pudo determinar el user_identifier ni por sesión ni por URL.")
+            user_identifier = payload.get('user_identifier')
+        else:
+            logging.warning("Fallo crítico: missing session information or auth token")
             return redirect(url_for('index', company_short_name=company_short_name))
 
         company = self.profile_service.get_company_by_short_name(company_short_name)
@@ -99,7 +106,7 @@ class FinalizeContextView(MethodView):
             # 2. Finalize the context rebuild (the heavy task).
             self.query_service.finalize_context_rebuild(
                 company_short_name=company_short_name,
-                user_identifier=final_user_identifier
+                user_identifier=user_identifier
             )
 
             # 3. render the chat page.
@@ -109,9 +116,12 @@ class FinalizeContextView(MethodView):
 
             return render_template(
                 "chat.html",
+                company_short_name=company_short_name,
+                user_identifier=user_identifier,
                 branding=branding_data,
                 prompts=prompts,
-                onboarding_cards=onboarding_cards
+                onboarding_cards=onboarding_cards,
+                redeem_token=token
             )
 
         except Exception as e:
@@ -119,3 +129,4 @@ class FinalizeContextView(MethodView):
                                    company=company,
                                    company_short_name=company_short_name,
                                    message=f"An unexpected error occurred during context loading: {str(e)}"), 500
+
