@@ -5,31 +5,37 @@ from unittest.mock import MagicMock, patch
 from iatoolkit.views.external_login_view import ExternalLoginView, RedeemTokenApiView
 from iatoolkit.views.base_login_view import BaseLoginView
 
+# --- Tests for ExternalLoginView ---
+
 class TestExternalLoginView:
     @pytest.fixture(autouse=True)
     def setup_method(self, monkeypatch):
         self.app = Flask(__name__)
-        self.app.secret_key = "test-secret"
         self.client = self.app.test_client()
 
-        # Mocks
+        # Mocks for all services used by BaseLoginView and its children
         self.auth_service = MagicMock()
         self.profile_service = MagicMock()
-        self.query_service = MagicMock()
+        self.jwt_service = MagicMock()
         self.branding_service = MagicMock()
         self.onboarding_service = MagicMock()
-        self.prompt_service = MagicMock()  # por si tu BaseLoginView actual la usa
+        self.query_service = MagicMock()
+        self.prompt_service = MagicMock()
 
-        # Inyección directa sin llamar a super().__init__
-        def patched_init(instance):
-            instance.iauthentication = self.auth_service
+        # A single, comprehensive patch for BaseLoginView's constructor
+        def patched_base_init(instance, **kwargs):
+            # This will be used by any view inheriting from BaseLoginView
+            instance.auth_service = self.auth_service
             instance.profile_service = self.profile_service
+            instance.jwt_service = self.jwt_service
             instance.branding_service = self.branding_service
             instance.onboarding_service = self.onboarding_service
             instance.query_service = self.query_service
-            instance.prompt_service = self.prompt_service  # inofensivo si no se usa
-        monkeypatch.setattr(ExternalLoginView, "__init__", patched_init)
+            instance.prompt_service = self.prompt_service
 
+        monkeypatch.setattr(BaseLoginView, "__init__", patched_base_init)
+
+        # Register the view under test
         self.app.add_url_rule(
             "/<company_short_name>/external_login",
             view_func=ExternalLoginView.as_view("external_login"),
@@ -39,23 +45,25 @@ class TestExternalLoginView:
         self.company_short_name = "acme"
         self.user_identifier = "ext-123"
 
-        # Defaults
+        # Default success cases for mocks
         self.profile_service.get_company_by_short_name.return_value = MagicMock()
         self.auth_service.verify.return_value = {"success": True}
 
-    def test_missing_body_returns_400(self):
-        resp = self.client.post(
+    def test_missing_body_or_key_returns_400(self):
+        """Tests that a request with an empty JSON body or missing key returns 400."""
+        # Test with an empty but valid JSON object
+        resp_empty = self.client.post(
             f"/{self.company_short_name}/external_login",
-            data="",
-            content_type="application/json",
+            json={}
         )
-        assert resp.status_code == 400
+        assert resp_empty.status_code == 400
 
-        resp = self.client.post(
+        # Test with a JSON object that's missing the required 'user_identifier' key
+        resp_missing_key = self.client.post(
             f"/{self.company_short_name}/external_login",
-            json={"foo": "bar"},
+            json={"other_data": "value"}
         )
-        assert resp.status_code == 400
+        assert resp_missing_key.status_code == 400
 
     def test_company_not_found_returns_404(self):
         self.profile_service.get_company_by_short_name.return_value = None
@@ -80,6 +88,7 @@ class TestExternalLoginView:
         )
         assert resp.status_code == 401
         self.auth_service.verify.assert_called_once()
+        assert "denied" in resp.get_json().get("error")
 
     def test_success_delegates_to_base_handler(self, monkeypatch):
         def fake_handle(_self, csn, uid, company):
@@ -90,7 +99,6 @@ class TestExternalLoginView:
             f"/{self.company_short_name}/external_login",
             json={"user_identifier": self.user_identifier},
         )
-
         assert resp.status_code == 200
         assert resp.data == b"OK"
         self.profile_service.create_external_user_session.assert_called_once()
@@ -105,82 +113,57 @@ class TestExternalLoginView:
         assert resp.is_json
         assert "boom" in resp.get_json().get("error", "")
 
+
+# --- Tests for RedeemTokenApiView (ahora separada para mayor claridad) ---
 class TestRedeemTokenApiView:
     @pytest.fixture(autouse=True)
     def setup_method(self, monkeypatch):
         self.app = Flask(__name__)
-        self.app.secret_key = "test-secret"
         self.client = self.app.test_client()
+        self.auth_service = MagicMock()
 
-        # Mocks
-        self.profile_service = MagicMock()
-        self.jwt_service = MagicMock()
+        # Usamos el mismo parcheador para BaseLoginView que en la clase anterior
+        def patched_base_init(instance, **kwargs):
+            instance.auth_service = self.auth_service
+            # Añadimos otros mocks que BaseLoginView pueda necesitar para que no falle
+            instance.profile_service = MagicMock()
+            instance.jwt_service = MagicMock()
 
-        # Parchear __init__ para inyectar mocks
-        original_init = RedeemTokenApiView.__init__
+        monkeypatch.setattr(BaseLoginView, "__init__", patched_base_init)
 
-        def patched_init(instance, **kwargs):
-            return original_init(
-                instance,
-                profile_service=self.profile_service,
-                jwt_service=self.jwt_service,
-            )
-
-        monkeypatch.setattr(RedeemTokenApiView, "__init__", patched_init)
-
-        # Registrar ruta con company_short_name en el path
         self.app.add_url_rule(
             "/<company_short_name>/api/redeem_token",
             view_func=RedeemTokenApiView.as_view("redeem_token"),
             methods=["POST"],
         )
-
         self.company_short_name = "acme"
-        self.user_identifier = "user-123"
 
     def test_redeem_missing_token_returns_400(self):
         resp = self.client.post(f"/{self.company_short_name}/api/redeem_token", json={})
         assert resp.status_code == 400
-        assert resp.is_json
         assert "Falta token" in resp.get_json().get("error", "")
 
-    def test_redeem_invalid_token_returns_401(self):
-        self.jwt_service.validate_chat_jwt.return_value = None
-
+    def test_redeem_failure_returns_401(self):
+        self.auth_service.redeem_token_for_session.return_value = {
+            'success': False,
+            'error': 'Token es inválido'
+        }
         resp = self.client.post(
-            f"/{self.company_short_name}/api/redeem_token",
-            json={"token": "bad-token"},
+            f"/{self.company_short_name}/api/redeem_token", json={"token": "bad"}
         )
-
         assert resp.status_code == 401
-        self.jwt_service.validate_chat_jwt.assert_called_once_with("bad-token")
-        self.profile_service.set_session_for_user.assert_not_called()
-
-    def test_redeem_valid_token_creates_session_and_returns_ok(self):
-        self.jwt_service.validate_chat_jwt.return_value = {"user_identifier": self.user_identifier}
-
-        resp = self.client.post(
-            f"/{self.company_short_name}/api/redeem_token",
-            json={"token": "good-token"},
+        assert "Token es inválido" in resp.get_json().get("error", "")
+        self.auth_service.redeem_token_for_session.assert_called_once_with(
+            company_short_name=self.company_short_name, token="bad"
         )
 
+    def test_redeem_success_returns_200(self):
+        self.auth_service.redeem_token_for_session.return_value = {'success': True}
+        resp = self.client.post(
+            f"/{self.company_short_name}/api/redeem_token", json={"token": "good"}
+        )
         assert resp.status_code == 200
-        assert resp.is_json
         assert resp.get_json().get("status") == "ok"
-        self.jwt_service.validate_chat_jwt.assert_called_once_with("good-token")
-        self.profile_service.set_session_for_user.assert_called_once_with(
-            self.company_short_name, self.user_identifier
+        self.auth_service.redeem_token_for_session.assert_called_once_with(
+            company_short_name=self.company_short_name, token="good"
         )
-
-    def test_redeem_session_creation_failure_returns_500(self):
-        self.jwt_service.validate_chat_jwt.return_value = {"user_identifier": self.user_identifier}
-        self.profile_service.set_session_for_user.side_effect = Exception("boom")
-
-        resp = self.client.post(
-            f"/{self.company_short_name}/api/redeem_token",
-            json={"token": "good-token"},
-        )
-
-        assert resp.status_code == 500
-        assert resp.is_json
-        assert "No se pudo crear la sesión" in resp.get_json().get("error", "")

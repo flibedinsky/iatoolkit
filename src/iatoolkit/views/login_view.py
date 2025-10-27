@@ -7,6 +7,7 @@ from flask.views import MethodView
 from flask import request, redirect, render_template, url_for
 from injector import inject
 from iatoolkit.services.profile_service import ProfileService
+from iatoolkit.services.auth_service import AuthService
 from iatoolkit.services.jwt_service import JWTService
 from iatoolkit.services.query_service import QueryService
 from iatoolkit.services.prompt_manager_service import PromptService
@@ -21,7 +22,6 @@ class LoginView(BaseLoginView):
     Handles login for local users.
     Authenticates and then delegates the path decision (fast/slow) to the base class.
     """
-
     def post(self, company_short_name: str):
         company = self.profile_service.get_company_by_short_name(company_short_name)
         if not company:
@@ -30,8 +30,8 @@ class LoginView(BaseLoginView):
         email = request.form.get('email')
         password = request.form.get('password')
 
-        # 1. Authenticate user and create the session for internal user
-        auth_response = self.profile_service.login(
+        # 1. Authenticate internal user
+        auth_response = self.auth_service.login_local_user(
             company_short_name=company_short_name,
             email=email,
             password=password
@@ -67,6 +67,7 @@ class FinalizeContextView(MethodView):
     @inject
     def __init__(self,
                  profile_service: ProfileService,
+                 auth_service: AuthService,
                  query_service: QueryService,
                  prompt_service: PromptService,
                  branding_service: BrandingService,

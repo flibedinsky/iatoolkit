@@ -6,8 +6,12 @@
 from flask import request
 from injector import inject
 from iatoolkit.services.profile_service import ProfileService
+from iatoolkit.services.jwt_service import JWTService
+from iatoolkit.repositories.database_manager import DatabaseManager
+from iatoolkit.repositories.models import AccessLog
 from flask import request
 import logging
+import hashlib
 
 
 class AuthService:
@@ -17,11 +21,75 @@ class AuthService:
     """
 
     @inject
-    def __init__(self, profile_service: ProfileService):
-        """
-        Injects ProfileService to access session information and validate API keys.
-        """
+    def __init__(self, profile_service: ProfileService,
+                 jwt_service: JWTService,
+                 db_manager: DatabaseManager
+                 ):
         self.profile_service = profile_service
+        self.jwt_service = jwt_service
+        self.db_manager = db_manager
+
+    def login_local_user(self, company_short_name: str, email: str, password: str) -> dict:
+        # try to autenticate a local user, register the event and return the result
+        auth_response = self.profile_service.login(
+            company_short_name=company_short_name,
+            email=email,
+            password=password
+        )
+
+        if not auth_response.get('success'):
+            self.log_access(
+                company_short_name=company_short_name,
+                user_identifier=email,
+                auth_type='local',
+                outcome='failure',
+                reason_code='INVALID_CREDENTIALS',
+            )
+        else:
+            self.log_access(
+                company_short_name=company_short_name,
+                auth_type='local',
+                outcome='success',
+                user_identifier=auth_response.get('user_identifier')
+            )
+
+        return auth_response
+
+    def redeem_token_for_session(self, company_short_name: str, token: str) -> dict:
+        # redeem a token for a session, register the event and return the result
+        payload = self.jwt_service.validate_chat_jwt(token)
+
+        if not payload:
+            self.log_access(
+                company_short_name=company_short_name,
+                auth_type='redeem_token',
+                outcome='failure',
+                reason_code='JWT_INVALID'
+            )
+            return {'success': False, 'error': 'Token inválido o expirado'}
+
+        # 2. if token is valid, extract the user_identifier
+        user_identifier = payload.get('user_identifier')
+        try:
+            # create the Flask session
+            self.profile_service.set_session_for_user(company_short_name, user_identifier)
+            self.log_access(
+                company_short_name=company_short_name,
+                auth_type='redeem_token',
+                outcome='success',
+                user_identifier=user_identifier
+            )
+            return {'success': True, 'user_identifier': user_identifier}
+        except Exception as e:
+            logging.error(f"Error al crear la sesión desde token para {user_identifier}: {e}")
+            self.log_access(
+                company_short_name=company_short_name,
+                auth_type='redeem_token',
+                outcome='failure',
+                reason_code='SESSION_CREATION_FAILED',
+                user_identifier=user_identifier
+            )
+            return {'success': False, 'error': 'No se pudo crear la sesión del usuario'}
 
     def verify(self) -> dict:
         """
@@ -75,3 +143,39 @@ class AuthService:
         logging.info(f"Authentication required. No session cookie or API Key provided.")
         return {"success": False, "error": "Authentication required. No session cookie or API Key provided.",
                 "status_code": 402}
+
+    def log_access(self,
+                   company_short_name: str,
+                   auth_type: str,
+                   outcome: str,
+                   user_identifier: str = None,
+                   reason_code: str = None):
+        """
+        Registra un intento de acceso en la base de datos.
+        Es "best-effort" y no debe interrumpir el flujo de autenticación.
+        """
+        session = self.db_manager.scoped_session()
+        try:
+            # Capturar datos del contexto de la petición de Flask
+            source_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+            path = request.path
+            ua = request.headers.get('User-Agent', '')
+            ua_hash = hashlib.sha256(ua.encode()).hexdigest()[:16] if ua else None
+
+            # Crear la entrada de log
+            log_entry = AccessLog(
+                company_short_name=company_short_name,
+                user_identifier=user_identifier,
+                auth_type=auth_type,
+                outcome=outcome,
+                reason_code=reason_code,
+                source_ip=source_ip,
+                user_agent_hash=ua_hash,
+                request_path=path,
+            )
+            session.add(log_entry)
+            session.commit()
+
+        except Exception as e:
+            logging.error(f"Fallo al escribir en AccessLog: {e}", exc_info=False)
+            session.rollback()

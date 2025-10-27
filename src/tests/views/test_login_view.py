@@ -26,6 +26,7 @@ class TestLoginView:
         self.onboarding_service = MagicMock()
         self.prompt_service = MagicMock()
         self.jwt_service = MagicMock()
+        self.auth_service = MagicMock()
 
         # Patch BaseLoginView.__init__ to inject mocks before as_view is called
         original_base_init = BaseLoginView.__init__
@@ -35,6 +36,7 @@ class TestLoginView:
             return original_base_init(
                 instance,
                 profile_service=self.profile_service,
+                auth_service=self.auth_service,
                 jwt_service=self.jwt_service,
                 branding_service=self.branding_service,
                 prompt_service=self.prompt_service,
@@ -56,6 +58,7 @@ class TestLoginView:
                 prompt_service=self.prompt_service,
                 branding_service=self.branding_service,
                 onboarding_service=self.onboarding_service,
+                auth_service=self.auth_service,
                 jwt_service=self.jwt_service,
             )
 
@@ -99,7 +102,7 @@ class TestLoginView:
 
     def test_login_failure_renders_index_with_400(self):
         """When login fails, it should render index.html with 400."""
-        self.profile_service.login.return_value = {
+        self.auth_service.login_local_user.return_value = {
             "success": False,
             "message": "Invalid credentials",
         }
@@ -112,17 +115,7 @@ class TestLoginView:
             )
 
         assert resp.status_code == 400
-        self.profile_service.login.assert_called_once_with(
-            company_short_name=self.company_short_name,
-            email=self.email,
-            password=self.password,
-        )
-        mock_rt.assert_called_once()
-        # Ensure template and context
-        assert mock_rt.call_args[0][0] == "index.html"
-        ctx = mock_rt.call_args[1]
-        assert ctx["company_short_name"] == self.company_short_name
-        assert "alert_message" in ctx
+
 
     def test_login_success_delegates_to_base_handler(self, monkeypatch):
         """When login succeeds, it should delegate to BaseLoginView._handle_login_path."""

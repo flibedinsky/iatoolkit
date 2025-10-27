@@ -8,6 +8,7 @@ from flask.views import MethodView
 from flask import render_template, url_for
 from injector import inject
 from iatoolkit.services.profile_service import ProfileService
+from iatoolkit.services.auth_service import AuthService
 from iatoolkit.services.query_service import QueryService
 from iatoolkit.services.branding_service import BrandingService
 from iatoolkit.services.onboarding_service import OnboardingService
@@ -23,6 +24,7 @@ class BaseLoginView(MethodView):
     @inject
     def __init__(self,
                  profile_service: ProfileService,
+                 auth_service: AuthService,
                  jwt_service: JWTService,
                  branding_service: BrandingService,
                  prompt_service: PromptService,
@@ -30,6 +32,7 @@ class BaseLoginView(MethodView):
                  query_service: QueryService
                  ):
         self.profile_service = profile_service
+        self.auth_service = auth_service
         self.jwt_service = jwt_service
         self.branding_service = branding_service
         self.prompt_service = prompt_service

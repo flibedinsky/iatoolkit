@@ -3,9 +3,10 @@
 #
 # IAToolkit is open source software.
 
-from sqlalchemy import Column, Integer, String, DateTime, Enum, Text, JSON, Boolean, ForeignKey, Table
+from sqlalchemy import Column, Integer, BigInteger, String, DateTime, Enum, Text, JSON, Boolean, ForeignKey, Table
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.orm import relationship, class_mapper, declarative_base
+from sqlalchemy.sql import func
 from datetime import datetime
 from pgvector.sqlalchemy import Vector
 from enum import Enum as PyEnum
@@ -307,3 +308,27 @@ class Prompt(Base):
 
     company = relationship("Company", back_populates="prompts")
     category = relationship("PromptCategory", back_populates="prompts")
+
+class AccessLog(Base):
+    # Modelo ORM para registrar cada intento de acceso a la plataforma.
+    __tablename__ = 'iat_access_log'
+
+    id = Column(BigInteger, primary_key=True)
+
+    timestamp = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
+    company_short_name = Column(String(100), nullable=False, index=True)
+    user_identifier = Column(String(255), index=True)
+
+    # Cómo y el Resultado
+    auth_type = Column(String(20), nullable=False) # 'local', 'external_api', 'redeem_token', etc.
+    outcome = Column(String(10), nullable=False)   # 'success' o 'failure'
+    reason_code = Column(String(50))               # Causa de fallo, ej: 'INVALID_CREDENTIALS'
+
+    # Contexto de la Petición
+    source_ip = Column(String(45), nullable=False)
+    user_agent_hash = Column(String(16))           # Hash corto del User-Agent
+    request_path = Column(String(255), nullable=False)
+
+    def __repr__(self):
+        return (f"<AccessLog(id={self.id}, company='{self.company_short_name}', "
+                f"user='{self.user_identifier}', outcome='{self.outcome}')>")

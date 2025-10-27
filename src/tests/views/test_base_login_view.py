@@ -26,6 +26,7 @@ class TestBaseLoginView:
             "onboarding_service": MagicMock(),
             "query_service": MagicMock(),
             "jwt_service": MagicMock(),
+            "auth_service": MagicMock(),
         }
         self.view_instance = BaseLoginView(**self.mock_services)
 
