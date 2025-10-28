@@ -61,6 +61,17 @@ class TestLLMQueryApiView:
             files=[]
         )
 
+    def test_api_query_when_error(self):
+        self.mock_query.llm_query.return_value = {"error": True, 'error_message': 'some error'}
+
+        response = self.client.post(self.url,
+                                    json={"external_user_id": MOCK_EXTERNAL_USER_ID})
+
+        # Assert
+        assert response.status_code == 400
+        assert response.json['error_message'] == 'some error'
+
+
     def test_api_query_fails_on_auth_failure(self):
         """Tests that the view returns a 401 if API Key authentication fails."""
         self.mock_auth.verify.return_value = {"success": False, "error_message": "Invalid API Key", "status_code": 401}
