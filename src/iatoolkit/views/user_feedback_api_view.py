@@ -37,14 +37,6 @@ class UserFeedbackApiView(MethodView):
         if not message:
             return jsonify({"error_message": "Falta el mensaje de feedback"}), 400
         
-        space = data.get("space")
-        if not space:
-            return jsonify({"error_message": "Falta el espacio de Google Chat"}), 400
-        
-        type = data.get("type")
-        if not type:
-            return jsonify({"error_message": "Falta el tipo de feedback"}), 400
-        
         rating = data.get("rating")
         if not rating:
             return jsonify({"error_message": "Falta la calificación"}), 400
@@ -54,8 +46,6 @@ class UserFeedbackApiView(MethodView):
                 company_short_name=company_short_name,
                 message=message,
                 user_identifier=user_identifier,
-                space=space,
-                type=type,
                 rating=rating
             )
 

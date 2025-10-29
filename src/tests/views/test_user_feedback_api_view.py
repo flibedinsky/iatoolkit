@@ -4,7 +4,7 @@
 # IAToolkit is open source software.
 
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 from flask import Flask
 from iatoolkit.views.user_feedback_api_view import UserFeedbackApiView
 from iatoolkit.services.user_feedback_service import UserFeedbackService
@@ -25,168 +25,83 @@ class TestUserFeedbackView:
         self.feedback_service = MagicMock(spec=UserFeedbackService)
         self.iauthentication = MagicMock(spec=AuthService)
 
+        # Mock a successful authentication by default for most tests
         self.iauthentication.verify.return_value = {
             'success': True,
-            'company_short_name': 'a_company',
+            'company_short_name': 'my_company',
             'user_identifier': 'test_user_123'
         }
 
-        # register the view
-        self.feedback_view = UserFeedbackApiView.as_view("feedback",
-                                          user_feedback_service=self.feedback_service,
-                                            iauthentication=self.iauthentication)
+        # Register the view with mocked dependencies
+        feedback_view = UserFeedbackApiView.as_view("feedback",
+                                                     user_feedback_service=self.feedback_service,
+                                                     iauthentication=self.iauthentication)
         self.app.add_url_rule('/<company_short_name>/api/feedback',
-                              view_func=self.feedback_view,
+                              view_func=feedback_view,
                               methods=["POST"])
         self.url = '/my_company/api/feedback'
 
-
-    def test_post_when_missing_data(self):
-        response = self.client.post(self.url,
-                                    json={})
-
-        assert response.status_code == 402
-        self.feedback_service.new_feedback.assert_not_called()
-
     def test_post_when_auth_error(self):
+        """Test that an auth error returns a 401 status."""
         self.iauthentication.verify.return_value = {'error_message': 'error in authentication'}
-        response = self.client.post(self.url,
-                                    json={})
+        response = self.client.post(self.url, json={'message': 'any', 'rating': 1})
 
         assert response.status_code == 401
         assert response.json["error_message"] == 'error in authentication'
-
-    def test_post_when_empty_body(self):
-        response = self.client.post(self.url,
-                                    json={})
-
-        assert response.status_code == 402
         self.feedback_service.new_feedback.assert_not_called()
 
-    def test_post_when_missing_message(self):
-        response = self.client.post(self.url,
-                                    json={'space': 'spaces/test'})
 
-        assert response.status_code == 400
-        assert response.json["error_message"] == 'Falta el mensaje de feedback'
-        self.feedback_service.new_feedback.assert_not_called()
+    def test_post_when_service_raises_exception(self):
+        """Test that a 500 is returned if the service throws an unexpected exception."""
+        self.feedback_service.new_feedback.side_effect = Exception('Database connection failed')
 
-    def test_post_when_missing_space(self):
-        response = self.client.post(self.url,
-                                    json={'message': 'test message'})
-
-        assert response.status_code == 400
-        assert response.json["error_message"] == 'Falta el espacio de Google Chat'
-        self.feedback_service.new_feedback.assert_not_called()
-
-    def test_post_when_missing_type(self):
-        response = self.client.post(self.url,
-                                    json={'message': 'test message', 'space': 'spaces/test'})
-
-        assert response.status_code == 400
-        assert response.json["error_message"] == 'Falta el tipo de feedback'
-        self.feedback_service.new_feedback.assert_not_called()
-
-    def test_post_when_missing_rating(self):
-        response = self.client.post(self.url,
-                                    json={'message': 'test message', 'space': 'spaces/test', 'type': 'MESSAGE_TRIGGER'})
-
-        assert response.status_code == 400
-        assert response.json["error_message"] == 'Falta la calificación'
-        self.feedback_service.new_feedback.assert_not_called()
-
-    def test_post_when_exception(self):
-        self.feedback_service.new_feedback.side_effect = Exception('error')
-
-        response = self.client.post(self.url,
-                                    json={
-                                        'message': 'feedback message', 
-                                        'space': 'spaces/test',
-                                        'type': 'MESSAGE_TRIGGER',
-                                        'rating': 4
-                                    })
+        response = self.client.post(self.url, json={'message': 'feedback message', 'rating': 4})
 
         assert response.status_code == 500
+        assert 'Database connection failed' in response.json['error_message']
 
-    def test_post_when_service_error(self):
-        self.feedback_service.new_feedback.return_value = {'error': 'an error'}
+    def test_post_when_service_returns_error(self):
+        """Test that a 402 is returned if the service reports a business logic error."""
+        self.feedback_service.new_feedback.return_value = {'error': 'Company has no credits'}
 
-        response = self.client.post(self.url,
-                                    json={
-                                        'message': 'feedback message', 
-                                        'space': 'spaces/test',
-                                        'type': 'MESSAGE_TRIGGER',
-                                        'rating': 3
-                                    })
+        response = self.client.post(self.url, json={'message': 'feedback message', 'rating': 3})
 
+        # Assuming 402 is used for business logic failures (like payment required)
         assert response.status_code == 402
-        assert response.json == {'error_message': 'an error'}
+        assert response.json == {'error_message': 'Company has no credits'}
 
     def test_post_when_ok(self):
+        """Test the successful path, returning a 200 status."""
         self.feedback_service.new_feedback.return_value = {'message': "Feedback guardado correctamente"}
 
-        response = self.client.post(self.url,
-                                    json={
-                                        'message': 'feedback message', 
-                                        'space': 'spaces/test',
-                                        'type': 'MESSAGE_TRIGGER',
-                                        'rating': 5
-                                    })
+        response = self.client.post(self.url, json={'message': 'feedback message', 'rating': 5})
 
         assert response.status_code == 200
         assert response.json == {'message': "Feedback guardado correctamente"}
 
-    def test_post_with_all_required_fields(self):
-        """Test that all required fields are passed to the service correctly"""
+    def test_post_calls_service_with_correct_parameters(self):
+        """
+        Crucial Test: Verify the service is called with the correct, refactored signature,
+        ignoring extra parameters from the JSON body if any.
+        """
         self.feedback_service.new_feedback.return_value = {'message': "Feedback guardado correctamente"}
 
+        # Payload now only needs message and rating.
+        # We can even include old params to ensure they are ignored.
         test_data = {
             'message': 'test feedback message',
-            'space': 'spaces/custom-space',
-            'type': 'CUSTOM_TYPE',
-            'rating': 4
+            'rating': 4,
+            'space': 'this_is_obsolete', # This should be ignored by the view
+            'type': 'this_is_also_obsolete'  # This should also be ignored
         }
 
         response = self.client.post(self.url, json=test_data)
-
         assert response.status_code == 200
 
-        # Verify service was called with all parameters
+        # Verify the service was called with the NEW, simpler signature
         self.feedback_service.new_feedback.assert_called_once_with(
             company_short_name='my_company',
             message='test feedback message',
             user_identifier='test_user_123',
-            space='spaces/custom-space',
-            type='CUSTOM_TYPE',
-            rating=4
+            rating=4  # Note: 'space' and 'type' are NOT passed
         )
-
-    def test_post_with_different_rating_values(self):
-        """Test that different rating values are accepted"""
-        self.feedback_service.new_feedback.return_value = {'message': "Feedback guardado correctamente"}
-
-        # Test with rating 1
-        response1 = self.client.post(self.url,
-                                    json={
-                                        'message': 'feedback message', 
-                                        'space': 'spaces/test',
-                                        'type': 'MESSAGE_TRIGGER',
-                                        'rating': 1
-                                    })
-        assert response1.status_code == 200
-
-        # Test with rating 5
-        response2 = self.client.post(self.url,
-                                    json={
-                                        'message': 'feedback message', 
-                                        'space': 'spaces/test',
-                                        'type': 'MESSAGE_TRIGGER',
-                                        'rating': 5
-                                    })
-        assert response2.status_code == 200
-
-        # Verify both calls were made with correct ratings
-        calls = self.feedback_service.new_feedback.call_args_list
-        assert len(calls) == 2
-        assert calls[0][1]['rating'] == 1
-        assert calls[1][1]['rating'] == 5

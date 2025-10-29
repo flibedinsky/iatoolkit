@@ -3,347 +3,180 @@
 #
 # IAToolkit is open source software.
 
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, ANY
 from iatoolkit.repositories.profile_repo import ProfileRepo
 from iatoolkit.services.user_feedback_service import UserFeedbackService
 from iatoolkit.repositories.models import Company, UserFeedback
 from iatoolkit.infra.google_chat_app import GoogleChatApp
+from iatoolkit.infra.mail_app import MailApp
 
 
 class TestUserFeedbackService:
     def setup_method(self):
+        """Set up a fresh service instance and mocks for each test."""
         self.profile_repo = MagicMock(ProfileRepo)
         self.google_chat_app = MagicMock(GoogleChatApp)
+        self.mail_app = MagicMock(MailApp)
 
-        # init the service with the mocks
+        # Init the service with all required mocks
         self.service = UserFeedbackService(
             profile_repo=self.profile_repo,
-            google_chat_app=self.google_chat_app
+            google_chat_app=self.google_chat_app,
+            mail_app=self.mail_app
         )
 
-        self.company = Company(name='my company', short_name='test_company')
+        # A base company object; params can be overridden in each test
+        self.company = Company(
+            id=1,
+            name='My Company',
+            short_name='my_company',
+            parameters={}  # Start with no feedback config
+        )
 
+        # Mock the repo to return our test company
         self.profile_repo.get_company_by_short_name.return_value = self.company
+        # Mock a successful feedback save by default
+        self.profile_repo.save_feedback.return_value = UserFeedback(id=123)
 
-        self.user_feedback = UserFeedback(
-                    company_id=self.company.id,
-                    message='feedback message for testing',
-                    user_identifier='flibedinsky',
-                    rating=4)
+    def test_new_feedback_saves_correctly(self):
+        """Test that feedback is saved with the correct data."""
+        response = self.service.new_feedback(
+            company_short_name='my_company',
+            message='A test message',
+            user_identifier='test_user',
+            rating=5
+        )
 
-        # Mock successful Google Chat response
-        self.google_chat_app.send_message.return_value = {
-            'success': True,
-            'message': 'Mensaje enviado correctamente'
+        assert response == {'message': 'Feedback guardado correctamente'}
+        self.profile_repo.save_feedback.assert_called_once()
+        saved_feedback_arg = self.profile_repo.save_feedback.call_args[0][0]
+        assert isinstance(saved_feedback_arg, UserFeedback)
+        assert saved_feedback_arg.company_id == self.company.id
+        assert saved_feedback_arg.message == 'A test message'
+        assert saved_feedback_arg.user_identifier == 'test_user'
+        assert saved_feedback_arg.rating == 5
+
+    def test_sends_google_chat_notification_on_correct_config(self):
+        """Test that a Google Chat notification is sent when configured."""
+        self.company.parameters = {
+            'user_feedback': {
+                'channel': 'google_chat',
+                'destination': 'spaces/test-space'
+            }
         }
 
-    def test_feedback_when_exception(self):
-        self.profile_repo.get_company_by_short_name.side_effect = Exception('an error')
-        response = self.service.new_feedback(
-                        company_short_name='my_company',
-                        message='feedback message for testing',
-                        user_identifier='flibedinsky',
-                        space='spaces/test-space',
-                        type='MESSAGE_TRIGGER',
-                        rating=3
-                        )
+        self.service.new_feedback(
+            company_short_name='my_company',
+            message='A message for Google Chat',
+            user_identifier='chat_user',
+            rating=4
+        )
 
-        assert 'an error' == response['error']
+        self.google_chat_app.send_message.assert_called_once()
+        call_args = self.google_chat_app.send_message.call_args[1]['message_data']
+        assert call_args['space']['name'] == 'spaces/test-space'
+        assert '*Nuevo feedback de my_company*' in call_args['message']['text']
+        assert '*Usuario:* chat_user' in call_args['message']['text']
+        assert '*Mensaje:* A message for Google Chat' in call_args['message']['text']
+        assert '*Calificación:* 4' in call_args['message']['text']
+        self.mail_app.send_email.assert_not_called()
+
+    def test_sends_email_notification_on_correct_config(self):
+        """Test that an email notification is sent when configured for 'rmail'."""
+        self.company.parameters = {
+            'user_feedback': {
+                'channel': 'email',
+                'destination': 'test@example.com'
+            }
+        }
+
+        self.service.new_feedback(
+            company_short_name='my_company',
+            message='A message for email',
+            user_identifier='email_user',
+            rating=3
+        )
+
+        self.mail_app.send_email.assert_called_once_with(
+            to='test@example.com',
+            subject='Nuevo Feedback de my_company',
+            body=ANY  # Check body content separately if needed
+        )
+        call_body = self.mail_app.send_email.call_args[1]['body']
+        assert 'Nuevo feedback de my_company' in call_body
+        assert 'Usuario:* email_user' in call_body
+        assert 'Mensaje:* A message for email' in call_body
+        assert 'Calificación:* 3' in call_body
+        self.google_chat_app.send_message.assert_not_called()
+
+    def test_no_notification_if_config_is_missing(self):
+        """Test that no notification is sent if 'user_feedback' config is absent."""
+        self.company.parameters = {}  # Explicitly no config
+
+        self.service.new_feedback(
+            company_short_name='my_company',
+            message='No notification message',
+            user_identifier='no_config_user',
+            rating=5
+        )
+
+        self.google_chat_app.send_message.assert_not_called()
+        self.mail_app.send_email.assert_not_called()
+
+    def test_no_notification_if_config_is_incomplete(self):
+        """Test that no notification is sent if 'channel' or 'destination' is missing."""
+        # Case 1: Missing destination
+        self.company.parameters = {'user_feedback': {'channel': 'google_chat'}}
+        self.service.new_feedback('my_company', 'msg', 'user', 1)
+
+        # Case 2: Missing channel
+        self.company.parameters = {'user_feedback': {'destination': 'test@example.com'}}
+        self.service.new_feedback('my_company', 'msg', 'user', 1)
+
+        self.google_chat_app.send_message.assert_not_called()
+        self.mail_app.send_email.assert_not_called()
+
+    def test_notification_failure_does_not_prevent_saving_feedback(self):
+        """Test that if a notification fails (e.g., raises an exception), feedback is still saved."""
+        self.company.parameters = {
+            'user_feedback': {
+                'channel': 'google_chat',
+                'destination': 'spaces/failing-space'
+            }
+        }
+        self.google_chat_app.send_message.side_effect = Exception("Network Error")
+
+        response = self.service.new_feedback(
+            company_short_name='my_company',
+            message='A message',
+            user_identifier='a_user',
+            rating=5
+        )
+
+        # The notification was attempted
+        self.google_chat_app.send_message.assert_called_once()
+        # But the feedback was still saved and the operation succeeded
+        self.profile_repo.save_feedback.assert_called_once()
+        assert response == {'message': 'Feedback guardado correctamente'}
 
     def test_feedback_when_company_not_exist(self):
+        """Test error handling when the company does not exist."""
         self.profile_repo.get_company_by_short_name.return_value = None
         response = self.service.new_feedback(
-                        company_short_name='my_company',
-                        message='feedback message for testing',
-                        user_identifier='flibedinsky',
-                        space='spaces/test-space',
-                        type='MESSAGE_TRIGGER',
-                        rating=5
-                        )
-
-        assert 'No existe la empresa: my_company' == response['error']
+            company_short_name='unknown_company',
+            message='any',
+            user_identifier='any',
+            rating=5
+        )
+        assert response == {'error': 'No existe la empresa: unknown_company'}
 
     def test_feedback_when_error_saving_in_database(self):
+        """Test error handling when saving to the database fails."""
         self.profile_repo.save_feedback.return_value = None
         response = self.service.new_feedback(
-                        company_short_name='my_company',
-                        message='feedback message for testing',
-                        user_identifier='flibedinsky',
-                        space='spaces/test-space',
-                        type='MESSAGE_TRIGGER',
-                        rating=2
-                        )
-
-        assert 'No se pudo guardar el feedback' == response['error']
-
-    def test_feedback_when_ok(self):
-        self.profile_repo.save_feedback.return_value = UserFeedback
-        response = self.service.new_feedback(
-                        company_short_name='my_company',
-                        message='feedback message for testing',
-                        user_identifier='flibedinsky',
-                        space='spaces/test-space',
-                        type='MESSAGE_TRIGGER',
-                        rating=4
-                        )
-
-        assert 'Feedback guardado correctamente' == response['message']
-
-    # Nuevos tests para Google Chat
-    def test_feedback_sends_google_chat_notification_success(self):
-        """Test that Google Chat notification is sent successfully"""
-        self.profile_repo.save_feedback.return_value = UserFeedback
-
-        response = self.service.new_feedback(
             company_short_name='my_company',
-            message='feedback message for testing',
-            user_identifier='flibedinsky',
-            space='spaces/AAQAupQldd4',
-            type='MESSAGE_TRIGGER',
-            rating=5
+            message='any',
+            user_identifier='any',
+            rating=2
         )
-
-        # Verify Google Chat was called
-        self.google_chat_app.send_message.assert_called_once()
-
-        # Verify the call arguments
-        call_args = self.google_chat_app.send_message.call_args[1]['message_data']
-        assert call_args['type'] == 'MESSAGE_TRIGGER'
-        assert call_args['space']['name'] == 'spaces/AAQAupQldd4'
-        assert '*Nuevo feedback de my_company*' in call_args['message']['text']
-        assert '*Usuario:* flibedinsky' in call_args['message']['text']
-        assert '*Mensaje:* feedback message for testing' in call_args['message']['text']
-        assert '*Calificación:* 5' in call_args['message']['text']
-
-        # Verify feedback was still saved successfully
-        assert 'Feedback guardado correctamente' == response['message']
-
-    def test_feedback_google_chat_notification_failure_does_not_affect_save(self):
-        """Test that Google Chat failure doesn't prevent feedback from being saved"""
-        self.profile_repo.save_feedback.return_value = UserFeedback
-
-        # Mock Google Chat failure
-        self.google_chat_app.send_message.return_value = {
-            'success': False,
-            'message': 'Error al enviar mensaje'
-        }
-
-        response = self.service.new_feedback(
-            company_short_name='my_company',
-            message='feedback message for testing',
-            user_identifier='flibedinsky',
-            space='spaces/AAQAupQldd4',
-            type='MESSAGE_TRIGGER',
-            rating=1
-        )
-
-        # Verify Google Chat was called
-        self.google_chat_app.send_message.assert_called_once()
-
-        # Verify feedback was still saved successfully despite Google Chat failure
-        assert 'Feedback guardado correctamente' == response['message']
-
-    def test_feedback_google_chat_exception_returns_error(self):
-        """Test that Google Chat exception returns an error response"""
-        self.profile_repo.save_feedback.return_value = UserFeedback
-
-        # Mock Google Chat exception
-        self.google_chat_app.send_message.side_effect = Exception('Google Chat error')
-
-        response = self.service.new_feedback(
-            company_short_name='my_company',
-            message='feedback message for testing',
-            user_identifier='flibedinsky',
-            space='spaces/AAQAupQldd4',
-            type='MESSAGE_TRIGGER',
-            rating=3
-        )
-
-        # Verify Google Chat was called
-        self.google_chat_app.send_message.assert_called_once()
-
-        # Verify error response due to Google Chat exception
-        assert 'error' in response
-        assert 'Google Chat error' in response['error']
-
-    def test_feedback_google_chat_failure_does_not_affect_save(self):
-        """Test that Google Chat failure (not exception) doesn't prevent feedback from being saved"""
-        self.profile_repo.save_feedback.return_value = UserFeedback
-
-        # Mock Google Chat failure (returns success: false, not exception)
-        self.google_chat_app.send_message.return_value = {
-            'success': False,
-            'message': 'Error al enviar mensaje'
-        }
-
-        response = self.service.new_feedback(
-            company_short_name='my_company',
-            message='feedback message for testing',
-            user_identifier='flibedinsky',
-            space='spaces/AAQAupQldd4',
-            type='MESSAGE_TRIGGER',
-            rating=4
-        )
-
-        # Verify Google Chat was called
-        self.google_chat_app.send_message.assert_called_once()
-
-        # Verify feedback was still saved successfully despite Google Chat failure
-        assert 'Feedback guardado correctamente' == response['message']
-
-    def test_feedback_message_format_with_external_user_id(self):
-        """Test the format of the Google Chat message """
-        self.profile_repo.save_feedback.return_value = UserFeedback
-
-        self.service.new_feedback(
-            company_short_name='test_company',
-            message='Test feedback message',
-            user_identifier='user123',
-            space='spaces/test-space',
-            type='MESSAGE_TRIGGER',
-            rating=5
-        )
-
-        call_args = self.google_chat_app.send_message.call_args[1]['message_data']
-        expected_message = "*Nuevo feedback de test_company*:\n*Usuario:* user123\n*Mensaje:* Test feedback message\n*Calificación:* 5"
-        assert call_args['message']['text'] == expected_message
-        assert call_args['type'] == 'MESSAGE_TRIGGER'
-        assert call_args['space']['name'] == 'spaces/test-space'
-
-    def test_feedback_google_chat_called_before_save(self):
-        """Test that Google Chat notification is sent before saving to database"""
-        self.profile_repo.save_feedback.return_value = UserFeedback
-
-        # Track the order of calls
-        call_order = []
-
-        def mock_send_message(message_data):
-            call_order.append('google_chat')
-            return {'success': True, 'message': 'Mensaje enviado correctamente'}
-
-        def mock_save_feedback(feedback):
-            call_order.append('save_feedback')
-            return UserFeedback
-
-        self.google_chat_app.send_message.side_effect = mock_send_message
-        self.profile_repo.save_feedback.side_effect = mock_save_feedback
-
-        self.service.new_feedback(
-            company_short_name='test_company',
-            message='Test feedback message',
-            user_identifier='user123',
-            space='spaces/test-space',
-            type='MESSAGE_TRIGGER',
-            rating=3
-        )
-
-        # Verify Google Chat was called before saving
-        assert call_order == ['google_chat', 'save_feedback']
-
-    def test_feedback_with_custom_type_and_space(self):
-        """Test that custom type and space values are used correctly"""
-        self.profile_repo.save_feedback.return_value = UserFeedback
-
-        self.service.new_feedback(
-            company_short_name='test_company',
-            message='Test feedback message',
-            user_identifier='user123',
-            space='spaces/custom-space-id',
-            type='CUSTOM_TYPE',
-            rating=1
-        )
-
-        call_args = self.google_chat_app.send_message.call_args[1]['message_data']
-        assert call_args['type'] == 'CUSTOM_TYPE'
-        assert call_args['space']['name'] == 'spaces/custom-space-id'
-        assert '*Nuevo feedback de test_company*' in call_args['message']['text']
-        assert '*Calificación:* 1' in call_args['message']['text']
-
-    def test_feedback_save_feedback_called_with_rating(self):
-        """Test that save_feedback is called with the rating parameter"""
-        self.profile_repo.save_feedback.return_value = UserFeedback
-
-        self.service.new_feedback(
-            company_short_name='test_company',
-            message='Test feedback message',
-            user_identifier='user123',
-            space='spaces/test-space',
-            type='MESSAGE_TRIGGER',
-            rating=5
-        )
-
-        # Verify save_feedback was called
-        self.profile_repo.save_feedback.assert_called_once()
-
-        # Get the UserFeedback object that was passed to save_feedback
-        saved_feedback = self.profile_repo.save_feedback.call_args[0][0]
-
-        # Verify the rating was set correctly
-        assert saved_feedback.rating == 5
-        assert saved_feedback.message == 'Test feedback message'
-        assert saved_feedback.user_identifier == 'user123'
-        assert saved_feedback.company_id == self.company.id
-
-    def test_feedback_with_different_rating_values(self):
-        """Test that different rating values work correctly"""
-        self.profile_repo.save_feedback.return_value = UserFeedback
-
-        # Test with rating 1
-        response1 = self.service.new_feedback(
-            company_short_name='test_company',
-            message='Test feedback message',
-            user_identifier='user123',
-            space='spaces/test-space',
-            type='MESSAGE_TRIGGER',
-            rating=1
-        )
-        assert 'Feedback guardado correctamente' == response1['message']
-
-        # Test with rating 5
-        response2 = self.service.new_feedback(
-            company_short_name='test_company',
-            message='Test feedback message',
-            user_identifier='user123',
-            space='spaces/test-space',
-            type='MESSAGE_TRIGGER',
-            rating=5
-        )
-        assert 'Feedback guardado correctamente' == response2['message']
-
-        # Verify both calls were made
-        assert self.profile_repo.save_feedback.call_count == 2
-
-        # Verify the ratings were saved correctly
-        calls = self.profile_repo.save_feedback.call_args_list
-        assert calls[0][0][0].rating == 1
-        assert calls[1][0][0].rating == 5
-
-    def test_feedback_google_chat_message_includes_rating(self):
-        """Test that Google Chat message includes the rating in the correct format"""
-        self.profile_repo.save_feedback.return_value = UserFeedback
-
-        self.service.new_feedback(
-            company_short_name='test_company',
-            message='Test feedback message',
-            user_identifier='user123',
-            space='spaces/test-space',
-            type='MESSAGE_TRIGGER',
-            rating=4
-        )
-
-        call_args = self.google_chat_app.send_message.call_args[1]['message_data']
-        message_text = call_args['message']['text']
-
-        # Verify the rating is included in the message
-        assert '*Calificación:* 4' in message_text
-
-        # Verify the complete message format
-        expected_parts = [
-            '*Nuevo feedback de test_company*:',
-            '*Usuario:* user123',
-            '*Mensaje:* Test feedback message',
-            '*Calificación:* 4'
-        ]
-
-        for part in expected_parts:
-            assert part in message_text
+        assert response == {'error': 'No se pudo guardar el feedback'}

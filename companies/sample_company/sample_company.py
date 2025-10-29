@@ -53,6 +53,7 @@ class SampleCompany(BaseCompany):
         self.company = self._create_company(
             name='Sample Company',
             short_name='sample_company',
+            parameters={'user_feedback': {'channel': 'email', 'destination': 'fernando.libedinsky@gmail.com'}},
             branding=BRANDING,
             onboarding_cards=ONBOARDING_CARDS
         )
