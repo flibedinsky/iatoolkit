@@ -101,12 +101,10 @@ const sendFeedback = async function(message) {
         "user_identifier": window.user_identifier,
         "message": message,
         "rating": activeStars,
-        "space": "spaces/AAQAupQldd4", // Este valor podría necesitar ser dinámico
-        "type": "MESSAGE_TRIGGER"
     };
     try {
         // Asumiendo que callLLMAPI está definido globalmente en otro archivo (ej. chat_main.js)
-        const responseData = await callToolkit('/feedback', data, "POST");
+        const responseData = await callToolkit('/api/feedback', data, "POST");
         return responseData;
     } catch (error) {
         console.error("Error al enviar feedback:", error);

@@ -29,11 +29,13 @@ class BaseCompany(ABC):
     def _create_company(self,
                         short_name: str,
                         name: str,
+                        parameters: dict | None = None,
                         branding: dict | None = None,
-                        onboarding_cards: dict | None = None
+                        onboarding_cards: dict | None = None,
                         ) -> Company:
         company_obj = Company(short_name=short_name,
                               name=name,
+                              parameters=parameters,
                               branding=branding,
                               onboarding_cards=onboarding_cards)
         self.company = self.profile_repo.create_company(company_obj)
