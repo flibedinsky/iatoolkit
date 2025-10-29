@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // 2. Construir la URL dinámicamente
         const company = window.companyShortName;
-        const reloadUrl = `/${company}/api/init-context`;
+        const reloadUrl = `${window.iatoolkit_base_url}/${company}/api/init-context`;
         console.log('URL de recarga:', reloadUrl);
 
         // 3. Hacer la llamada AJAX con POST
