@@ -67,7 +67,8 @@ def register_views(injector, app):
 
     # init (reset) the company context (with api-key)
     app.add_url_rule('/<company_short_name>/api/init-context',
-                     view_func=InitContextApiView.as_view('init-context'))
+                     view_func=InitContextApiView.as_view('init-context'),
+                     methods=['POST', 'OPTIONS'])
 
     # register new user, account verification and forgot password
     app.add_url_rule('/<company_short_name>/signup',view_func=SignupView.as_view('signup'))
