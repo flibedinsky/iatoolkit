@@ -146,8 +146,8 @@ class TestQueryService:
                                         question="Hi")
 
         assert result['error'] is True
-        expected_error = f"FATAL: No se encontró 'previous_response_id' para '{MOCK_COMPANY_SHORT_NAME}/{str(MOCK_LOCAL_USER_ID)}'. La conversación no puede continuar."
-        assert result['error_message'] == expected_error
+        expected_error = f"No se encontró 'previous_response_id' para '{MOCK_COMPANY_SHORT_NAME}/{str(MOCK_LOCAL_USER_ID)}'"
+        assert expected_error in result['error_message']
         self.mock_llm_client.invoke.assert_not_called()
 
     # --- Tests para load_files_for_context ---

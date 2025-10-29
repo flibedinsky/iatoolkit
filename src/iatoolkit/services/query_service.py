@@ -196,7 +196,7 @@ class QueryService:
                 previous_response_id = self.session_context.get_last_response_id(company.short_name, user_identifier)
                 if not previous_response_id:
                     return {'error': True,
-                            "error_message": f"FATAL: No se encontró 'previous_response_id' para '{company.short_name}/{user_identifier}'. La conversación no puede continuar."
+                            "error_message": f"No se encontró 'previous_response_id' para '{company.short_name}/{user_identifier}'. Reinicia el contexto para continuar."
                             }
             elif self.util.is_gemini_model(self.model):
                 # check the length of the context_history and remove old messages
