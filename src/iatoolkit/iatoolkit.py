@@ -19,7 +19,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from injector import Binder, Injector, singleton
 from importlib.metadata import version as _pkg_version, PackageNotFoundError
 
-IATOOLKIT_VERSION = "0.60.1"
+IATOOLKIT_VERSION = "0.60.2"
 
 # global variable for the unique instance of IAToolkit
 _iatoolkit_instance: Optional['IAToolkit'] = None
@@ -88,7 +88,7 @@ class IAToolkit:
         # and other integrations, as views are handled manually.
         FlaskInjector(app=self.app, injector=self._injector)
 
-        # Step 6: initialize dispatcher and registered compaies
+        # Step 6: initialize dispatcher and registered companies
         self._init_dispatcher_and_company_instances()
 
         # Step 7: Finalize setup within the application context
@@ -100,8 +100,6 @@ class IAToolkit:
 
         # Step 8: define the download_dir for excel's
         self._setup_download_dir()
-
-
 
         logging.info(f"🎉 IAToolkit v{self.version} inicializado correctamente")
         self._initialized = True
@@ -226,19 +224,19 @@ class IAToolkit:
 
     def _setup_cors(self):
         """🌐 Configura CORS"""
-        # Origins por defecto para desarrollo
+        from iatoolkit.company_registry import get_company_registry
+
+        # default CORS origin
         default_origins = [
-            "http://localhost:5001",
-            "http://127.0.0.1:5001",
             os.getenv('IATOOLKIT_BASE_URL')
         ]
 
-        # Obtener origins adicionales desde configuración/env
+        # Iterate through the registered company names
         extra_origins = []
-        for i in range(1, 11):  # Soporte para CORS_ORIGIN_1 a CORS_ORIGIN_10
-            origin = self._get_config_value(f'CORS_ORIGIN_{i}')
-            if origin:
-                extra_origins.append(origin)
+        all_company_instances = get_company_registry().get_all_company_instances()
+        for company_name, company_instance in all_company_instances.items():
+            cors_origin = company_instance.company.parameters.get('cors_origin', [])
+            extra_origins += cors_origin
 
         all_origins = default_origins + extra_origins
 
@@ -252,7 +250,6 @@ class IAToolkit:
              methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
 
         logging.info(f"✅ CORS configurado para: {all_origins}")
-
 
     def _configure_core_dependencies(self, binder: Binder):
         """⚙️ Configures all system dependencies."""
@@ -383,6 +380,7 @@ class IAToolkit:
                 'user_email': user_profile.get('user_email'),
                 'iatoolkit_base_url': os.environ.get('IATOOLKIT_BASE_URL', ''),
             }
+
 
     def _get_default_static_folder(self) -> str:
         try:

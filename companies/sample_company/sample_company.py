@@ -38,6 +38,43 @@ class SampleCompany(BaseCompany):
             self.sample_db_manager = DatabaseManager(sample_db_uri, register_pgvector=False)
             self.sample_database = SampleCompanyDatabase(self.sample_db_manager)
 
+
+    def register_company(self):
+        # 1. Initialize the company and parameters in the database
+        self.company = self._create_company(
+            name='Sample Company',
+            short_name='sample_company',
+            branding=BRANDING,
+            onboarding_cards=ONBOARDING_CARDS,
+            parameters={
+                'cors_origin': ['https://portal-interno.empresa_de_ejemplo.cl'],
+                'user_feedback':
+                    {
+                        'channel': 'email',
+                        'destination': 'fernando.libedinsky@gmail.com'
+                    },
+                'external_urls':
+                    {
+                        # this login_url is added by the toolkit to Flask CORS
+                        'login_url': 'https://portal-interno.empresa_de_ejemplo.cl',
+
+                        # this logout_url is used when closing Toolkit session
+                        'logout_url': 'https://portal-interno.empresa_de_ejemplo.cl'
+                    }
+                }
+        )
+
+        # 2. create or update the function list
+        for function in FUNCTION_LIST:
+            self._create_function(
+                function_name=function['function_name'],
+                description=function['description'],
+                params=function['params']
+            )
+
+        # 3. create the prompts
+        self._create_prompts()
+
     def handle_request(self, action: str, **kwargs) -> str:
         if action == "sql_query":
             sql_query = kwargs.get('query')
@@ -48,37 +85,6 @@ class SampleCompany(BaseCompany):
         else:
             return self.unsupported_operation(action)
 
-    def register_company(self):
-        # Initialize the company in the database if not exists
-        self.company = self._create_company(
-            name='Sample Company',
-            short_name='sample_company',
-            parameters={'user_feedback': {'channel': 'email', 'destination': 'fernando.libedinsky@gmail.com'}},
-            branding=BRANDING,
-            onboarding_cards=ONBOARDING_CARDS
-        )
-
-        # create or update the function list
-        for function in FUNCTION_LIST:
-            self._create_function(
-                function_name=function['function_name'],
-                description=function['description'],
-                params=function['params']
-            )
-
-        c_general = self._create_prompt_category(name='General', order=1)
-
-        # create the company prompts
-        for prt in PROMPT_LIST:
-            self._create_prompt(
-                prompt_name=prt['name'],
-                description=prt['description'],
-                order=prt['order'],
-                category=c_general,
-                active=prt.get('active', True),
-                custom_fields=prt.get('custom_fields', [])
-            )
-            
     # Return company specific context
     def get_company_context(self, **kwargs) -> str:
         if not self.sample_db_manager:
@@ -189,5 +195,19 @@ class SampleCompany(BaseCompany):
                     click.echo(f"Error: {str(e)}")
 
 
+    def _create_prompts(self):
+        # 1. create the general category
+        c_general = self._create_prompt_category(name='General', order=1)
+
+        # 2. create the company prompts
+        for prt in PROMPT_LIST:
+            self._create_prompt(
+                prompt_name=prt['name'],
+                description=prt['description'],
+                order=prt['order'],
+                category=c_general,
+                active=prt.get('active', True),
+                custom_fields=prt.get('custom_fields', [])
+            )
 
 
