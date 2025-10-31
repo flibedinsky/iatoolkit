@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}IAToolkit - Asistente Inteligente Personalizable{% endblock %}
+{% block title %}IAToolkit{% endblock %}
 
 {% block styles %}
     {# Enlazamos la hoja de estilos del website y los iconos de Bootstrap #}
@@ -22,24 +22,23 @@
         <div class="container">
             <div class="row align-items-center g-5 py-5">
                 <div class="col-lg-7">
-                    <h1 class="hero-title gradient-text">IA que entiende tu negocio desde el primer día.</h1>
+                    <h1 class="hero-title gradient-text">Framework de IA Open Source</h1>
                     <ul class="hero-bullets mt-4">
-                      <li><i class="bi bi-hdd-stack"></i> Conecta tus bases de datos, APIs y documentos.</li>
-                      <li><i class="bi bi-chat-dots"></i> Construye un asistente que entiende el lenguaje de tu empresa.</li>
-                      <li><i class="bi bi-rocket-takeoff"></i> Despliega donde quieras, con tu marca y tus reglas.</li>
-                    </ul>
+                      <li><i class="bi bi-hdd-stack"></i>Integra tus bases de datos SQL y documentos para dar contexto real a tus asistentes.</li>
+                    <li><i class="bi bi-code-slash"></i>Crea un repositorio de prompts validados por tu equipo para estandarizar y acelerar las tareas de IA.</li>
+                    <li><i class="bi bi-shield-lock"></i> Monta la plataforma en tu propia infraestructura con control total sobre el LLM, garantizando la privacidad de los datos.</li>                    </ul>
                 </div>
                 <div class="col-lg-5">
                     <div class="border rounded-3 p-4 p-md-5 shadow-sm bg-light">
                         <h3 class="fw-bold text-center mb-3">Prueba la Plataforma</h3>
                         <p class="text-muted text-center mb-4">
-                            Explora una versión de demostración completamente funcional para ver el asistente en acción.
+                            Interactúa con una demo pre-configurada y conectada a una base de datos de ejemplo para poner a prueba sus capacidades.
                         </p>
                         <div class="d-grid">
                             {# Este botón usa la clase .btn-primary, que es estilizada por .hero-section .btn-primary en el CSS #}
                             <a href="{{ url_for('home', company_short_name='sample_company') }}"
                                class="btn btn-primary btn-lg fw-bold">
-                                Acceder a la Demo
+                                Acceder
                             </a>
                         </div>
                     </div>

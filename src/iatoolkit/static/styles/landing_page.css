@@ -79,6 +79,10 @@ body {
     border-color: var(--website-primary-color-dark);
 }
 
+.bg-light h3 {
+    color: var(--website-primary-color);
+}
+
 /* --- Sección de Características (Features) --- */
 .features-section {
     padding: 5rem 0;
