@@ -57,7 +57,7 @@ class TestChangePasswordView:
 
         # Añadir una ruta 'index' para que url_for() no falle en la prueba
         @self.app.route("/<company_short_name>/")
-        def index(company_short_name):
+        def home(company_short_name):
             return "Página de índice", 200
 
     @patch("iatoolkit.views.change_password_view.render_template")

@@ -6,7 +6,7 @@ let selectedPrompt = null; // Will hold a lightweight prompt object
 $(document).ready(function () {
     // Si viene un Token retornado por login con APY-KEY se gatilla el redeem a una sesion de flask
         if (window.redeemToken) {
-            const url = `/api/redeem_token`;
+            const url = '/api/redeem_token';
             // No await: dejamos que callToolkit maneje todo internamente
             callToolkit(url, {'token': window.redeemToken}, "POST").catch(() => {});
         }

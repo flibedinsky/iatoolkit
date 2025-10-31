@@ -82,7 +82,7 @@ class SignupView(MethodView):
             session['alert_icon'] = 'success'
 
             # Redirigimos al usuario a la página de login
-            return redirect(url_for('index', company_short_name=company_short_name))
+            return redirect(url_for('home', company_short_name=company_short_name))
 
         except Exception as e:
             return render_template("error.html",

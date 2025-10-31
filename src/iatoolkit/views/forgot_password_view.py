@@ -60,7 +60,7 @@ class ForgotPasswordView(MethodView):
             # Guardamos el mensaje y el icono en la sesión manualmente
             session['alert_message'] = "Si tu correo está registrado, recibirás un enlace para restablecer tu contraseña."
             session['alert_icon'] = "success"
-            return redirect(url_for('index', company_short_name=company_short_name))
+            return redirect(url_for('home', company_short_name=company_short_name))
 
         except Exception as e:
             return render_template("error.html",

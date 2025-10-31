@@ -91,7 +91,7 @@ class ChangePasswordView(MethodView):
             # Éxito: Guardar mensaje en sesión y redirigir
             session['alert_message'] = "Tu contraseña ha sido restablecida exitosamente. Ahora puedes iniciar sesión."
             session['alert_icon'] = 'success'
-            return redirect(url_for('index', company_short_name=company_short_name))
+            return redirect(url_for('home', company_short_name=company_short_name))
 
         except Exception as e:
             return render_template("error.html",

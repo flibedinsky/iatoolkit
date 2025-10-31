@@ -27,10 +27,13 @@ def register_views(injector, app):
     from iatoolkit.views.login_view import LoginView, FinalizeContextView
     from iatoolkit.views.external_login_view import ExternalLoginView, RedeemTokenApiView
     from iatoolkit.views.logout_api_view import LogoutApiView
-
+    from iatoolkit.views.home_view import HomeView
 
     # iatoolkit home page
-    app.add_url_rule('/<company_short_name>', view_func=IndexView.as_view('index'))
+    app.add_url_rule('/', view_func=IndexView.as_view('index'))
+
+    # company home view
+    app.add_url_rule('/<company_short_name>/home', view_func=HomeView.as_view('home'))
 
     # login for the iatoolkit integrated frontend
     app.add_url_rule('/<company_short_name>/login', view_func=LoginView.as_view('login'))
@@ -124,6 +127,6 @@ def register_views(injector, app):
     # hacer que la raíz '/' vaya al home de iatoolkit
     @app.route('/')
     def root_redirect():
-        return redirect(url_for('index', company_short_name='sample_company'))
+        return redirect(url_for('index'))
 
 

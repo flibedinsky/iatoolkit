@@ -1,228 +1,176 @@
 /* static/styles/landing_page.css */
 
-/* --- Configuración General --- */
+/* --- Variables y Estilos Globales --- */
+:root {
+    --website-primary-color: #4A55A2;
+    --website-primary-color-dark: #3A448A;
+    --website-gradient-start: #4A55A2;
+    --website-gradient-end: #7895CB;
+    --website-dark-text: #212529;
+    --website-light-bg: #f8f9fa;
+    --website-muted-text: #6c757d;
+}
+
 body {
-    background-color: #ffffff; /* Cambiado a blanco para que el hero destaque */
+    background-color: #fff;
+    color: var(--website-dark-text);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
-/* --- 1. Barra de Navegación Superior --- */
-.landing-navbar {
-    background-color: var(--brand-primary-color, #0d6efd);
-    padding: 1rem 1.5rem;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.landing-navbar .navbar-brand {
-    color: var(--brand-text-on-primary, #FFFFFF);
-    font-weight: 700;
-    font-size: 1.8rem; /* Aumentado el tamaño del texto */
-}
-
-.gradient-text {
-  /* Define un gradiente como fondo */
-  background: linear-gradient(90deg, #4F46E5, #818CF8);
-
-  /* Recorta el fondo para que solo sea visible donde hay texto */
-  -webkit-background-clip: text;
-  background-clip: text;
-
-  /* Hace que el color del texto sea transparente para que se vea el fondo */
-  color: transparent;
-
-  /* Asegura que el fondo no se repita */
-  background-size: 100%;
-}
-
-/* Estilos para el texto de la propuesta de valor */
-.value-proposition {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    height: 100%;
-    padding-left: 2rem;
-}
-
-/* --- 2. Sección Principal (Hero) --- */
-.hero-section {
-    padding: 1rem 0;
-    background-color: #f8f9fa; /* Fondo gris claro para la sección principal */
-}
-
-.hero-title {
-  font-size: 3rem;
-  font-weight: 700;
-  background: linear-gradient(90deg, #4F46E5, #818CF8);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  line-height: 1.1;
-  letter-spacing: -0.5px;
-}
-
-.hero-bullets {
-  list-style: none;
-  padding-left: 2rem;
-  margin-top: 1.5rem;
-}
-
-.hero-bullets li {
-  font-size: 1.15rem;
-  color: #4b5563;
-  margin-bottom: 0.8rem;
-  display: flex;
-  align-items: flex-start;
-  gap: 0.6rem;
-  line-height: 1.5;
-}
-
-.hero-bullets i {
-  color: #4F46E5;
-  font-size: 1.3rem;
-  margin-top: 0.2rem;
-}
-
-.value-proposition .hero-subtitle {
-    font-size: 1.1rem;
-    color: #6c757d;
-    margin-top: 1.5rem;
-}
-
-
-.value-proposition .hero-accelerator {
-    color: var(--brand-primary-color, #0d6efd);
-}
-
-/* --- Estilo para el título del widget de login --- */
-.hero-section .bg-light h4 {
-    color: var(--brand-primary-color, #0d6efd);
-}
-
-.author-section {
-  background: #ffffff;
-}
-
-.author-card {
-  background: #f8f9fa;
-  border: 1px solid #e9ecef;
-  border-radius: 10px;
-}
-
-.author-avatar {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  background: var(--brand-primary-color, #0d6efd);
-  color: var(--brand-text-on-primary, #fff);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 2rem;
-}
-
-.author-bio {
-  color: #4b5563;
-  line-height: 1.6;
-}
-
-.author-linkedin {
-  color: var(--brand-primary-color, #0d6efd);
-  text-decoration: none;
-}
-.author-linkedin:hover {
-  text-decoration: underline;
-}
-
-/* --- Estilo para el texto introductorio del widget --- */
-.widget-intro-text {
-    font-style: italic;
-    font-size: 0.9rem;
-    line-height: 1.4;
-}
-
-/* --- 3. Sección de Características --- */
-.features-section {
-    padding: 5rem 0;
-    background-color: #ffffff; /* Fondo blanco para esta sección */
-}
-
-/* (El resto del archivo CSS permanece sin cambios) */
-.feature-item {
-    text-align: center;
-    padding: 2rem;
-    background-color: #f8f9fa; /* Fondo gris claro para cada tarjeta */
-    border: 1px solid #dee2e6;
-    border-radius: 0.5rem;
-    height: 100%; /* CLAVE: Asegura que todas las tarjetas en una fila tengan el mismo alto */
-}
-
-.feature-icon {
-    font-size: 3rem;
-    color: var(--brand-primary-color); /* Usar color primario para más impacto */
-    margin-bottom: 1.5rem;
-    display: inline-block;
-}
-
-.feature-item h3 {
-    font-size: 1.4rem;
-    font-weight: 600;
-    margin-bottom: 1rem;
-}
-
-.feature-item p {
-    color: #6c757d;
-}
-
-.opensource-box {
-    background-color: #343a40;
-    color: #f8f9fa;
-    padding: 2rem;
-    border-radius: 0.5rem;
-    height: 100%; /* CLAVE: Asegura que tenga el mismo alto */
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    text-align: center;
-}
-
-.opensource-icon {
-    font-size: 3rem; /* Tamaño consistente con los otros iconos */
-    color: var(--brand-text-on-primary, #FFFFFF);
-    opacity: 0.9;
-    margin-bottom: 1.5rem;
-}
-
-.opensource-content h3 {
-    font-weight: 600;
-    font-size: 1.4rem; /* Tamaño consistente */
-    margin-bottom: 1rem;
-}
-
-.opensource-content p {
-    margin-bottom: 1.5rem;
-    color: #adb5bd;
-}
-
-.opensource-content .btn {
+/* --- Encabezado Propio (sin usar .navbar) --- */
+.website-header {
+    background-color: var(--website-primary-color); /* Color primario del website */
+    border-bottom: 1px solid transparent; /* Borde ya no necesario con fondo sólido */
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+    padding: 0.75rem 0;
     width: 100%;
 }
 
-.pypi-link {
-    margin-top: 1.5rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid #495057;
-    font-size: 0.9rem;
+.website-brand {
+    font-weight: 700;
+    font-size: 1.75rem;
+     color: #ffffff;
+}
+
+/* --- Sección Principal (Hero) --- */
+.hero-section {
+    padding: 5rem 0;
+}
+.hero-title {
+    font-size: 3.5rem;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 1.5rem;
+}
+.gradient-text {
+    background: linear-gradient(90deg, var(--website-gradient-start), var(--website-gradient-end));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-fill-color: transparent;
+}
+.hero-bullets {
+    list-style: none;
+    padding-left: 0;
+    font-size: 1.1rem;
+}
+.hero-bullets li {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    color: var(--website-muted-text);
+}
+.hero-bullets .bi {
+    color: var(--website-primary-color);
+    font-size: 1.5rem;
+}
+
+/* --- Botón de Llamada a la Acción (CTA) --- */
+.hero-section .btn-primary {
+    background-color: var(--website-primary-color);
+    border-color: var(--website-primary-color);
+    transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out;
+}
+.hero-section .btn-primary:hover {
+    background-color: var(--website-primary-color-dark);
+    border-color: var(--website-primary-color-dark);
+}
+
+/* --- Sección de Características (Features) --- */
+.features-section {
+    padding: 5rem 0;
+    background-color: var(--website-light-bg);
+}
+.feature-item {
+    background-color: #fff;
+    padding: 2rem;
+    border-radius: 0.75rem;
+    border: 1px solid #e9ecef;
+    height: 100%;
+    transition: all 0.3s ease;
+}
+.feature-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+}
+.feature-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    color: var(--website-primary-color);
+}
+.feature-item h3 {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+.feature-item p {
+    color: var(--website-muted-text);
+}
+
+/* Estilo especial para la caja de Open Source */
+.opensource-box {
+    background: var(--website-dark-text);
+    color: #fff;
+    padding: 2rem;
+    border-radius: 0.75rem;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    border: 1px solid transparent;
+    transition: all 0.3s ease;
+}
+.opensource-box:hover {
+     transform: translateY(-5px);
+     box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+.opensource-icon .bi-github {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+.opensource-box h3 {
+    font-weight: 600;
+}
+.opensource-box p {
     color: #ced4da;
+    margin-bottom: 1.5rem;
 }
 
-.pypi-link code {
-    background-color: #212529;
-    padding: 0.2rem 0.5rem;
-    border-radius: 4px;
-    color: #e83e8c;
+/* --- Sección del Autor --- */
+.author-section {
+    background-color: #fff;
+}
+.author-card {
+    background-color: var(--website-light-bg);
+    border-radius: 0.75rem;
+    border: 1px solid #e9ecef;
+}
+.author-card h5 {
+    color: var(--website-primary-color);
+    font-weight: 600;
+}
+.author-bio {
+    color: var(--website-muted-text);
+    line-height: 1.6;
+}
+.author-linkedin {
+    text-decoration: none;
+    color: #0077b5;
+    font-weight: 500;
+    transition: opacity 0.2s;
+}
+.author-linkedin:hover {
+    opacity: 0.8;
 }
 
-/* --- 4. Footer --- */
+/* --- Footer --- */
 .landing-footer {
-    background-color: #343a40;
-    color: #adb5bd;
+    background-color: var(--website-light-bg);
+    color: var(--website-muted-text);
     padding: 2rem 0;
     text-align: center;
-    font-size: 0.9rem;
+    margin-top: 4rem;
+    border-top: 1px solid #e9ecef;
 }

@@ -32,7 +32,7 @@ class LogoutApiView(MethodView):
         # get URL for redirection
         url_for_redirect = company.parameters.get('external_urls', {}).get('logout_url')
         if not url_for_redirect:
-            url_for_redirect = url_for('index', company_short_name=company_short_name)
+            url_for_redirect = url_for('home', company_short_name=company_short_name)
 
         # clear de session cookie
         SessionManager.clear()

@@ -1,0 +1,15 @@
+<div class="custom-company-header" style="{{ branding.header_style }}">
+
+    {# Enlace condicional para el nombre de la marca a la izquierda #}
+        <a href="{{ url_for('home', company_short_name=company_short_name) }}"
+           class="brand-name"
+           style="{{ branding.primary_text_style }}">
+            {{ branding.name }}
+        </a>
+
+    <span class="powered-by">
+        Powered by IAToolkit
+         </a>
+    </span>
+
+</div>

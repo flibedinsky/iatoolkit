@@ -19,8 +19,9 @@
     color: var(--brand-text-on-primary);
 }
 .btn-branded-primary:hover {
-    filter: brightness(90%);
-    color: var(--brand-text-on-primary);
+    background-color: var(--brand-text-on-primary);
+    color: var(--brand-primary-color);
+    border-color: var(--brand-primary-color);
 }
 
 .btn-branded-secondary {
@@ -29,8 +30,9 @@
     color: var(--brand-text-on-secondary);
 }
 .btn-branded-secondary:hover {
-    filter: brightness(90%);
-    color: var(--brand-text-on-secondary);
+    background-color: var(--brand-text-on-secondary);
+    color: var(--brand-secondary-color);
+    border-color: var(--brand-secondary-color);
 }
 
 /* Estilos para alertas informativas personalizadas */

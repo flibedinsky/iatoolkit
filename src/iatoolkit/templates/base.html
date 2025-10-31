@@ -13,6 +13,8 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='styles/onboarding.css', _external=True) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles/chat_modal.css',  _external=True) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles/llm_output.css', _external=True) }}">
+
+    {% block styles %}{% endblock %}
 </head>
 <body class="d-flex flex-column p-3" style="min-height: 100vh;">
 

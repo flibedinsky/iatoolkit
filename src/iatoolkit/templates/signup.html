@@ -1,16 +1,18 @@
 {% extends "base.html" %}
 
-{% block title %}Registro de Usuario - {{ company.name }}{% endblock %}
+{% block title %}Crear Cuenta - {{ branding.name }}{% endblock %}
+
+{% block styles %}
+    {# ¡Importante! Añadimos los estilos para el branding #}
+    <style>
+        {{ branding.css_variables | safe }}
+    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/chat_iatoolkit.css') }}">
+{% endblock %}
 
 {% block content %}
-    <!-- 1. Incluimos los estilos de branding reutilizables -->
-    {% include '_branding_styles.html' %}
+{% include '_company_header.html' %}
 
-    <!-- Enlazamos la hoja de estilos de la landing page para reutilizar estilos -->
-    <link rel="stylesheet" href="{{ iatoolkit_base_url }}/static/styles/landing_page.css">
-
-    <!-- 2. Incluimos la barra de navegación reutilizable -->
-    {% include '_navbar.html' %}
 
     <!-- 3. Sección contenedora para centrar el contenido -->
     <section class="hero-section">
@@ -18,8 +20,8 @@
             <div class="row justify-content-center">
                 <!-- Se ha reducido el ancho de la columna a lg-6 y md-8 -->
                 <div class="col-lg-6 col-md-8">
-                    <div class="border rounded p-4 p-md-5 shadow-sm bg-light">
-                        <h4 class="form-title fw-bold mb-3 text-center">Crea tu cuenta en {{ company.name }}</h4>
+                    <div class="branded-form-container">
+                        <h4 class="branded-form-title">Crea tu cuenta en {{ company.name }}</h4>
                         <form action="{{ url_for('signup', company_short_name=company_short_name) }}" method="post">
                             <div class="mb-3">
                                 <label for="email" class="form-label text-secondary">Correo Electrónico</label>
