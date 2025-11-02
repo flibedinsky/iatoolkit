@@ -66,33 +66,15 @@
 /* Modal de historial */
 .thead-branded th {
     background-color: #e9ecef; /* Un gris claro estándar de Bootstrap */
-    color: #212529; /* El color de texto oscuro por defecto */
+    color: #212529;             /* El color de texto oscuro por defecto */
     font-size: 16px;
     font-weight: bold;
-}
-
-/* Evita el salto de línea en la celda de la fecha */
-#historyModal .date-cell {
-    white-space: nowrap;
 }
 
 .col-min,
 .col-icon {
   width: 1%;
   white-space: nowrap;
-}
-
-/* Estilo para el icono de copiar/editar en cada fila */
-#historyModal .copy-query-icon {
-    color: var(--brand-secondary-color, #6c757d); /* Usa el color secundario de la marca */
-    text-decoration: none;
-    opacity: 0.6;
-    transition: opacity 0.2s ease-in-out;
-}
-
-#historyModal .copy-query-icon:hover {
-    opacity: 1; /* El icono se vuelve completamente opaco al pasar el ratón */
-    cursor: pointer; /* Asegura que el cursor cambie a una mano */
 }
 
 /* Modal de feedback */

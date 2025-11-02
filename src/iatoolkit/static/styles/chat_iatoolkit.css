@@ -519,5 +519,21 @@ h1, h2, h3, h4, h5, h6 {
     color: inherit;
 }
 
+.edit-pencil {
+    color: var(--brand-secondary-color, #6c757d); /* Color secundario por defecto */
+    cursor: pointer;
+    opacity: 0.6;
+    text-decoration: none;
+    /* Transición suave para todos los cambios (color, opacidad, tamaño) */
+    transition: all 0.25s ease-in-out;
+}
+
+.edit-pencil:hover {
+    opacity: 1;
+    transform: scale(1.2);
+    color: var(--brand-primary-color, #4C6A8D);
+    cursor: pointer;
+}
+
 
 

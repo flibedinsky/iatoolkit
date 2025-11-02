@@ -8,7 +8,7 @@ $(document).ready(function () {
     // Evento delegado para el icono de copiar.
     // Se adjunta UNA SOLA VEZ al cuerpo de la tabla y funciona para todas las filas
     // que se añadan dinámicamente.
-    $('#history-table-body').on('click', '.copy-query-icon', function() {
+    $('#history-table-body').on('click', '.edit-pencil', function() {
         const queryText = $(this).data('query');
 
         // Copiar el texto al textarea del chat
@@ -94,7 +94,7 @@ $(document).ready(function () {
 
             const link = $('<a>')
                 .attr('href', 'javascript:void(0);')
-                .addClass('copy-query-icon')
+                .addClass('edit-pencil')
                 .attr('title', 'Copiar consulta al chat')
                 .data('query', item.query)
                 .append(icon);

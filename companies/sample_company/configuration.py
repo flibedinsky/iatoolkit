@@ -69,7 +69,6 @@ BRANDING = {
     "header_background_color": "#4C6A8D",       # Fondo en Azul Acero
     "header_text_color": "#FFFFFF",             # Texto en blanco para un contraste nítido
 
-    # --- Estilos Globales de la Marca (Botones y acciones) ---
     "brand_primary_color": "#4C6A8D",           # Azul Acero como color de acción principal
     "brand_secondary_color": "#9EADC0",         # Un gris azulado más claro para acciones secundarias
     "brand_text_on_primary": "#FFFFFF",         # Texto blanco sobre el azul
