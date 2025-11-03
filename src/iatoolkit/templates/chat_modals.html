@@ -1,66 +1,4 @@
-<!-- Modal para mostrar archivos cargados -->
-<div class="modal fade" id="uploadedFilesModal" tabindex="-1" aria-labelledby="uploadedFilesModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header branded">
-        <h5 class="modal-title" id="uploadedFilesModalLabel">Archivos Cargados</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <ul id="uploaded-files-list" class="list-group">
-          <!-- Los nombres de los archivos se agregarán aquí por JS -->
-        </ul>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-branded-secondary" data-bs-dismiss="modal">Cerrar</button>
-      </div>
-    </div>
-  </div>
-</div>
 
-<!-- Modal para feedback -->
-<div class="modal fade" id="feedbackModal" tabindex="-1" aria-labelledby="feedbackModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header branded">
-                <h5 class="modal-title" id="feedbackModalLabel">
-                    <i class="bi bi-chat-dots me-3"></i>Tu Opinión es Importante
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p class="text-center mb-2"><strong>¿Qué tan útil fue la respuesta del asistente?</strong></p>
-
-                <div class="rating-stars mb-4">
-                    <span class="star" data-rating="1" onclick="gfg(1)"></span>
-                    <span class="star" data-rating="2" onclick="gfg(2)"></span>
-                    <span class="star" data-rating="3" onclick="gfg(3)"></span>
-                    <span class="star" data-rating="4" onclick="gfg(4)"></span>
-                    <span class="star" data-rating="5" onclick="gfg(5)"></span>
-                </div>
-                <!-- ▲▲▲ FIN DEL BLOQUE DE HTML QUE FALTABA ▲▲▲ -->
-
-                <div class="form-group">
-                    <label for="feedback-text" class="form-label text-muted">Tu comentario nos ayuda a mejorar:</label>
-                    <textarea
-                    class="form-control feedback-text"
-                    id="feedback-text"
-                    rows="4"
-                    placeholder="Escribe aquí tu opinión, sugerencias o comentarios..."
-                    style="resize: vertical; min-height: 100px;"></textarea>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-branded-secondary" data-bs-dismiss="modal">
-                    <i class="bi bi-x-circle me-1"></i>Cancelar
-                </button>
-                <button type="button" class="btn btn-branded-primary" id="submit-feedback">
-                    <i class="bi bi-send me-1"></i>Enviar
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
 
 <!-- Modal para historial -->
 <div class="modal fade" id="historyModal" tabindex="-1" aria-labelledby="historyModalLabel" aria-hidden="true">
@@ -106,6 +44,52 @@
     </div>
 </div>
 
+
+<!-- Modal para feedback -->
+<div class="modal fade" id="feedbackModal" tabindex="-1" aria-labelledby="feedbackModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header branded">
+                <h5 class="modal-title" id="feedbackModalLabel">
+                    <i class="bi bi-chat-dots me-3"></i>Tu Opinión es Importante
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-center mb-2"><strong>¿Qué tan útil fue la respuesta del asistente?</strong></p>
+
+                <div class="rating-stars mb-4">
+                    <span class="star" data-rating="1" onclick="gfg(1)"></span>
+                    <span class="star" data-rating="2" onclick="gfg(2)"></span>
+                    <span class="star" data-rating="3" onclick="gfg(3)"></span>
+                    <span class="star" data-rating="4" onclick="gfg(4)"></span>
+                    <span class="star" data-rating="5" onclick="gfg(5)"></span>
+                </div>
+                <!-- ▲▲▲ FIN DEL BLOQUE DE HTML QUE FALTABA ▲▲▲ -->
+
+                <div class="form-group">
+                    <label for="feedback-text" class="form-label text-muted">Tu comentario nos ayuda a mejorar:</label>
+                    <textarea
+                    class="form-control feedback-text"
+                    id="feedback-text"
+                    rows="4"
+                    placeholder="Escribe aquí tu opinión, sugerencias o comentarios..."
+                    style="resize: vertical; min-height: 100px;"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-branded-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-branded-primary" id="submit-feedback">
+                    <i class="bi bi-send me-1"></i>Enviar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 <!-- Modal de Onboarding -->
 <div class="modal fade" id="onboardingModal" tabindex="-1" aria-labelledby="onboardingModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
@@ -135,6 +119,26 @@
             Cerrar
         </button>
         </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para mostrar archivos cargados -->
+<div class="modal fade" id="uploadedFilesModal" tabindex="-1" aria-labelledby="uploadedFilesModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header branded">
+        <h5 class="modal-title" id="uploadedFilesModalLabel">Archivos Cargados</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <ul id="uploaded-files-list" class="list-group">
+          <!-- Los nombres de los archivos se agregarán aquí por JS -->
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-branded-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
     </div>
   </div>
 </div>
