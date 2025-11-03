@@ -1,6 +1,5 @@
 /* Estilos generales para modales */
 
-
 /* Título del modal */
 .modal-title{
     font-size: 20px;
@@ -63,7 +62,7 @@
     border-color: var(--brand-secondary-color);
 }
 
-/* Modal de historial */
+/* Tabla con el resultado del historial */
 .thead-branded th {
     background-color: #e9ecef; /* Un gris claro estándar de Bootstrap */
     color: #212529;             /* El color de texto oscuro por defecto */
@@ -102,7 +101,7 @@
 .star:hover,
 .star.active,
 .star.hover-active {
-    color: #ffc107;
+    color: var(--brand-primary-color);
 }
 
 .icon-spaced {
@@ -142,7 +141,7 @@
     flex-shrink: 0;
 }
 
-/* Estilos para alertas informativas personalizadas */
+/* Estilos para alertas generales del chat */
 .alert-branded-info {
     background-color: var(--brand-info-bg);
     color: var(--brand-info-text);

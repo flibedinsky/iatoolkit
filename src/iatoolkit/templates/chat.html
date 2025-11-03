@@ -102,7 +102,7 @@
                 <div class="{{ prompt_col_class }}">
                     <div class="position-relative h-100">
                         <div class="input-group dropup h-100">
-                            <button type="button" id="prompt-select-button" class="btn btn-light border dropdown-toggle w-100 text-start" data-bs-toggle="dropdown" aria-expanded="false">
+                            <button type="button" id="prompt-select-button" class="btn prompt-select-button  border dropdown-toggle w-100 text-start" data-bs-toggle="dropdown" aria-expanded="false">
                                 Prompts disponibles ....
                             </button>
                             <ul class="dropdown-menu dropdown-menu-soft w-100">
@@ -198,14 +198,13 @@
 </script>
 
 <!-- Carga de los scripts JS externos después de definir las variables globales -->
-    <script src="{{ url_for('static', filename='js/chat_onboarding_button.js', _external=True) }}"></script>
-    <script src="{{ url_for('static', filename='js/chat_filepond.js', _external=True) }}"></script>
     <script src="{{ url_for('static', filename='js/chat_history_button.js', _external=True) }}"></script>
-    <script src="{{ url_for('static', filename='js/chat_feedback_button.js', _external=True) }}"></script>
     <script src="{{ url_for('static', filename='js/chat_reload_button.js', _external=True) }}"></script>
-    <script src="{{ url_for('static', filename='js/chat_main.js', _external=True) }}"></script>
+    <script src="{{ url_for('static', filename='js/chat_feedback_button.js', _external=True) }}"></script>
+    <script src="{{ url_for('static', filename='js/chat_onboarding_button.js', _external=True) }}"></script>
     <script src="{{ url_for('static', filename='js/chat_logout_button.js', _external=True) }}"></script>
     <script src="{{ url_for('static', filename='js/chat_prompt_manager.js', _external=True) }}"></script>
+    <script src="{{ url_for('static', filename='js/chat_filepond.js', _external=True) }}"></script>
     <script src="{{ url_for('static', filename='js/chat_main.js', _external=True) }}"></script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>

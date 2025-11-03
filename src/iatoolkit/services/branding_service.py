@@ -143,5 +143,5 @@ class BrandingService:
             "tertiary_text_style": tertiary_text_style,
             "header_text_color": final_branding_values['header_text_color'],
             "css_variables": css_variables,
-            "send_button_color": final_branding_values['send_button_color']
+            "send_button_color": final_branding_values['brand_primary_color']
         }

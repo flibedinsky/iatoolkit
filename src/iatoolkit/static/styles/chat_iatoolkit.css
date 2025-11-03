@@ -444,6 +444,30 @@ h1, h2, h3, h4, h5, h6 {
     border-bottom: none;
 }
 
+    .prompt-select-button {
+        /* Estado por defecto: Estilo "outline" sutil */
+        background-color: transparent;
+        color: var(--brand-primary-color);
+        border: 1px solid var(--brand-primary-color); /* Borde fino con el color primario */
+
+        /* Estilos de botón estándar */
+        border-radius: 0.25rem;
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+        text-align: center;
+        font-weight: 500; /* Un poco más de peso para el texto */
+
+        /* Transición suave para el cambio en hover */
+        transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+    }
+
+    .prompt-select-button:hover {
+        /* Estado hover: Se rellena para dar feedback claro */
+        background-color: var(--brand-primary-color);
+        color: var(--brand-text-on-primary);
+    }
+
+
 #clear-selection-button {
     position: absolute;
     top: 50%;
