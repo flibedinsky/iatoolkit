@@ -11,6 +11,22 @@ $(document).ready(function () {
             callToolkit(url, {'token': window.redeemToken}, "POST").catch(() => {});
         }
 
+        const layoutContainer = document.querySelector('body.chat-page-layout'); // Apunta al body con la clase
+    const promptAssistantCollapse = document.getElementById('prompt-assistant-collapse');
+
+    if (layoutContainer && promptAssistantCollapse) {
+        promptAssistantCollapse.addEventListener('show.bs.collapse', function () {
+            layoutContainer.classList.add('prompt-assistant-open');
+            setTimeout(() => {
+                window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+            }, 300);
+        });
+
+        promptAssistantCollapse.addEventListener('hide.bs.collapse', function () {
+            layoutContainer.classList.remove('prompt-assistant-open');
+        });
+    }
+
     // --- chat main event hadlers ---
     $('#send-button').on('click', handleChatMessage);
     $('#stop-button').on('click', abortCurrentRequest);

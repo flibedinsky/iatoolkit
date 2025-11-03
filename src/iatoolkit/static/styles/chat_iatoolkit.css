@@ -36,6 +36,24 @@ h1, h2, h3, h4, h5, h6 {
   color: #64748b;
 }
 
+/* --- Layout Principal de la Aplicación de Chat --- */
+main.chat-layout-container {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    overflow: hidden; /* Evita el scroll en el contenedor principal */
+
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+}
+
+/* Esta parte para el prompt-assistant sigue siendo correcta */
+main.chat-layout-container.prompt-assistant-open {
+    height: auto;
+    overflow: visible;
+}
+
+
 /* Estos estilos son para las paginas publicas: home, signup,  olvide la clave, etc */
 
     /* --- Encabezado (top) de company --- */
@@ -165,7 +183,7 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Estilos para el contenedor del chat y mensajes para que exista scroll */
 #chat-container {
-    max-height: 70vh;
+    flex-grow: 1;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
@@ -383,12 +401,6 @@ h1, h2, h3, h4, h5, h6 {
 .send-button-icon.disabled {
     opacity: 0.4;
     pointer-events: none; /* Lo hace no-clicable */
-}
-
-@media (max-width: 768px) {
-    #chat-container {
-        height: 68vh;
-    }
 }
 
 .filepond--credits {
