@@ -94,6 +94,19 @@ h1, h2, h3, h4, h5, h6 {
         line-height: 1.2;
         color: var(--brand-primary-color);
     }
+    .list-example {
+            display: block;              /* Coloca el ejemplo en su propia línea */
+            font-size: 0.9rem;          /* Lo hace ligeramente más pequeño */
+            color: #6c757d;             /* Color gris (muted) para texto secundario */
+            font-style: italic;         /* Cursiva para diferenciarlo */
+            padding-left: 1.75rem;      /* Lo indenta para alinearlo con el texto del tema */
+            margin-top: 0.25rem;        /* Pequeño espacio superior */
+        }
+
+    .text-brand-primary {
+        font-weight: 800;
+        color: var(--brand-primary-color);
+        }
 
 /* contenedor de formularios: login, signup, forgot password, etc. */
     .branded-form-container {
