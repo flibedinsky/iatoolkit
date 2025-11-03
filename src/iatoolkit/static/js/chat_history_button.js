@@ -87,7 +87,8 @@ $(document).ready(function () {
             $('#historyModal').modal('hide');
 
             // Hacer focus en el textarea
-            $('#question').focus();
+            if (window.innerWidth > 768)
+                $('#question').focus();
         }
     });
 });
