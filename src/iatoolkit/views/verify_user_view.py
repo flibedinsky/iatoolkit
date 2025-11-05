@@ -7,16 +7,21 @@ from flask.views import MethodView
 from flask import render_template, url_for, redirect, session, flash
 from iatoolkit.services.profile_service import ProfileService
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired
-from iatoolkit.services.branding_service import BrandingService  # ¡Importante!
+from iatoolkit.services.branding_service import BrandingService
+from iatoolkit.services.i18n_service import I18nService
 from injector import inject
 import os
 
 
 class VerifyAccountView(MethodView):
     @inject
-    def __init__(self, profile_service: ProfileService, branding_service: BrandingService):
+    def __init__(self,
+                 profile_service: ProfileService,
+                 branding_service: BrandingService,
+                 i18n_service: I18nService):
         self.profile_service = profile_service
         self.branding_service = branding_service
+        self.i18n_service = i18n_service
         self.serializer = URLSafeTimedSerializer(os.getenv("USER_VERIF_KEY"))
 
     def get(self, company_short_name: str, token: str):
@@ -30,7 +35,7 @@ class VerifyAccountView(MethodView):
             # decode the token from the URL
             email = self.serializer.loads(token, salt='email-confirm', max_age=3600*5)
         except SignatureExpired:
-            flash("El enlace de verificación ha expirado. Por favor, solicita uno nuevo.", 'error')
+            flash(self.i18n_service.t('errors.verification.token_expired'), 'error')
             return render_template('signup.html',
                                    company=company,
                                    company_short_name=company_short_name,
@@ -52,7 +57,5 @@ class VerifyAccountView(MethodView):
             return redirect(url_for('home', company_short_name=company_short_name))
 
         except Exception as e:
-            return render_template("error.html",
-                                   company_short_name=company_short_name,
-                                   branding=branding_data,
-                                   message="Ha ocurrido un error inesperado."), 500
+            flash(self.i18n_service.t('errors.general.unexpected_error'), 'error')
+            return redirect(url_for('home', company_short_name=company_short_name))

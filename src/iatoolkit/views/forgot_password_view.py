@@ -8,15 +8,19 @@ from flask import render_template, request, url_for, redirect, session, flash
 from injector import inject
 from iatoolkit.services.profile_service import ProfileService
 from iatoolkit.services.branding_service import BrandingService
+from iatoolkit.services.i18n_service import I18nService
 from itsdangerous import URLSafeTimedSerializer
 import os
 
 class ForgotPasswordView(MethodView):
     @inject
     def __init__(self, profile_service: ProfileService,
-                 branding_service: BrandingService):
+                 branding_service: BrandingService,
+                 i18n_service: I18nService):
         self.profile_service = profile_service
         self.branding_service = branding_service
+        self.i18n_service = i18n_service
+
         self.serializer = URLSafeTimedSerializer(os.getenv("PASS_RESET_KEY"))
 
     def get(self, company_short_name: str):
@@ -25,7 +29,7 @@ class ForgotPasswordView(MethodView):
         if not company:
             return render_template('error.html',
                         company_short_name=company_short_name,
-                        message="Empresa no encontrada"), 404
+                        message="company not found"), 404
 
         branding_data = self.branding_service.get_company_branding(company)
         return render_template('forgot_password.html',
@@ -61,12 +65,9 @@ class ForgotPasswordView(MethodView):
                     branding=branding_data,
                     form_data={"email": email}), 400
 
-            flash("Si tu correo está registrado, recibirás un enlace para restablecer tu contraseña.", 'success')
+            flash(self.i18n_service.t('flash_messages.forgot_password_success'), 'success')
             return redirect(url_for('home', company_short_name=company_short_name))
 
         except Exception as e:
-            return render_template("error.html",
-                                   company_short_name=company_short_name,
-                                   branding=branding_data,
-                                   message=f"Ha ocurrido un error inesperado: {str(e)}"), 500
-
+            flash(self.i18n_service.t('errors.general.unexpected_error'), 'error')
+            return redirect(url_for('home', company_short_name=company_short_name))

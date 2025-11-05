@@ -28,6 +28,7 @@ class TestLoginView:
         self.jwt_service = MagicMock()
         self.auth_service = MagicMock()
         self.utility = MagicMock()
+        self.i18n_service = MagicMock()
 
         # Patch BaseLoginView.__init__ to inject mocks before as_view is called
         original_base_init = BaseLoginView.__init__
@@ -44,6 +45,7 @@ class TestLoginView:
                 onboarding_service=self.onboarding_service,
                 query_service=self.query_service,
                 utility=self.utility,
+                i18n_service=self.i18n_service,
             )
 
         monkeypatch.setattr(BaseLoginView, "__init__", patched_base_init)
@@ -61,6 +63,7 @@ class TestLoginView:
                 branding_service=self.branding_service,
                 onboarding_service=self.onboarding_service,
                 jwt_service=self.jwt_service,
+                i18n_service=self.i18n_service,
             )
 
         monkeypatch.setattr(FinalizeContextView, "__init__", patched_finalize_init)

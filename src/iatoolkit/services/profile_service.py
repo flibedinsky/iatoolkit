@@ -5,7 +5,7 @@
 
 from injector import inject
 from iatoolkit.repositories.profile_repo import ProfileRepo
-from iatoolkit.services.dispatcher_service import Dispatcher
+from iatoolkit.services.i18n_service import I18nService
 from iatoolkit.repositories.models import User, Company, ApiKey
 from flask_bcrypt import check_password_hash
 from iatoolkit.common.session_manager import SessionManager
@@ -16,16 +16,19 @@ import random
 import re
 import secrets
 import string
+import logging
 from iatoolkit.services.dispatcher_service import Dispatcher
 
 
 class ProfileService:
     @inject
     def __init__(self,
+                 i18n_service: I18nService,
                  profile_repo: ProfileRepo,
                  session_context_service: UserSessionContextService,
                  dispatcher: Dispatcher,
                  mail_app: MailApp):
+        self.i18n_service = i18n_service
         self.profile_repo = profile_repo
         self.dispatcher = dispatcher
         self.session_context = session_context_service
@@ -38,11 +41,11 @@ class ProfileService:
             # check if user exists
             user = self.profile_repo.get_user_by_email(email)
             if not user:
-                return {'success': False, "message": "Usuario no encontrado"}
+                return {'success': False, 'message': self.i18n_service.t('errors.auth.user_not_found')}
 
             # check the encrypted password
             if not check_password_hash(user.password, password):
-                return {'success': False, "message": "Contraseña inválida"}
+                return {'success': False, 'message': self.i18n_service.t('errors.auth.invalid_password')}
 
             company = self.profile_repo.get_company_by_short_name(company_short_name)
             if not company:
@@ -131,6 +134,24 @@ class ProfileService:
             "profile": profile
         }
 
+    def update_user_language(self, user_identifier: str, new_lang: str) -> dict:
+        """
+        Business logic to update a user's preferred language.
+        It validates the language and then calls the generic update method.
+        """
+        # 1. Validate that the language is supported by checking the loaded translations.
+        if new_lang not in self.i18n_service.translations:
+            return {'success': False, 'error_message': self.i18n_service.t('errors.general.unsupported_language')}
+
+        try:
+            # 2. Call the generic update_user method, passing the specific field to update.
+            self.update_user(user_identifier, preferred_language=new_lang)
+            return {'success': True, 'message': 'Language updated successfully.'}
+        except Exception as e:
+            # Log the error and return a generic failure message.
+            logging.error(f"Failed to update language for {user_identifier}: {e}")
+            return {'success': False, 'error_message': self.i18n_service.t('errors.general.unexpected_error')}
+
 
     def get_profile_by_identifier(self, company_short_name: str, user_identifier: str) -> dict:
         """
@@ -155,7 +176,8 @@ class ProfileService:
             # get company info
             company = self.profile_repo.get_company_by_short_name(company_short_name)
             if not company:
-                return {"error": f"la empresa {company_short_name} no existe"}
+                return {
+                    "error": self.i18n_service.t('errors.signup.company_not_found', company_name=company_short_name)}
 
             # normalize  format's
             email = email.lower()
@@ -165,24 +187,25 @@ class ProfileService:
             if existing_user:
                 # validate password
                 if not self.bcrypt.check_password_hash(existing_user.password, password):
-                    return {"error": f"La contraseña de {email} es incorrecta."}
+                    return {"error": self.i18n_service.t('errors.signup.incorrect_password_for_existing_user', email=email)}
 
                 # check if register
                 if company in existing_user.companies:
-                    return {"error": f"El usuario con email '{email}' ya existe en esta empresa"}
+                    return {"error": self.i18n_service.t('errors.signup.user_already_registered', email=email)}
                 else:
                     # add new company to existing user
                     existing_user.companies.append(company)
                     self.profile_repo.save_user(existing_user)
-                    return {"message": "Usuario asociado a nueva empresa"}
+                    return {"message": self.i18n_service.t('flash_messages.user_associated_success')}
 
             # add the new user
             if password != confirm_password:
-                return {"error": "Las contraseñas no coinciden. Por favor, inténtalo de nuevo."}
+                return {"error": self.i18n_service.t('errors.signup.password_mismatch')}
 
             is_valid, message = self.validate_password(password)
             if not is_valid:
-                return {"error": message}
+                # Translate the key returned by validate_password
+                return {"error": self.i18n_service.t(message)}
 
             # encrypt the password
             hashed_password = self.bcrypt.generate_password_hash(password).decode('utf-8')
@@ -204,9 +227,9 @@ class ProfileService:
             # send email with verification
             self.send_verification_email(new_user, company_short_name)
 
-            return {"message": "Registro exitoso. Por favor, revisa tu correo para verificar tu cuenta."}
+            return {"message": self.i18n_service.t('flash_messages.signup_success')}
         except Exception as e:
-            return {"error": str(e)}
+            return {"error": self.i18n_service.t('errors.general.unexpected_error')}
 
     def update_user(self, email: str, **kwargs) -> User:
         return self.profile_repo.update_user(email, **kwargs)
@@ -216,14 +239,14 @@ class ProfileService:
             # check if user exist
             user = self.profile_repo.get_user_by_email(email)
             if not user:
-                return {"error": "El usuario no existe."}
+                return {"error": self.i18n_service.t('errors.verification.user_not_found')}
 
             # activate the user account
             self.profile_repo.verify_user(email)
-            return {"message": "Tu cuenta ha sido verificada exitosamente. Ahora puedes iniciar sesión."}
+            return {"message": self.i18n_service.t('flash_messages.account_verified_success')}
 
         except Exception as e:
-            return {"error": str(e)}
+            return {"error": self.i18n_service.t('errors.general.unexpected_error')}
 
     def change_password(self,
                          email: str,
@@ -232,28 +255,28 @@ class ProfileService:
                          confirm_password: str):
         try:
             if new_password != confirm_password:
-                return {"error": "Las contraseñas no coinciden. Por favor, inténtalo nuevamente."}
+                return {"error": self.i18n_service.t('errors.change_password.password_mismatch')}
 
             # check the temporary code
             user = self.profile_repo.get_user_by_email(email)
             if not user or user.temp_code != temp_code:
-                return {"error": "El código temporal no es válido. Por favor, verifica o solicita uno nuevo."}
+                return {"error": self.i18n_service.t('errors.change_password.invalid_temp_code')}
 
             # encrypt and save the password, make the temporary code invalid
             hashed_password = self.bcrypt.generate_password_hash(new_password).decode('utf-8')
             self.profile_repo.update_password(email, hashed_password)
             self.profile_repo.reset_temp_code(email)
 
-            return {"message": "La clave se cambio correctamente"}
+            return {"message": self.i18n_service.t('flash_messages.password_changed_success')}
         except Exception as e:
-            return {"error": str(e)}
+            return {"error": self.i18n_service.t('errors.general.unexpected_error')}
 
     def forgot_password(self, email: str, reset_url: str):
         try:
             # Verificar si el usuario existe
             user = self.profile_repo.get_user_by_email(email)
             if not user:
-                return {"error": f"El usuario {email} no esta registrado."}
+                return {"error": self.i18n_service.t('errors.forgot_password.user_not_registered', email=email)}
 
             # Gen a temporary code and store in the repositories
             temp_code = ''.join(random.choices(string.ascii_letters + string.digits, k=6)).upper()
@@ -262,35 +285,31 @@ class ProfileService:
             # send email to the user
             self.send_forgot_password_email(user, reset_url)
 
-            return {"message": "se envio mail para cambio de clave"}
+            return {"message": self.i18n_service.t('flash_messages.forgot_password_success')}
         except Exception as e:
-            return {"error": str(e)}
+            return {"error": self.i18n_service.t('errors.general.unexpected_error')}
 
     def validate_password(self, password):
         """
-        Valida que una contraseña cumpla con los siguientes requisitos:
-        - Al menos 8 caracteres de longitud
-        - Contiene al menos una letra mayúscula
-        - Contiene al menos una letra minúscula
-        - Contiene al menos un número
-        - Contiene al menos un carácter especial
+        Validates that a password meets all requirements.
+        Returns (True, "...") on success, or (False, "translation.key") on failure.
         """
         if len(password) < 8:
-            return False, "La contraseña debe tener al menos 8 caracteres."
+            return False, "errors.validation.password_too_short"
 
         if not any(char.isupper() for char in password):
-            return False, "La contraseña debe tener al menos una letra mayúscula."
+            return False, "errors.validation.password_no_uppercase"
 
         if not any(char.islower() for char in password):
-            return False, "La contraseña debe tener al menos una letra minúscula."
+            return False, "errors.validation.password_no_lowercase"
 
         if not any(char.isdigit() for char in password):
-            return False, "La contraseña debe tener al menos un número."
+            return False, "errors.validation.password_no_digit"
 
         if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
-            return False, "La contraseña debe tener al menos un carácter especial."
+            return False, "errors.validation.password_no_special_char"
 
-        return True, "La contraseña es válida."
+        return True, "Password is valid."
 
     def get_companies(self):
         return self.profile_repo.get_companies()

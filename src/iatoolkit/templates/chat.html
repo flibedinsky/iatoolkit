@@ -45,38 +45,43 @@
             <div class="d-flex align-items-center">
                 <a href="javascript:void(0);"
                    id="history-button"
-                   class="action-icon-style" title="Historial con mis consultas" style="color: {{ branding.header_text_color }};">
+                   class="action-icon-style" title="{{ t('ui.tooltips.history') }}"
+                   style="color: {{ branding.header_text_color }};">
                     <i class="bi bi-clock-history"></i>
                 </a>
                 <a href="javascript:void(0);"
                    id="force-reload-button"
                    class="ms-3 action-icon-style"
-                   title="Forzar Recarga de Contexto"
+                   title="{{ t('ui.tooltips.reload_context') }}"
                    style="color: {{ branding.header_text_color }};">
                     <i class="bi bi-arrow-clockwise"></i>
                 </a>
                 <a href="javascript:void(0);"
                    id="send-feedback-button"
-                   class="ms-3 action-icon-style" title="Tu feedback es muy importante"
+                   class="ms-3 action-icon-style"
+                   title="{{ t('ui.tooltips.feedback') }}"
                    style="color: {{ branding.header_text_color }};">
                     <i class="bi bi-emoji-smile"></i>
                 </a>
 
                 <a href="javascript:void(0);"
                    id="onboarding-button"
-                   class="ms-3 action-icon-style" title="Como preguntar mejor"
+                   class="ms-3 action-icon-style"
+                   title="{{ t('ui.tooltips.onboarding') }}"
                    style="color: {{ branding.header_text_color }};">
                     <i class="bi bi-lightbulb"></i>
                 </a>
                 <a href="javascript:void(0);"
                        id="open-help-button"
-                       class="ms-3 action-icon-style" title="Guía de Uso"
+                       class="ms-3 action-icon-style"
+                        title="{{ t('ui.tooltips.usage_guide') }}"
                        style="color: {{ branding.header_text_color }};">
                         <i class="bi bi-question-circle-fill"></i>
                     </a>
                 <a href="javascript:void(0);"
                    id="logout-button"
-                   class="ms-3 action-icon-style" title="Cerrar sesión"
+                   class="ms-3 action-icon-style"
+                   title="{{ t('ui.tooltips.logout') }}"
                    style="color: {{ branding.header_text_color }}; !important;">
                     <i class="bi bi-box-arrow-right"></i>
                 </a>
@@ -87,9 +92,9 @@
 <div id="chat-container"
      class="chat-block mt-2 flex-grow-1"
      style="overflow-y: auto;">
-    <!-- Mensaje de bienvenida estático -->
+    <!-- Mensaje de bienvenida  -->
     <div class="answer-section">
-                ¡Hola! en que te puedo ayudar hoy?
+         {{ t('ui.chat.welcome_message') }}
     </div>
 </div>
 
@@ -109,7 +114,7 @@
                     <div class="position-relative h-100">
                         <div class="input-group dropup h-100">
                             <button type="button" id="prompt-select-button" class="btn prompt-select-button  border dropdown-toggle w-100 text-start" data-bs-toggle="dropdown" aria-expanded="false">
-                                Prompts disponibles ....
+                                {{ t('ui.chat.prompts_available') }} ....
                             </button>
                             <ul class="dropdown-menu dropdown-menu-soft w-100">
                                 {% if prompts and prompts.message %}
@@ -151,33 +156,39 @@
         <div class="d-flex align-items-center">
             <!-- varita magica -->
             <a class="p-2" href="#prompt-assistant-collapse" data-bs-toggle="collapse" role="button"
-               aria-expanded="false" aria-controls="prompt-assistant-collapse" title="Usar Asistente de Prompts">
+               aria-expanded="false" aria-controls="prompt-assistant-collapse"
+               title="{{ t('ui.tooltips.use_prompt_assistant') }}">
                 <i class="bi bi-magic"></i>
             </a>
-            <a class="p-2" href="javascript:void(0);" id="paperclip-button" title="Adjuntar archivos">
+            <a class="p-2" href="javascript:void(0);" id="paperclip-button"
+               title="{{ t('ui.tooltips.attach_files') }}">
                 <i class="bi bi-plus-circle"></i>
             </a>
             <div id="view-files-button-container" style="display: none;">
-                <a class="p-2" href="javascript:void(0);" id="view-files-button" title="Ver archivos adjuntos">
+                <a class="p-2" href="javascript:void(0);" id="view-files-button"
+                   title="{{ t('ui.tooltips.view_attached_files') }}">
                     <i class="bi bi-file-earmark-text"></i>
                 </a>
             </div>
         </div>
 
         <!-- Textarea Central -->
-        <textarea id="question" placeholder="Escribe tu consulta aquí..." class="form-control chat-textarea" style="resize: none;" rows="1"></textarea>
+        <textarea id="question" placeholder="{{ t('ui.chat.input_placeholder') }}"
+                  class="form-control chat-textarea" style="resize: none;" rows="1"></textarea>
 
         <!-- Botón de Enviar a la derecha -->
         <div class="d-flex align-items-center">
             <div id="send-button-container">
                 <a href="javascript:void(0);" id="send-button"
-                   class="p-2 send-button-icon" title="Enviar">
+                   class="p-2 send-button-icon"
+                   title="{{ t('ui.buttons.send') }}">
                     <i class="bi bi-arrow-up-circle-fill"></i>
                 </a>
             </div>
             <div id="stop-button-container" style="display: none;">
                 <a href="javascript:void(0);" id="stop-button"
-                   class="p-2 text-danger" title="Detener">
+                   class="p-2 text-danger"
+                   title="{{ t('ui.buttons.stop') }}">
                     <i class="bi bi-stop-circle-fill"></i>
                 </a>
             </div>
@@ -201,6 +212,13 @@
     window.availablePrompts = {{ prompts.message | tojson }};
     window.onboardingCards = {{ onboarding_cards | tojson }};
     window.sendButtonColor = "{{ branding.send_button_color }}";
+
+    // JS translations helper
+    window.i18n = {{ js_translations | tojson }};
+    function t_js(key) {
+        return window.i18n[key] || key;
+    }
+
 
 </script>
 

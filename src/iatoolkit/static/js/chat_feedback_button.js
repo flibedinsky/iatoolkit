@@ -1,4 +1,5 @@
 $(document).ready(function () {
+    const feedbackModal = $('#feedbackModal');
     $('#submit-feedback').on('click', function () {
         sendFeedback(this);
     });
@@ -10,12 +11,12 @@ $(document).ready(function () {
         const activeStars = $('.star.active').length;
 
         if (!feedbackText) {
-            toastr.error('Por favor, escribe tu comentario antes de enviar.');
+            toastr.error(t_js('feedback_comment_error'));
             return;
         }
 
         if (activeStars === 0) {
-            toastr.error('Por favor, califica al asistente con las estrellas.');
+            toastr.error(t_js('feedback_rating_error'));
             return;
         }
 
@@ -30,32 +31,29 @@ $(document).ready(function () {
 
         const responseData = await callToolkit('/api/feedback', data, "POST");
         if (responseData)
-            toastr.success('¡Gracias por tu comentario!', 'Feedback Enviado');
+            toastr.success(t_js('feedback_sent_success_body'), t_js('feedback_sent_success_title'));
         else
-            toastr.error('No se pudo enviar el feedback, por favor intente nuevamente.');
+            toastr.error(t_js('feedback_sent_error'));
 
         submitButton.disabled = false;
-        $('#feedbackModal').modal('hide');
+        feedbackModal.modal('hide');
     }
 
 // Evento para abrir el modal de feedback
 $('#send-feedback-button').on('click', function () {
     $('#submit-feedback').prop('disabled', false);
-    $('#submit-feedback').html('<i class="bi bi-send me-1 icon-spaced"></i>Enviar');
     $('.star').removeClass('active hover-active'); // Resetea estrellas
-    $('#feedback-text').val(''); // Limpia texto
-    $('.modal-body .alert').remove(); // Quita alertas previas
-    $('#feedbackModal').modal('show');
+    $('#feedback-text').val('');
+    feedbackModal.modal('show');
 });
 
 // Evento que se dispara DESPUÉS de que el modal se ha ocultado
 $('#feedbackModal').on('hidden.bs.modal', function () {
     $('#feedback-text').val('');
-    $('.modal-body .alert').remove();
     $('.star').removeClass('active');
 });
 
-// Función para el sistema de estrellas
+// Function for the star rating system
 window.gfg = function (rating) {
     $('.star').removeClass('active');
     $('.star').each(function (index) {

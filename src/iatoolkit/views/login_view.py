@@ -13,6 +13,7 @@ from iatoolkit.services.query_service import QueryService
 from iatoolkit.services.prompt_manager_service import PromptService
 from iatoolkit.services.branding_service import BrandingService
 from iatoolkit.services.onboarding_service import OnboardingService
+from iatoolkit.services.i18n_service import I18nService
 from iatoolkit.views.base_login_view import BaseLoginView
 import logging
 
@@ -82,6 +83,7 @@ class FinalizeContextView(MethodView):
                  branding_service: BrandingService,
                  onboarding_service: OnboardingService,
                  jwt_service: JWTService,
+                 i18n_service: I18nService
                  ):
         self.profile_service = profile_service
         self.jwt_service = jwt_service
@@ -89,6 +91,7 @@ class FinalizeContextView(MethodView):
         self.prompt_service = prompt_service
         self.branding_service = branding_service
         self.onboarding_service = onboarding_service
+        self.i18n_service = i18n_service
 
     def get(self, company_short_name: str, token: str = None):
         session_info = self.profile_service.get_current_session_info()
@@ -126,6 +129,9 @@ class FinalizeContextView(MethodView):
             prompts = self.prompt_service.get_user_prompts(company_short_name)
             onboarding_cards = self.onboarding_service.get_onboarding_cards(company)
 
+            # Get the entire 'js_messages' block in the correct language.
+            js_translations = self.i18n_service.get_translation_block('js_messages')
+
             return render_template(
                 "chat.html",
                 company_short_name=company_short_name,
@@ -133,6 +139,7 @@ class FinalizeContextView(MethodView):
                 branding=branding_data,
                 prompts=prompts,
                 onboarding_cards=onboarding_cards,
+                js_translations=js_translations,
                 redeem_token=token
             )
 

@@ -1,6 +1,9 @@
 $(document).ready(function () {
     // Evento para abrir el modal de historial
+    const historyModal = $('#historyModal');
+
     $('#history-button').on('click', function() {
+        historyModal.modal('show');
         loadHistory();
     });
 
@@ -8,18 +11,33 @@ $(document).ready(function () {
     // Función para cargar el historial
     async function loadHistory() {
         const historyLoading = $('#history-loading');
+        const historyContent = $('#history-content');
+        const historyTable = historyContent.find('table');
+        const noHistoryMessage = $('#no-history-message');
 
+        // prepare UI for loading
         historyLoading.show();
+        historyContent.hide();
+        historyTable.show();
+        noHistoryMessage.hide();
 
         // cal the toolkit, handle the response and errors
         const data = await callToolkit("/api/history", {}, "POST");
 
-        if (data && data.history) {
-            $('#historyModal').modal('show');
-            displayAllHistory(data.history);
-            $('#history-content').show();
+        if (!data || !data.history) {
+            toastr.error(t_js('error_loading_history'));
+            historyModal.modal('hide');
+            return;
         }
+
+        if (data.history.length === 0) {
+            historyTable.hide();
+            noHistoryMessage.show();
+        } else
+            displayAllHistory(data.history);
+
         historyLoading.hide();
+        historyContent.show();
     }
 
     // Función para mostrar todo el historial
@@ -45,7 +63,7 @@ $(document).ready(function () {
             const link = $('<a>')
                 .attr('href', 'javascript:void(0);')
                 .addClass('edit-pencil')
-                .attr('title', 'Copiar consulta al chat')
+                .attr('title', t_js('edit_query'))
                 .data('query', item.query)
                 .append(icon);
 

@@ -5,6 +5,7 @@ from iatoolkit.views.init_context_api_view import InitContextApiView
 from iatoolkit.services.query_service import QueryService
 from iatoolkit.services.profile_service import ProfileService
 from iatoolkit.services.auth_service import AuthService
+from iatoolkit.services.i18n_service import I18nService
 from iatoolkit.services.user_session_context_service import UserSessionContextService
 
 # --- Constantes para los Tests ---
@@ -28,17 +29,22 @@ class TestInitContextApiView:
         self.mock_auth_service = MagicMock(spec=AuthService)
         self.mock_query_service = MagicMock(spec=QueryService)
         self.mock_profile_service = MagicMock(spec=ProfileService)
+        self.mock_i18n_service = MagicMock(spec=I18nService)
 
         # Create a mock for session_context and attach it to query_service
         self.mock_session_context = MagicMock(spec=UserSessionContextService)
         self.mock_query_service.session_context = self.mock_session_context
+
+        self.mock_i18n_service.t.side_effect = lambda key, **kwargs: f"translated:{key}"
+
 
         # Register the view with its dependencies
         view_func = InitContextApiView.as_view(
             'init_context_api',
             auth_service=self.mock_auth_service,
             query_service=self.mock_query_service,
-            profile_service=self.mock_profile_service
+            profile_service=self.mock_profile_service,
+            i18n_service=self.mock_i18n_service
         )
         self.app.add_url_rule('/api/<company_short_name>/init-context', view_func=view_func, methods=['POST'])
 
@@ -90,4 +96,4 @@ class TestInitContextApiView:
 
         # Assert
         assert response.status_code == 500
-        assert response.json['error_message'] == 'Database connection failed'
+        assert response.json['error_message'] == 'translated:errors.general.unexpected_error'

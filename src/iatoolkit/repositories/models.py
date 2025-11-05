@@ -53,6 +53,7 @@ class Company(Base):
     id = Column(Integer, primary_key=True)
     short_name = Column(String(20), nullable=False, unique=True, index=True)
     name = Column(String(256), nullable=False)
+    default_language = Column(String(5), nullable=False, default='es')
 
     # encrypted api-key
     openai_api_key = Column(String, nullable=True)
@@ -107,6 +108,7 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.now)
     password = Column(String, nullable=False)
     verified = Column(Boolean, nullable=False, default=False)
+    preferred_language = Column(String(5), nullable=True)
     verification_url = Column(String, nullable=True)
     temp_code = Column(String, nullable=True)
 

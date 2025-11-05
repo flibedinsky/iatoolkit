@@ -8,6 +8,7 @@ from flask import Flask, get_flashed_messages
 from unittest.mock import MagicMock, patch
 from iatoolkit.services.profile_service import ProfileService
 from iatoolkit.services.branding_service import BrandingService
+from iatoolkit.services.i18n_service import I18nService
 from iatoolkit.views.change_password_view import ChangePasswordView
 from itsdangerous import SignatureExpired
 import os
@@ -40,6 +41,7 @@ class TestChangePasswordView:
         self.client = self.app.test_client()
         self.profile_service = MagicMock(spec=ProfileService)
         self.branding_service = MagicMock(spec=BrandingService)
+        self.i8n_service = MagicMock(spec=I18nService)
         self.branding_service.get_company_branding.return_value = {}
 
         self.test_company = Company(
@@ -48,10 +50,13 @@ class TestChangePasswordView:
             short_name="test_company"
         )
         self.profile_service.get_company_by_short_name.return_value = self.test_company
+        # Configure the mock to return a real string, not another mock.
+        self.i8n_service.t.side_effect = lambda key, **kwargs: f"translated:{key}"
 
         # Registrar la vista
         view = ChangePasswordView.as_view("change_password",
                                           profile_service=self.profile_service,
+                                          i18n_service=self.i8n_service,
                                           branding_service=self.branding_service,)
         self.app.add_url_rule("/<company_short_name>/change_password/<token>", view_func=view, methods=["GET", "POST"])
 
@@ -85,7 +90,12 @@ class TestChangePasswordView:
             mock_serializer.loads.side_effect = SignatureExpired('error')
 
             mock_render_template.return_value = "<html><body><h1>Forgot Password</h1></body></html>"
-            response = self.client.get("/test_company/change_password/expired_token")
+            with self.client:
+                response = self.client.get("/test_company/change_password/expired_token")
+                flashed = get_flashed_messages(with_categories=True)
+
+            assert len(flashed) == 1
+            assert flashed[0] == ('error', 'translated:errors.change_password.token_expired')
 
             mock_render_template.assert_called_once_with(
                 "forgot_password.html",

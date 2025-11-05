@@ -8,6 +8,7 @@ from flask import Flask, url_for, get_flashed_messages
 from unittest.mock import MagicMock, patch
 from iatoolkit.services.profile_service import ProfileService
 from iatoolkit.services.branding_service import BrandingService
+from iatoolkit.services.i18n_service import I18nService
 from iatoolkit.repositories.models import Company
 from iatoolkit.views.verify_user_view import VerifyAccountView
 import os
@@ -36,19 +37,22 @@ class TestVerifyAccountView:
         self.app = self.create_app()
         self.client = self.app.test_client()
         self.profile_service = MagicMock(spec=ProfileService)
-        # --- MEJORA: Añadir mock para BrandingService ---
         self.branding_service = MagicMock(spec=BrandingService)
+        self.i8n_service = MagicMock(spec=I18nService)
+
         self.test_company = Company(id=1, name="Empresa de Prueba", short_name="test_company")
         self.profile_service.get_company_by_short_name.return_value = self.test_company
         self.branding_service.get_company_branding.return_value = {"name": "Empresa de Prueba"}
 
-        # --- MEJORA: Inyectar branding_service en la vista ---
+        # Configure the mock to return a real string, not another mock.
+        self.i8n_service.t.side_effect = lambda key, **kwargs: f"translated:{key}"
+
         view = VerifyAccountView.as_view("verify_account",
                                          profile_service=self.profile_service,
-                                         branding_service=self.branding_service)
+                                         branding_service=self.branding_service,
+                                         i18n_service=self.i8n_service,)
         self.app.add_url_rule("/<string:company_short_name>/verify/<token>", view_func=view, methods=["GET"])
 
-        # --- CORRECCIÓN: Añadir la ruta 'home' para que url_for() no falle ---
         @self.app.route("/<string:company_short_name>/home.html", endpoint="home")
         def dummy_home(company_short_name):
             return "Página Home", 200
@@ -129,12 +133,10 @@ class TestVerifyAccountView:
     def test_get_unexpected_error(self, mock_serializer, mock_render_template):
         mock_serializer.return_value.loads.return_value = "user@example.com"
         self.profile_service.verify_account.side_effect = Exception('an error')
-        response = self.client.get("/test_company/verify/valid_token")
+        with self.client:
+            response = self.client.get("/test_company/verify/valid_token")
+            flashed = get_flashed_messages(with_categories=True)
 
-        assert response.status_code == 500
-        mock_render_template.assert_called_once_with(
-            "error.html",
-            branding=self.branding_service.get_company_branding.return_value,
-            company_short_name='test_company',
-            message="Ha ocurrido un error inesperado."
-        )
+        assert response.status_code == 302
+        assert len(flashed) == 1
+        assert flashed[0] == ('error', 'translated:errors.general.unexpected_error')

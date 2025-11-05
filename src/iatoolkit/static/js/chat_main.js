@@ -236,7 +236,7 @@ const callToolkit = async function(apiPath, data, method, timeoutMs = 500000) {
             try {
                 // Intentamos leer el error como JSON, que es el formato esperado de nuestra API.
                 const errorData = await response.json();
-                const errorMessage = errorData.error_message || 'Error desconocido del servidor.';
+                const errorMessage = errorData.error_message || t_js('unknown_server_error'); // <-- Translation
                 const errorIcon = '<i class="bi bi-exclamation-triangle"></i>';
                 const endpointError = $('<div>').addClass('error-section').html(errorIcon + `<p>${errorMessage}</p>`);
                 displayBotMessage(endpointError);
@@ -257,14 +257,14 @@ const callToolkit = async function(apiPath, data, method, timeoutMs = 500000) {
             throw error; // Re-throw to be handled by handleChatMessage
         } else {
             // Log detallado en consola
-                console.error('Error de red en callToolkit:', {
+                console.error('Network error in callToolkit:', {
                     url,
                     method,
                     error,
                     message: error?.message,
                     stack: error?.stack,
                 });
-            const friendlyMessage = "Ocurrió un error de red. Por favor, inténtalo de nuevo en unos momentos.";
+            const friendlyMessage = t_js('network_error');
             const errorIcon = '<i class="bi bi-exclamation-triangle"></i>';
             const commError = $('<div>').addClass('error-section').html(errorIcon + `<p>${friendlyMessage}</p>`);
             displayBotMessage(commError);
@@ -327,12 +327,13 @@ const abortCurrentRequest = function () {
 const showSpinner = function () {
     if ($('#spinner').length) return;
     const accessibilityClass = (typeof bootstrap !== 'undefined') ? 'visually-hidden' : 'sr-only';
+    const spinnerText = t_js('loading');
     const spinner = $(`
         <div id="spinner" style="display: flex; align-items: center; justify-content: start; margin: 10px 0; padding: 10px;">
             <div class="spinner-border" role="status" style="width: 1.5rem; height: 1.5rem; margin-right: 15px;">
                 <span class="${accessibilityClass}">Loading...</span>
             </div>
-            <span style="font-weight: bold; font-size: 15px;">Cargando...</span>
+            <span style="font-weight: bold; font-size: 15px;">${spinnerText}</span>
         </div>
     `);
     $('#chat-container').append(spinner).scrollTop($('#chat-container')[0].scrollHeight);

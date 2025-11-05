@@ -7,6 +7,7 @@ import pytest
 from flask import Flask, url_for, get_flashed_messages
 from unittest.mock import MagicMock, patch
 from iatoolkit.services.profile_service import ProfileService
+from iatoolkit.services.i18n_service import I18nService
 from iatoolkit.repositories.models import Company
 from iatoolkit.views.forgot_password_view import ForgotPasswordView
 import os
@@ -38,6 +39,8 @@ class TestForgotPasswordView:
         self.client = self.app.test_client()
         self.profile_service = MagicMock(spec=ProfileService)
         self.branding_service = MagicMock(spec=BrandingService)
+        self.i8n_service = MagicMock(spec=I18nService)
+
         self.test_company = Company(
             id=1,
             name="Empresa de Prueba",
@@ -47,13 +50,16 @@ class TestForgotPasswordView:
         # Mock para el branding data que se espera en los templates
         self.branding_service.get_company_branding.return_value = {"name": "Empresa de Prueba"}
 
+        self.i8n_service.t.side_effect = lambda key, **kwargs: f"translated:{key}"
+
+
         # Registrar la vista
         view = ForgotPasswordView.as_view("forgot_password",
                                           profile_service=self.profile_service,
-                                          branding_service=self.branding_service)
+                                          branding_service=self.branding_service,
+                                          i18n_service=self.i8n_service,)
         self.app.add_url_rule("/<string:company_short_name>/forgot_password", view_func=view, methods=["GET", "POST"])
 
-        # --- MEJORA: Añadir rutas dummy con los nombres correctos para que url_for() no falle ---
         @self.app.route("/<string:company_short_name>/home.html", endpoint="home")
         def dummy_home(company_short_name):
             return "Página Home", 200
@@ -139,12 +145,13 @@ class TestForgotPasswordView:
         # Este test ya estaba bien, pero lo dejamos para consistencia
         self.profile_service.forgot_password.side_effect = Exception('an error')
 
-        response = self.client.post("/test_company/forgot_password", data={"email": "nonexistent@email.com"})
+        with self.client:
+            response = self.client.post("/test_company/forgot_password", data={"email": "nonexistent@email.com"})
+            flashed_messages = get_flashed_messages(with_categories=True)
 
-        mock_render_template.assert_called_once_with(
-            "error.html",
-            company_short_name='test_company',
-            branding=self.branding_service.get_company_branding.return_value,
-            message="Ha ocurrido un error inesperado: an error"
-        )
-        assert response.status_code == 500
+        assert len(flashed_messages) == 1
+        assert flashed_messages[0][0] == 'error'
+
+        # 1. Verificar la redirección
+        assert response.status_code == 302
+

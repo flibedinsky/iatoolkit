@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, patch
 from iatoolkit.services.auth_service import AuthService
 from iatoolkit.services.profile_service import ProfileService
 from iatoolkit.services.jwt_service import JWTService
+from iatoolkit.services.i18n_service import I18nService
 from iatoolkit.repositories.database_manager import DatabaseManager
 from iatoolkit.repositories.models import ApiKey, Company, AccessLog
 from flask import Flask
@@ -22,11 +23,13 @@ class TestAuthServiceVerify:
         self.mock_profile_service = MagicMock(spec=ProfileService)
         self.mock_jwt_service = MagicMock(spec=JWTService)
         self.mock_db_manager = MagicMock(spec=DatabaseManager)
+        self.mock_i18n_service = MagicMock(spec=I18nService)
 
         self.service = AuthService(
             profile_service=self.mock_profile_service,
             jwt_service=self.mock_jwt_service,
-            db_manager=self.mock_db_manager
+            db_manager=self.mock_db_manager,
+            i18n_service=self.mock_i18n_service
         )
         self.app = Flask(__name__)
         self.app.testing = True
@@ -34,6 +37,7 @@ class TestAuthServiceVerify:
         # Common mock setup for API key tests
         self.mock_company = Company(id=1, short_name="apico")
         self.mock_api_key_entry = ApiKey(key="valid-api-key", company=self.mock_company)
+        self.mock_i18n_service.t.side_effect = lambda key, **kwargs: f"translated:{key}"
 
     def test_verify_success_with_flask_session(self):
         """verify() should succeed if a valid Flask session is found."""
@@ -75,7 +79,7 @@ class TestAuthServiceVerify:
             result = self.service.verify()
 
         assert result['success'] is False
-        assert result['error_message'] == "No user_identifier provided for API call."
+        assert result['error_message'] == 'translated:errors.auth.no_user_identifier_api'
         assert result['status_code'] == 403
 
     def test_verify_success_with_api_key_and_anonymous_flag(self):
@@ -100,7 +104,7 @@ class TestAuthServiceVerify:
             result = self.service.verify()
 
         assert result['success'] is False
-        assert result['error_message'] == "Invalid or inactive API Key"
+        assert result['error_message'] == 'translated:errors.auth.invalid_api_key'
         # FIX: The service returns 402 for invalid keys, not 401.
         assert result['status_code'] == 402
 
@@ -112,7 +116,7 @@ class TestAuthServiceVerify:
             result = self.service.verify()
 
         assert result['success'] is False
-        assert "No session cookie or API Key provided" in result['error_message']
+        assert 'translated:errors.auth.authentication_required' in result['error_message']
         # FIX: The service returns 401 for missing credentials, not 402.
         assert result['status_code'] == 401
 
@@ -128,6 +132,7 @@ class TestAuthServiceLoginFlows:
         self.mock_profile_service = MagicMock(spec=ProfileService)
         self.mock_jwt_service = MagicMock(spec=JWTService)
         self.mock_db_manager = MagicMock(spec=DatabaseManager, scoped_session=MagicMock())
+        self.mock_i18n_service = MagicMock(spec=I18nService)
 
         self.mock_session = MagicMock()
         self.mock_db_manager.scoped_session.return_value = self.mock_session
@@ -135,13 +140,17 @@ class TestAuthServiceLoginFlows:
         self.service = AuthService(
             profile_service=self.mock_profile_service,
             jwt_service=self.mock_jwt_service,
-            db_manager=self.mock_db_manager
+            db_manager=self.mock_db_manager,
+            i18n_service=self.mock_i18n_service
         )
         self.app = Flask(__name__)
         self.app.testing = True
 
         self.mock_log_access = MagicMock()
         monkeypatch.setattr(self.service, 'log_access', self.mock_log_access)
+
+        self.mock_i18n_service.t.side_effect = lambda key, **kwargs: f"translated:{key}"
+
 
         self.company_short_name = "acme"
         self.user_identifier = "user-123"
@@ -250,14 +259,18 @@ class TestAuthServiceLogAccess:
         # The important mock: the session object returned by the db_manager
         self.mock_session = MagicMock()
         self.mock_db_manager.scoped_session.return_value = self.mock_session
+        self.mock_i18n_service = MagicMock(spec=I18nService)
 
         self.service = AuthService(
             profile_service=self.mock_profile_service,
             jwt_service=self.mock_jwt_service,
-            db_manager=self.mock_db_manager
+            db_manager=self.mock_db_manager,
+            i18n_service=self.mock_i18n_service
         )
         self.app = Flask(__name__)
         self.app.testing = True
+
+        self.mock_i18n_service.t.side_effect = lambda key, **kwargs: f"translated:{key}"
 
     def test_log_access_creates_correct_log_entry(self):
         """

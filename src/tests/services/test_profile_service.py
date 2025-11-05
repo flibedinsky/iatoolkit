@@ -10,9 +10,8 @@ from iatoolkit.infra.mail_app import MailApp
 from iatoolkit.repositories.models import User, Company
 from flask_bcrypt import generate_password_hash
 from iatoolkit.services.dispatcher_service import Dispatcher
+from iatoolkit.services.i18n_service import I18nService
 
-
-# CORRECTION: Patch where the object is USED, not where it is defined.
 # The SessionManager is used inside the 'profile_service' module.
 @patch('iatoolkit.services.profile_service.SessionManager')
 class TestProfileService:
@@ -24,12 +23,14 @@ class TestProfileService:
         self.mock_session_context = MagicMock(spec=UserSessionContextService)
         self.mock_mail_app = MagicMock(spec=MailApp)
         self.mock_dispatcher = MagicMock(spec=Dispatcher)
+        self.mock_i18n = MagicMock(spec=I18nService)  # <-- 2. Crea el mock
 
         self.service = ProfileService(
             profile_repo=self.mock_repo,
             session_context_service=self.mock_session_context,
             mail_app=self.mock_mail_app,
-            dispatcher=self.mock_dispatcher
+            dispatcher=self.mock_dispatcher,
+            i18n_service=self.mock_i18n,
         )
 
         self.mock_user = User(id=1, email='test@email.com', first_name='Test', last_name='User',
@@ -38,6 +39,10 @@ class TestProfileService:
         self.mock_repo.get_company_by_short_name.return_value = self.mock_company
         self.mock_repo.get_user_by_email.return_value = self.mock_user
         self.mock_user.companies = [self.mock_company]
+
+        # Simula el diccionario de traducciones cargado para la validación
+        self.mock_i18n.translations = {'en': {}, 'es': {}}
+        self.mock_i18n.t.side_effect = lambda key, **kwargs: f"translated:{key}"
 
     # --- Tests for New Unified Session Logic ---
 
@@ -95,7 +100,7 @@ class TestProfileService:
         response = self.service.signup(
             self.mock_company.short_name, 'test@email.com', 'Test', 'User', 'password', 'password', 'url'
         )
-        assert "usuario con email 'test@email.com' ya existe" in response['error']
+        assert  response['error'] == 'translated:errors.signup.user_already_registered'
 
     def test_signup_when_user_exist_and_invalid_password(self, mock_session_manager):
         self.mock_user.password = generate_password_hash("password").decode("utf-8")
@@ -109,7 +114,7 @@ class TestProfileService:
             verification_url='http://verification'
         )
 
-        assert "contraseña de test@email.com es incorrecta" in response['error']
+        assert 'translated:errors.signup.incorrect_password_for_existing_user' == response['error']
 
     def test_signup_when_user_exist_and_not_in_company(self, mock_session_manager):
         self.mock_repo.get_user_by_email.return_value = self.mock_user
@@ -123,7 +128,7 @@ class TestProfileService:
             verification_url='http://verification'
         )
 
-        assert "Usuario asociado" in response['message']
+        assert response['message'] == 'translated:flash_messages.user_associated_success'
         self.mock_repo.save_user.assert_called_once()
 
     def test_signup_when_passwords_different(self, mock_session_manager):
@@ -137,7 +142,7 @@ class TestProfileService:
             verification_url='http://verification'
         )
 
-        assert "contraseñas no coinciden" in response['error']
+        assert response['error'] == 'translated:errors.signup.password_mismatch'
 
     def test_signup_when_passwords_incorrect2(self, mock_session_manager):
         self.mock_repo.get_user_by_email.return_value = None
@@ -150,7 +155,7 @@ class TestProfileService:
             verification_url='http://verification'
         )
 
-        assert "número" in response['error']
+        assert response['error'] == 'translated:errors.validation.password_no_digit'
 
     def test_signup_when_passwords_incorrect3(self, mock_session_manager):
         self.mock_repo.get_user_by_email.return_value = None
@@ -163,7 +168,7 @@ class TestProfileService:
             verification_url='http://verification'
         )
 
-        assert "8 caracteres" in response['error']
+        assert response['error'] == 'translated:errors.validation.password_too_short'
 
     def test_signup_when_passwords_incorrect4(self, mock_session_manager):
         self.mock_repo.get_user_by_email.return_value = None
@@ -176,7 +181,7 @@ class TestProfileService:
             verification_url='http://verification'
         )
 
-        assert "mayúscula" in response['error']
+        assert response['error'] == 'translated:errors.validation.password_no_uppercase'
 
     def test_signup_when_passwords_incorrect5(self, mock_session_manager):
         self.mock_repo.get_user_by_email.return_value = None
@@ -189,7 +194,7 @@ class TestProfileService:
             verification_url='http://verification'
         )
 
-        assert "especial" in response['error']
+        assert response['error'] == 'translated:errors.validation.password_no_special_char'
 
     def test_signup_when_ok(self, mock_session_manager):
         self.mock_repo.get_user_by_email.return_value = None
@@ -203,7 +208,7 @@ class TestProfileService:
             verification_url='http://verification'
         )
 
-        assert "Registro exitoso" in response['message']
+        assert response['message'] == 'translated:flash_messages.signup_success'
         self.mock_mail_app.send_email.assert_called()
 
     def test_signup_when_exception(self, mock_session_manager):
@@ -216,7 +221,7 @@ class TestProfileService:
             verification_url='http://verification'
         )
 
-        assert "an error" == response['error']
+        assert  response['error'] == 'translated:errors.general.unexpected_error'
 
     def test_get_companies_when_ok(self, mock_session_manager):
         self.mock_repo.get_companies.return_value = [self.mock_company]
@@ -238,19 +243,19 @@ class TestProfileService:
 
         response = self.service.verify_account(email='test@email.com')
 
-        assert "El usuario no existe." in response['error']
+        assert 'translated:errors.verification.user_not_found' == response['error']
 
     def test_verify_account_when_exception(self,mock_session_manager):
         self.mock_repo.get_user_by_email.side_effect = Exception('an error')
         response = self.service.verify_account(email='test@email.com')
 
-        assert "an error" == response['error']
+        assert 'translated:errors.general.unexpected_error' == response['error']
 
     def test_verify_account_when_ok(self,mock_session_manager):
         self.mock_repo.get_user_by_email.return_value = self.mock_user
         response = self.service.verify_account(email='test@email.com')
 
-        assert "cuenta ha sido verificada" in response['message']
+        assert 'translated:flash_messages.account_verified_success' == response['message']
 
     def test_change_password_when_password_mismatch(self,mock_session_manager):
         response = self.service.change_password(
@@ -259,7 +264,7 @@ class TestProfileService:
             new_password='pass1',
             confirm_password='pass2'
         )
-        assert "contraseñas no coinciden" in response['error']
+        assert 'translated:errors.change_password.password_mismatch' == response['error']
 
     def test_change_passworwd_when_invalid_code(self,mock_session_manager):
         self.mock_repo.get_user_by_email.return_value = self.mock_user
@@ -270,7 +275,7 @@ class TestProfileService:
             new_password='pass1',
             confirm_password='pass1'
         )
-        assert "código temporal no es válido" in response['error']
+        assert 'translated:errors.change_password.invalid_temp_code' == response['error']
 
     def test_change_password_when_ok(self,mock_session_manager):
         self.mock_repo.get_user_by_email.return_value = self.mock_user
@@ -281,7 +286,7 @@ class TestProfileService:
             new_password='pass1',
             confirm_password='pass1'
         )
-        assert "clave se cambio correctamente" in response['message']
+        assert 'translated:flash_messages.password_changed_success' == response['message']
 
     def test_change_password_when_exception(self,mock_session_manager):
         self.mock_repo.get_user_by_email.return_value = self.mock_user
@@ -292,7 +297,7 @@ class TestProfileService:
             new_password='pass1',
             confirm_password='pass1'
         )
-        assert "db error" == response['error']
+        assert 'translated:errors.general.unexpected_error' == response['error']
 
     def test_forgot_password_when_user_not_exist(self,mock_session_manager):
         self.mock_repo.get_user_by_email.return_value = None
@@ -300,7 +305,7 @@ class TestProfileService:
             email='test@email.com',
             reset_url='http://a_reset_utl'
         )
-        assert "usuario test@email.com no esta registrado" in response['error']
+        assert 'translated:errors.forgot_password.user_not_registered' == response['error']
 
     def test_forgot_password_when_ok(self,mock_session_manager):
         self.mock_repo.get_user_by_email.return_value = self.mock_user
@@ -308,7 +313,7 @@ class TestProfileService:
             email='test@email.com',
             reset_url='http://a_reset_utl'
         )
-        assert "se envio mail para cambio de clave" in response['message']
+        assert 'translated:flash_messages.forgot_password_success' == response['message']
         self.mock_mail_app.send_email.assert_called()
 
     def test_forgot_password_when_exception(self,mock_session_manager):
@@ -319,7 +324,7 @@ class TestProfileService:
             reset_url='http://a_reset_utl'
         )
 
-        assert "mail error" == response['error']
+        assert 'translated:errors.general.unexpected_error' == response['error']
 
     def test_new_api_key_when_not_company(self,mock_session_manager):
         self.mock_repo.get_company_by_short_name.return_value = None
@@ -333,4 +338,42 @@ class TestProfileService:
         self.mock_repo.create_api_key.assert_called()
         assert response['api-key'] != ''
 
+    def test_update_user_language_success(self, mock_session_manager):
+        """
+        Tests that update_user_language calls the repository with correct arguments
+        when the language is valid.
+        """
+        user_email = "test@example.com"
+        new_lang = "en"
 
+        result = self.service.update_user_language(user_email, new_lang)
+        assert result['success'] is True
+
+    def test_update_user_language_unsupported_language(self, mock_session_manager):
+        """
+        Tests that the method returns an error if the language is not supported
+        without calling the repository.
+        """
+        # Arrange
+        user_email = "test@example.com"
+        new_lang = "fr"  # 'fr' is not in our mocked translations
+
+        # Act
+        result = self.service.update_user_language(user_email, new_lang)
+
+        # Assert
+        assert result['success'] is False
+        assert result['error_message'] == 'translated:errors.general.unsupported_language'
+
+    @patch('iatoolkit.services.profile_service.logging')
+    def test_update_user_language_handles_repository_exception(self, mock_logging, mock_session_manager):
+        """
+        Tests that if the repository fails, an exception is logged and an error is returned.
+        """
+        # Arrange
+        user_email = "test@example.com"
+        new_lang = "es"
+        self.mock_repo.update_user.side_effect = Exception("Database connection failed")
+
+        result = self.service.update_user_language(user_email, new_lang)
+        assert result['success'] is False

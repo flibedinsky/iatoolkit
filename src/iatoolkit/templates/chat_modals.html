@@ -6,7 +6,8 @@
         <div class="modal-content">
             <div class="modal-header branded">
                 <h5 class="modal-title" id="historyModalLabel">
-                    <i class="bi bi-clock-history me-3"></i>Historial de Consultas
+                    <i class="bi bi-clock-history me-3"></i>
+                    {{ t('ui.modals.history_title') }}
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -15,7 +16,7 @@
                     <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Cargando...</span>
                     </div>
-                    <p class="mt-2">Cargando historial...</p>
+                    <p class="mt-2">{{ t('ui.modals.loading_history') }}</p>
                 </div>
 
                 <div id="history-content" style="display: none;">
@@ -23,8 +24,8 @@
                         <table class="table table-striped table-hover">
                             <thead class="thead-branded">
                                 <tr>
-                                    <th scope="col">Fecha</th>
-                                    <th scope="col">Consulta</th>
+                                    <th scope="col">{{ t('ui.modals.history_table_date') }}</th>
+                                    <th scope="col">{{ t('ui.modals.history_table_query') }}</th>
                                     <th scope="col" class="col-icon"></th>
                                 </tr>
                             </thead>
@@ -33,11 +34,15 @@
                             </tbody>
                         </table>
                     </div>
+                    <div id="no-history-message" class="alert alert-info" style="display: none;">
+                        {{ t('js_messages.no_history_found') }}
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-branded-secondary" data-bs-dismiss="modal">
-                    <i class="bi bi-x-circle me-1"></i>Cerrar
+                    <i class="bi bi-x-circle me-1"></i>
+                    {{ t('ui.buttons.cancel') }}
                 </button>
             </div>
         </div>
@@ -51,12 +56,13 @@
         <div class="modal-content">
             <div class="modal-header branded">
                 <h5 class="modal-title" id="feedbackModalLabel">
-                    <i class="bi bi-chat-dots me-3"></i>Tu Opinión es Importante
+                    <i class="bi bi-chat-dots me-3"></i>
+                    {{ t('ui.modals.feedback_title') }}
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p class="text-center mb-2"><strong>¿Qué tan útil fue la respuesta del asistente?</strong></p>
+                <p class="text-center mb-2"><strong>{{ t('ui.modals.feedback_prompt') }}</strong></p>
 
                 <div class="rating-stars mb-4">
                     <span class="star" data-rating="1" onclick="gfg(1)"></span>
@@ -65,24 +71,26 @@
                     <span class="star" data-rating="4" onclick="gfg(4)"></span>
                     <span class="star" data-rating="5" onclick="gfg(5)"></span>
                 </div>
-                <!-- ▲▲▲ FIN DEL BLOQUE DE HTML QUE FALTABA ▲▲▲ -->
 
                 <div class="form-group">
-                    <label for="feedback-text" class="form-label text-muted">Tu comentario nos ayuda a mejorar:</label>
+                    <label for="feedback-text" class="form-label text-muted">
+                        {{ t('ui.modals.feedback_comment_label') }}</label>
                     <textarea
                     class="form-control feedback-text"
                     id="feedback-text"
                     rows="4"
-                    placeholder="Escribe aquí tu opinión, sugerencias o comentarios..."
+                    placeholder="{{ t('ui.modals.feedback_comment_placeholder') }}"
                     style="resize: vertical; min-height: 100px;"></textarea>
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-branded-secondary" data-bs-dismiss="modal">
-                    <i class="bi bi-x-circle me-1"></i>Cancelar
+                    <i class="bi bi-x-circle me-1"></i>
+                    {{ t('ui.buttons.cancel') }}
                 </button>
                 <button type="button" class="btn btn-branded-primary" id="submit-feedback">
-                    <i class="bi bi-send me-1"></i>Enviar
+                    <i class="bi bi-send me-1"></i>
+                    {{ t('ui.buttons.send') }}
                 </button>
             </div>
         </div>
@@ -116,7 +124,7 @@
 
       <div class="modal-footer">
         <button id="ob-close" type="button" class="btn btn-branded-primary" data-bs-dismiss="modal">
-            Cerrar
+            {{ t('ui.buttons.cancel') }}
         </button>
         </div>
     </div>
@@ -130,7 +138,7 @@
           <div class="modal-header branded">
             <h5 class="modal-title" id="helpModalLabel">
                 <i class="bi bi-info-circle me-2"></i>
-                Guía de uso del Asistente IA
+                {{ t('ui.modals.help_title') }}
             </h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
@@ -146,7 +154,10 @@
             </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-branded-secondary" data-bs-dismiss="modal">Cerrar</button>
+            <button type="button" class="btn btn-branded-secondary"
+                    data-bs-dismiss="modal">
+                {{ t('ui.buttons.cancel') }}
+            </button>
           </div>
         </div>
       </div>

@@ -7,6 +7,7 @@ from flask import request
 from injector import inject
 from iatoolkit.services.profile_service import ProfileService
 from iatoolkit.services.jwt_service import JWTService
+from iatoolkit.services.i18n_service import I18nService
 from iatoolkit.repositories.database_manager import DatabaseManager
 from iatoolkit.repositories.models import AccessLog
 from flask import request
@@ -23,18 +24,20 @@ class AuthService:
     @inject
     def __init__(self, profile_service: ProfileService,
                  jwt_service: JWTService,
-                 db_manager: DatabaseManager
+                 db_manager: DatabaseManager,
+                 i18n_service: I18nService
                  ):
         self.profile_service = profile_service
         self.jwt_service = jwt_service
         self.db_manager = db_manager
+        self.i18n_service = i18n_service
 
     def login_local_user(self, company_short_name: str, email: str, password: str) -> dict:
         # try to autenticate a local user, register the event and return the result
         auth_response = self.profile_service.login(
             company_short_name=company_short_name,
             email=email,
-            password=password
+            password=password,
         )
 
         if not auth_response.get('success'):
@@ -66,7 +69,7 @@ class AuthService:
                 outcome='failure',
                 reason_code='JWT_INVALID'
             )
-            return {'success': False, 'error': 'Token inválido o expirado'}
+            return {'success': False, 'error': self.i18n_service.t('errors.auth.invalid_or_expired_token')}
 
         # 2. if token is valid, extract the user_identifier
         user_identifier = payload.get('user_identifier')
@@ -89,7 +92,7 @@ class AuthService:
                 reason_code='SESSION_CREATION_FAILED',
                 user_identifier=user_identifier
             )
-            return {'success': False, 'error': 'No se pudo crear la sesión del usuario'}
+            return {'success': False, 'error': self.i18n_service.t('errors.auth.session_creation_failed')}
 
     def verify(self, anonymous: bool = False) -> dict:
         """
@@ -123,14 +126,15 @@ class AuthService:
             # --- Failure: No valid credentials found ---
             logging.info(f"Authentication required. No session cookie or API Key provided.")
             return {"success": False,
-                    "error_message": "Authentication required. No session cookie or API Key provided.",
+                    "error_message": self.i18n_service.t('errors.auth.authentication_required'),
                     "status_code": 401}
 
         # check if the api-key is valid and active
         api_key_entry = self.profile_service.get_active_api_key_entry(api_key)
         if not api_key_entry:
             logging.info(f"Invalid or inactive API Key {api_key}")
-            return {"success": False, "error_message": "Invalid or inactive API Key",
+            return {"success": False,
+                    "error_message": self.i18n_service.t('errors.auth.invalid_api_key'),
                     "status_code": 402}
 
         # get the company from the api_key_entry
@@ -141,7 +145,8 @@ class AuthService:
         user_identifier = data.get('user_identifier', '')
         if not anonymous and not user_identifier:
             logging.info(f"No user_identifier provided for API call.")
-            return {"success": False, "error_message": "No user_identifier provided for API call.",
+            return {"success": False,
+                    "error_message": self.i18n_service.t('errors.auth.no_user_identifier_api'),
                     "status_code": 403}
 
         return {

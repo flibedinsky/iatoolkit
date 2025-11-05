@@ -96,6 +96,7 @@ class IAToolkit:
         self._setup_cors()
         self._setup_additional_services()
         self._setup_cli_commands()
+        self._setup_request_globals()
         self._setup_context_processors()
 
         # Step 8: define the download_dir for excel's
@@ -108,6 +109,22 @@ class IAToolkit:
     def _get_config_value(self, key: str, default=None):
         # get a value from the config dict or the environment variable
         return self.config.get(key, os.getenv(key, default))
+
+    def _setup_request_globals(self):
+        """
+        Configures functions to run before each request to set up
+        request-global variables, such as language.
+        """
+        injector = self._injector
+
+        @self.app.before_request
+        def set_request_language():
+            """
+            Determines and caches the language for the current request in g.lang.
+            """
+            from iatoolkit.services.language_service import LanguageService
+            language_service = injector.get(LanguageService)
+            language_service.get_current_language()
 
     def _setup_logging(self):
         # Lee el nivel de log desde una variable de entorno, con 'INFO' como valor por defecto.
@@ -299,6 +316,8 @@ class IAToolkit:
         from iatoolkit.services.jwt_service import JWTService
         from iatoolkit.services.dispatcher_service import Dispatcher
         from iatoolkit.services.branding_service import BrandingService
+        from iatoolkit.services.i18n_service import I18nService
+        from iatoolkit.services.language_service import LanguageService
 
         binder.bind(QueryService, to=QueryService)
         binder.bind(TaskService, to=TaskService)
@@ -312,6 +331,8 @@ class IAToolkit:
         binder.bind(JWTService, to=JWTService)
         binder.bind(Dispatcher, to=Dispatcher)
         binder.bind(BrandingService, to=BrandingService)
+        binder.bind(I18nService, to=I18nService)
+        binder.bind(LanguageService, to=LanguageService)
 
     def _bind_infrastructure(self, binder: Binder):
         from iatoolkit.infra.llm_client import llmClient
@@ -366,8 +387,18 @@ class IAToolkit:
         def inject_globals():
             from iatoolkit.common.session_manager import SessionManager
             from iatoolkit.services.profile_service import ProfileService
+            from iatoolkit.services.i18n_service import I18nService
 
+            # Get services from the injector
             profile_service = self._injector.get(ProfileService)
+            i18n_service = self._injector.get(I18nService)
+
+            # The 't' function wrapper no longer needs to determine the language itself.
+            # It will be automatically handled by the refactored I18nService.
+            def translate_for_template(key: str, **kwargs):
+                return i18n_service.t(key, **kwargs)
+
+            # Get user profile if a session exists
             user_profile = profile_service.get_current_session_info().get('profile', {})
 
             return {
@@ -379,9 +410,9 @@ class IAToolkit:
                 'user_is_local': user_profile.get('user_is_local'),
                 'user_email': user_profile.get('user_email'),
                 'iatoolkit_base_url': os.environ.get('IATOOLKIT_BASE_URL', ''),
-                'flashed_messages': get_flashed_messages(with_categories=True)
+                'flashed_messages': get_flashed_messages(with_categories=True),
+                't': translate_for_template
             }
-
 
     def _get_default_static_folder(self) -> str:
         try:

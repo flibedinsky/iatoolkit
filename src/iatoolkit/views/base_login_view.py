@@ -13,6 +13,7 @@ from iatoolkit.services.query_service import QueryService
 from iatoolkit.services.branding_service import BrandingService
 from iatoolkit.services.onboarding_service import OnboardingService
 from iatoolkit.services.prompt_manager_service import PromptService
+from iatoolkit.services.i18n_service import I18nService
 from iatoolkit.common.util import Utility
 from iatoolkit.services.jwt_service import JWTService
 from iatoolkit.repositories.models import Company
@@ -32,6 +33,7 @@ class BaseLoginView(MethodView):
                  prompt_service: PromptService,
                  onboarding_service: OnboardingService,
                  query_service: QueryService,
+                 i18n_service: I18nService,
                  utility: Utility
                  ):
         self.profile_service = profile_service
@@ -41,6 +43,7 @@ class BaseLoginView(MethodView):
         self.prompt_service = prompt_service
         self.onboarding_service = onboarding_service
         self.query_service = query_service
+        self.i18n_service = i18n_service
         self.utility = utility
 
 
@@ -73,6 +76,10 @@ class BaseLoginView(MethodView):
         else:
             # --- FAST PATH: Render the chat page directly ---
             prompts = self.prompt_service.get_user_prompts(company_short_name)
+
+            # Get the entire 'js_messages' block in the correct language.
+            js_translations = self.i18n_service.get_translation_block('js_messages')
+
             return render_template(
                 "chat.html",
                 company_short_name=company_short_name,
@@ -80,5 +87,6 @@ class BaseLoginView(MethodView):
                 prompts=prompts,
                 branding=branding_data,
                 onboarding_cards=onboarding_cards,
+                js_translations=js_translations,
                 redeem_token=redeem_token
             )

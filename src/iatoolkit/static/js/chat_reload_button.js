@@ -14,7 +14,7 @@ $(document).ready(function () {
         button.disabled = true;
         const icon = button.querySelector('i');
         icon.className = spinnerIconClass;
-        toastr.info('Iniciando recarga de contexto en segundo plano...');
+        toastr.info(t_js('reload_init'));
 
         // 2. prepare the api parameters
         const apiPath = '/api/init-context';
@@ -24,9 +24,9 @@ $(document).ready(function () {
         const data = await callToolkit(apiPath, payload, 'POST');
         if (data) {
             if (data.status === 'OK')
-                toastr.success(data.message || 'Contexto recargado.');
+                toastr.success(data.message || 'Contexto reloaded.');
             else
-                toastr.error(data.error_message || 'Ocurrió un error desconocido durante la recarga.');
+                toastr.error(data.error_message || 'error during reload');
         }
 
         button.disabled = false;

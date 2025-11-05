@@ -3,7 +3,8 @@ from injector import inject
 from iatoolkit.services.query_service import QueryService
 from iatoolkit.services.profile_service import ProfileService
 from iatoolkit.services.auth_service import AuthService
-from flask import jsonify, request
+from iatoolkit.services.i18n_service import I18nService
+from flask import jsonify
 import logging
 
 
@@ -17,10 +18,12 @@ class InitContextApiView(MethodView):
     def __init__(self,
                  auth_service: AuthService,
                  query_service: QueryService,
-                 profile_service: ProfileService):
+                 profile_service: ProfileService,
+                 i18n_service: I18nService):
         self.auth_service = auth_service
         self.query_service = query_service
         self.profile_service = profile_service
+        self.i18n_service = i18n_service
 
     def post(self, company_short_name: str):
         """
@@ -52,11 +55,13 @@ class InitContextApiView(MethodView):
             )
 
             # 3. Respond with JSON, as this is an API endpoint.
-            return jsonify({'status': 'OK', 'message': 'El contexto se ha recargado con éxito.'}), 200
+            success_message = self.i18n_service.t('api_responses.context_reloaded_success')
+            return jsonify({'status': 'OK', 'message': success_message}), 200
 
         except Exception as e:
             logging.exception(f"Error durante la recarga de contexto {user_identifier}: {e}")
-            return jsonify({"error_message": str(e)}), 500
+            error_message = self.i18n_service.t('errors.general.unexpected_error')
+            return jsonify({"error_message": error_message}), 500
 
     def options(self, company_short_name):
         """
