@@ -151,7 +151,7 @@ class ProfileService:
         except Exception as e:
             # Log the error and return a generic failure message.
             logging.error(f"Failed to update language for {user_identifier}: {e}")
-            return {'success': False, 'error_message': self.i18n_service.t('errors.general.unexpected_error')}
+            return {'success': False, 'error_message': self.i18n_service.t('errors.general.unexpected_error', error=str(e))}
 
 
     def get_profile_by_identifier(self, company_short_name: str, user_identifier: str) -> dict:
@@ -230,7 +230,7 @@ class ProfileService:
 
             return {"message": self.i18n_service.t('flash_messages.signup_success')}
         except Exception as e:
-            return {"error": self.i18n_service.t('errors.general.unexpected_error')}
+            return {"error": self.i18n_service.t('errors.general.unexpected_error', error=str(e))}
 
     def update_user(self, email: str, **kwargs) -> User:
         return self.profile_repo.update_user(email, **kwargs)

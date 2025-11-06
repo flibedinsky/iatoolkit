@@ -27,8 +27,8 @@ class DatabaseManager:
             self._engine = create_engine(
                 database_url,
                 echo=False,
-                pool_size=2,  # per worker
-                max_overflow=3,
+                pool_size=10,  # per worker
+                max_overflow=20,
                 pool_timeout=30,
                 pool_recycle=1800,
                 pool_pre_ping=True,
