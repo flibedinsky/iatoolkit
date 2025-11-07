@@ -113,7 +113,10 @@
                 <div class="{{ prompt_col_class }}">
                     <div class="position-relative h-100">
                         <div class="input-group dropup h-100">
-                            <button type="button" id="prompt-select-button" class="btn prompt-select-button  border dropdown-toggle w-100 text-start" data-bs-toggle="dropdown" aria-expanded="false">
+                            <button type="button" id="prompt-select-button"
+                                    class="btn prompt-select-button  border dropdown-toggle w-100 text-start"
+                                    data-bs-toggle="dropdown"
+                                    aria-expanded="false">
                                 {{ t('ui.chat.prompts_available') }} ....
                             </button>
                             <ul class="dropdown-menu dropdown-menu-soft w-100">
@@ -137,7 +140,11 @@
                                 {% endif %}
                             </ul>
                         </div>
-                        <button type="button" id="clear-selection-button" class="btn clear-specific-data-button" style="display: none;"><i class="bi bi-x-circle-fill"></i></button>
+                        <button type="button"
+                                id="clear-selection-button"
+                                class="btn clear-specific-data-button position-absolute end-0 me-1" style="display: none;">
+                            <i class="bi bi-x-circle-fill"></i>
+                        </button>
                     </div>
                     <input type="hidden" id="prompt-select-value" name="prompt_select_value">
                     <input type="hidden" id="prompt-select-description" name="prompt-select-description">

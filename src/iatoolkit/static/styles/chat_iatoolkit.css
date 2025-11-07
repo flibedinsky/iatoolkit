@@ -23,12 +23,6 @@ li {
   padding-left: 0.25rem; /* Pequeño espacio extra entre la viñeta y el texto */
 }
 
-/* Estilo para la viñeta (el punto) de cada elemento de la lista */
-li::marker {
-  color: var(--brand-primary-color); /* La viñeta usa el color principal de la marca */
-  font-size: 1.1em; /* Ligeramente más grande para que sea más visible */
-}
-
 .text-muted {
   color: #64748b;
 }
@@ -406,9 +400,13 @@ li::marker {
 .prompt-select-button:hover {
     background-color: var(--brand-primary-color);
     color: var(--brand-text-on-primary);
+
+    /* Marca el borde con un glow limpio */
+    border-color: var(--brand-primary-color);
+    box-shadow: 0 0 0 3px rgba( var(--brand-primary-rgb), 0.25 );
 }
 
-
+/* estilo de la x que limpia el prompt seleccionado */
 #clear-selection-button {
     position: absolute;
     top: 50%;
@@ -421,7 +419,9 @@ li::marker {
 }
 
 #clear-selection-button:hover {
-    color: #212529;
+    color: #ffffff;
+    background-color: #6c757d;
+    border-radius: 0.25rem;
 }
 
 #send-button i {
