@@ -318,6 +318,7 @@ class IAToolkit:
         from iatoolkit.services.branding_service import BrandingService
         from iatoolkit.services.i18n_service import I18nService
         from iatoolkit.services.language_service import LanguageService
+        from iatoolkit.services.configuration_service import ConfigurationService
 
         binder.bind(QueryService, to=QueryService)
         binder.bind(TaskService, to=TaskService)
@@ -333,6 +334,7 @@ class IAToolkit:
         binder.bind(BrandingService, to=BrandingService)
         binder.bind(I18nService, to=I18nService)
         binder.bind(LanguageService, to=LanguageService)
+        binder.bind(ConfigurationService, to=ConfigurationService)
 
     def _bind_infrastructure(self, binder: Binder):
         from iatoolkit.infra.llm_client import llmClient
@@ -359,9 +361,9 @@ class IAToolkit:
         # instantiate all the registered companies
         get_company_registry().instantiate_companies(self._injector)
 
-        # use the dispatcher to start the execution of every company
+        # use the dispatcher to load the config and prepare the execution
         dispatcher = self._injector.get(Dispatcher)
-        dispatcher.start_execution()
+        dispatcher.load_company_configs()
 
     def _setup_cli_commands(self):
         from iatoolkit.cli_commands import register_core_commands

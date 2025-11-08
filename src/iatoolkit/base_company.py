@@ -79,11 +79,6 @@ class BaseCompany(ABC):
 
 
     @abstractmethod
-    # initialize all the database tables  needed
-    def register_company(self):
-        raise NotImplementedError("La subclase debe implementar el método create_company()")
-
-    @abstractmethod
     # get context specific for this company
     def get_company_context(self, **kwargs) -> str:
         raise NotImplementedError("La subclase debe implementar el método get_company_context()")
@@ -97,11 +92,6 @@ class BaseCompany(ABC):
     # execute the specific action configured in the intent table
     def handle_request(self, tag: str, params: dict) -> dict:
         raise NotImplementedError("La subclase debe implementar el método handle_request()")
-
-    @abstractmethod
-    # get context specific for the query
-    def start_execution(self):
-        raise NotImplementedError("La subclase debe implementar el método start_execution()")
 
     @abstractmethod
     # get context specific for the query
