@@ -1,11 +1,15 @@
 
 <div align="center">
 <h1>
-  <a href="https://www.iatoolkit.com" target="_blank" style="text-decoration: none; color: inherit;">
     IAToolkit
-  </a>
 </h1>
+
   <p><strong>The Open-Source Framework for Building AI Chatbots on Your Private Data.</strong></p>
+<h4>
+  <a href="https://www.iatoolkit.com" target="_blank" style="text-decoration: none; color: inherit;">
+    www.iatoolkit.com
+  </a>
+</h4>
 </div>
 
 IAToolkit is a comprehensive, Python open-source framework designed for building enterprise-grade 
