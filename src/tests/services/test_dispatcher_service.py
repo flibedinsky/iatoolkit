@@ -15,6 +15,7 @@ from iatoolkit.services.excel_service import ExcelService
 from iatoolkit.services.prompt_manager_service import PromptService
 from iatoolkit.services.profile_service import ProfileService
 from iatoolkit.services.mail_service import MailService
+from iatoolkit.services.configuration_service import ConfigurationService
 from iatoolkit.common.util import Utility
 
 
@@ -25,8 +26,6 @@ class MockSampleCompany(BaseCompany):
     def get_company_context(self, **kwargs) -> str: return "Company Context for Sample"
 
     def handle_request(self, tag: str, params: dict) -> dict: return {"result": "sample_company_response"}
-
-    def start_execution(self): pass
 
     def get_user_info(self, user_identifier: str): pass
 
@@ -49,6 +48,7 @@ class TestDispatcher:
         self.mail_service = MagicMock(spec=MailService)
         self.util = MagicMock(spec=Utility)
         self.mock_profile_repo = MagicMock(spec=ProfileRepo)
+        self.mock_config_service = MagicMock(spec=ConfigurationService)
 
 
         # Create a mock injector that will be used for instantiation.
@@ -74,7 +74,6 @@ class TestDispatcher:
         self.mock_sample_company_instance.register_company = MagicMock()
         self.mock_sample_company_instance.handle_request = MagicMock(return_value={"result": "sample_company_response"})
         self.mock_sample_company_instance.get_company_context = MagicMock(return_value="Company Context for Sample")
-        self.mock_sample_company_instance.start_execution = MagicMock(return_value=True)
         self.mock_sample_company_instance.get_user_info = MagicMock(return_value={"user_email": "test@user.com"})
         self.mock_sample_company_instance.get_metadata_from_filename = MagicMock(return_value={"meta": "data"})
 
@@ -95,6 +94,7 @@ class TestDispatcher:
             util=self.util,
             excel_service=self.excel_service,
             mail_service=self.mail_service,
+            config_service=self.mock_config_service,
         )
 
 
@@ -248,6 +248,7 @@ class TestDispatcher:
                 util=self.util,
                 excel_service=self.excel_service,
                 mail_service=self.mail_service,
+                config_service=self.mock_config_service,
             )
 
             assert len(dispatcher.company_instances) == 0

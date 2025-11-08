@@ -3,7 +3,7 @@ import pytest
 from flask import Flask
 from unittest.mock import MagicMock
 from iatoolkit.views.help_content_api_view import HelpContentApiView
-from iatoolkit.services.help_content_service import HelpContentService
+from iatoolkit.services.configuration_service import ConfigurationService
 from iatoolkit.services.auth_service import AuthService
 from iatoolkit.services.i18n_service import I18nService
 
@@ -25,7 +25,7 @@ class TestHelpContentApiView:
 
         # Mocks para los servicios inyectados
         self.mock_auth_service = MagicMock(spec=AuthService)
-        self.mock_help_content_service = MagicMock(spec=HelpContentService)
+        self.mock_config_service = MagicMock(spec=ConfigurationService)
         self.i8n_service = MagicMock(spec=I18nService)
 
         self.i8n_service.t.side_effect = lambda key, **kwargs: f"translated:{key}"
@@ -34,7 +34,7 @@ class TestHelpContentApiView:
         view_func = HelpContentApiView.as_view(
             'help_content',
             auth_service=self.mock_auth_service,
-            help_content_service=self.mock_help_content_service,
+            config_service=self.mock_config_service,
             i18n_service=self.i8n_service
         )
         self.app.add_url_rule('/<company_short_name>/api/help-content', view_func=view_func, methods=['POST'])
@@ -50,7 +50,7 @@ class TestHelpContentApiView:
         mock_help_response = {
             'example_questions': [{'category': 'Ventas', 'questions': ['Pregunta 1']}]
         }
-        self.mock_help_content_service.get_content.return_value = mock_help_response
+        self.mock_config_service.get_company_content.return_value = mock_help_response
 
         # Act
         response = self.client.post(self.url)
@@ -61,8 +61,9 @@ class TestHelpContentApiView:
 
         # Verifica que se llamó al servicio de autenticación y al de ayuda con los parámetros correctos
         self.mock_auth_service.verify.assert_called_once()
-        self.mock_help_content_service.get_content.assert_called_once_with(
-            company_short_name=MOCK_COMPANY_SHORT_NAME
+        self.mock_config_service.get_company_content.assert_called_once_with(
+            company_short_name=MOCK_COMPANY_SHORT_NAME,
+            content_key='help_content'
         )
 
     def test_get_content_when_auth_error(self):
@@ -78,14 +79,14 @@ class TestHelpContentApiView:
         # Assert
         assert response.status_code == 401
         assert "Token inválido" in response.json['error_message']
-        self.mock_help_content_service.get_content.assert_not_called()
+        self.mock_config_service.get_company_content.assert_not_called()
 
     def test_get_content_handles_service_error(self):
         """
         Prueba que la vista maneja un error controlado devuelto por el servicio de ayuda.
         """
         # Arrange
-        self.mock_help_content_service.get_content.return_value = {
+        self.mock_config_service.get_company_content.return_value = {
             'error': 'El archivo de contenido está corrupto'
         }
 
@@ -95,14 +96,14 @@ class TestHelpContentApiView:
         # Assert
         assert response.status_code == 400
         assert response.json['error_message'] == 'El archivo de contenido está corrupto'
-        self.mock_help_content_service.get_content.assert_called_once()
+        self.mock_config_service.get_company_content.assert_called_once()
 
     def test_get_content_handles_unexpected_exception(self):
         """
         Prueba que la vista devuelve un error 500 si ocurre una excepción inesperada.
         """
         # Arrange
-        self.mock_help_content_service.get_content.side_effect = Exception("Fallo crítico de lectura de archivo")
+        self.mock_config_service.get_company_content.side_effect = Exception("Fallo crítico de lectura de archivo")
 
         # Act
         response = self.client.post(self.url)

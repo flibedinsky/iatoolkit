@@ -5,7 +5,7 @@
 
 from flask import request, jsonify
 from flask.views import MethodView
-from iatoolkit.services.help_content_service import HelpContentService
+from iatoolkit.services.configuration_service import ConfigurationService
 from iatoolkit.services.i18n_service import I18nService
 from iatoolkit.services.auth_service import AuthService
 from injector import inject
@@ -21,10 +21,10 @@ class HelpContentApiView(MethodView):
     @inject
     def __init__(self,
                  auth_service: AuthService,
-                 help_content_service: HelpContentService,
+                 config_service: ConfigurationService,
                  i18n_service: I18nService):
         self.auth_service = auth_service
-        self.help_content_service = help_content_service
+        self.config_service = config_service
         self.i18n_service = i18n_service
 
     def post(self, company_short_name: str):
@@ -36,10 +36,10 @@ class HelpContentApiView(MethodView):
 
             user_identifier = auth_result.get('user_identifier')
 
-            # 2. Call the history service with the unified identifier.
-            # The service's signature should now only expect user_identifier.
-            response = self.help_content_service.get_content(
-                company_short_name=company_short_name
+            # 2. Call the config service with the unified identifier.
+            response = self.config_service.get_company_content(
+                company_short_name=company_short_name,
+                content_key='help_content'      # specific key for this service
             )
 
             if "error" in response:
@@ -50,5 +50,5 @@ class HelpContentApiView(MethodView):
 
         except Exception as e:
             logging.exception(
-                f"Unexpected error fetching help_content for {company_short_name}/{user_identifier}: {e}")
+                f"Unexpected error fetching help_content for {company_short_name}: {e}")
             return jsonify({"error_message": self.i18n_service.t('errors.general.unexpected_error', error=str(e))}), 500

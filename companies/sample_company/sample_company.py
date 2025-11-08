@@ -38,40 +38,6 @@ class SampleCompany(BaseCompany):
             self.sample_db_manager = DatabaseManager(sample_db_uri, register_pgvector=False)
             self.sample_database = SampleCompanyDatabase(self.sample_db_manager)
 
-
-    def register_company(self):
-        # 1. Initialize the company and parameters in the database
-        self.company = self._create_company(
-            name='Sample Company',
-            short_name='sample_company',
-            branding=BRANDING,
-            onboarding_cards=ONBOARDING_CARDS,
-            parameters={
-                'cors_origin': ['https://portal-interno.empresa_de_ejemplo.cl'],
-                'user_feedback':
-                    {
-                        'channel': 'email',
-                        'destination': 'fernando.libedinsky@gmail.com'
-                    },
-                'external_urls':
-                    {
-                         # this logout_url is used when closing Toolkit session
-                        'logout_url': ''
-                    }
-                }
-        )
-
-        # 2. create or update the function list
-        for function in FUNCTION_LIST:
-            self._create_function(
-                function_name=function['function_name'],
-                description=function['description'],
-                params=function['params']
-            )
-
-        # 3. create the prompts
-        self._create_prompts()
-
     def handle_request(self, action: str, **kwargs) -> str:
         if action == "sql_query":
             sql_query = kwargs.get('query')
@@ -118,9 +84,6 @@ class SampleCompany(BaseCompany):
                 logging.warning(f"Advertencia al generar esquema para {table['table_name']}: {e}")
 
         return db_context
-
-    def start_execution(self) -> dict:
-        return {}
 
     def get_metadata_from_filename(self, filename: str) -> dict:
         if filename.startswith('contract_'):

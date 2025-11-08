@@ -1,0 +1,123 @@
+# ===================================================================
+# IAToolkit Company Configuration for: sample_company
+# Location: companies/sample_company/config/company.yaml
+# ===================================================================
+
+# 1. General Company Information
+id: "sample_company"
+name: "Sample Company"
+default_language: "es_ES"
+parameters:
+  cors_origin:
+    - "https://portal-interno.empresa_de_ejemplo.cl"
+  user_feedback:
+    channel: "email"
+    destination: "fernando.libedinsky@gmail.com"
+  external_urls:
+    logout_url: ""
+
+# 2. Data Sources
+data_sources:
+  sql:
+    - database: "northwind_db"
+      connection_string_env: "NORTHWIND_DATABASE_URI"
+      description: |
+        Esta es la base de datos principal de la empresa, modelada a partir del conjunto de datos 'Northwind'.
+        Contiene toda la información operativa, incluyendo productos, clientes, empleados, órdenes de compra y detalles de envío.
+        Es la fuente principal para responder preguntas sobre ventas y operaciones.
+      tables:
+        - table_name: "products"
+        - table_name: "regions"
+        - table_name: "shippers"
+        - table_name: "suppliers"
+        - table_name: "categories"
+        - table_name: "customers"
+        - table_name: "territories"
+        - table_name: "employees"
+        - table_name: "employee_territories"
+        - table_name: "orders"
+        - table_name: "order_details"
+          schema_name: "order_detail" # Opcional: solo si el nombre del esquema difiere del de la tabla
+
+# 3. Tools (Functions)
+# Defines the custom actions the LLM can take, including their parameters.
+tools:
+  - function_name: "sql_query"
+    description: "Debes usar este servicio para consulta sobre Sample Company y sus clientes, productos, ordenes , regiones, empleados."
+    params:
+      type: "object"
+      properties:
+        query:
+          type: "string"
+          description: "string con la consulta en sql"
+      required: ["query"]
+  - function_name: "document_search"
+    description: "Busquedas sobre documentos: manuales, contratos de trabajo de empleados, manuales de procedimientos, y documentos legales."
+    params:
+      type: "object"
+      properties:
+        query:
+          type: "string"
+          description: "Texto o pregunta a buscar en los documentos."
+      required: ["query"]
+
+# 4. Prompts
+# Defines the ordered list of categories and the prompts available in the UI.
+prompt_categories:
+  - "General"
+  - "Análisis Avanzado" # Ejemplo de cómo se agregarían más categorías
+
+prompts:
+  - category: "General" # Asigna este prompt a la categoría 'General'
+    name: "analisis_ventas"
+    description: "Analisis de ventas"
+    order: 1
+  - category: "General"
+    name: "supplier_report"
+    description: "Análisis de proveedores"
+    order: 2
+    custom_fields:
+      - data_key: "supplier_id"
+        label: "Identificador del Proveedor"
+  - category: "General"
+    name: "analisis_despachos"
+    description: "Analisis de despachos"
+    order: 3
+    custom_fields:
+      - data_key: "init_date"
+        label: "Fecha desde"
+        type: "date"
+      - data_key: "end_date"
+        label: "Fecha hasta"
+        type: "date"
+
+# 5. Branding and Content Files
+branding:
+  header_background_color: "#4C6A8D"
+  header_text_color: "#FFFFFF"
+  brand_primary_color: "#4C6A8D"
+  brand_secondary_color: "#9EADC0"
+  brand_text_on_primary: "#FFFFFF"
+  brand_text_on_secondary: "#FFFFFF"
+
+# 6. Help files
+help_files:
+  onboarding_cards: "onboarding_cards.yaml"
+  help_content: "help_content.yaml"
+
+# 7. Document Loader (RAG)
+document_loader:
+  dev_connector:
+    type: "local"
+  prod_connector:
+    type: "s3"
+    bucket: "iatoolkit"
+    prefix: "sample_company"
+    aws_access_key_id_env: "AWS_ACCESS_KEY_ID"
+    aws_secret_access_key_env: "AWS_SECRET_ACCESS_KEY"
+    aws_region_env: "AWS_REGION"
+  folders_to_load:
+    - path: "companies/sample_company/sample_data/supplier_manuals"
+      predefined_metadata:
+        type: "supplier_manual"
+    - path: "companies/sample_company/sample_data/employee_contracts"

@@ -6,7 +6,7 @@
 from iatoolkit.common.exceptions import IAToolkitException
 from iatoolkit.services.prompt_manager_service import PromptService
 from iatoolkit.repositories.llm_query_repo import LLMQueryRepo
-
+from iatoolkit.services.configuration_service import ConfigurationService
 from iatoolkit.repositories.models import Company, Function
 from iatoolkit.services.excel_service import ExcelService
 from iatoolkit.services.mail_service import MailService
@@ -19,11 +19,13 @@ import os
 class Dispatcher:
     @inject
     def __init__(self,
+                 config_service: ConfigurationService,
                  prompt_service: PromptService,
                  llmquery_repo: LLMQueryRepo,
                  util: Utility,
                  excel_service: ExcelService,
                  mail_service: MailService):
+        self.config_service = config_service
         self.prompt_service = prompt_service
         self.llmquery_repo = llmquery_repo
         self.util = util
@@ -55,14 +57,13 @@ class Dispatcher:
             self._company_instances = self.company_registry.get_all_company_instances()
         return self._company_instances
 
-    def start_execution(self):
+    def load_company_configs(self):
         # initialize the system functions and prompts
         self.setup_iatoolkit_system()
 
-        """Runs the startup logic for all registered companies."""
+        """Loads the configuration of every company"""
         for company in self.company_instances.values():
-            company.register_company()
-            company.start_execution()
+            self.config_service.register_company(company)
 
         return True
 
@@ -90,9 +91,6 @@ class Dispatcher:
             )
             i += 1
 
-        # register in the database  every company class
-        for company in self.company_instances.values():
-            company.register_company()
 
     def dispatch(self, company_name: str, action: str, **kwargs) -> dict:
         company_key = company_name.lower()
