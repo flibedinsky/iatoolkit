@@ -55,9 +55,9 @@ class SampleCompany(BaseCompany):
             return ''
 
         # get the configuration for 'data_sources' from the ConfigurationService
-        data_sources_config = self.config_service.get_company_content(self.id, 'data_sources')
+        data_sources_config = self.config_service.get_company_content(self.company_short_name, 'data_sources')
         if not data_sources_config or not data_sources_config.get('sql'):
-            logging.warning(f"No 'data_sources.sql' configuration found for company '{self.id}'.")
+            logging.warning(f"No 'data_sources.sql' configuration found for company '{self.company_short_name}'.")
             return ''
 
         # the first SQL source defined in the YAML configuration

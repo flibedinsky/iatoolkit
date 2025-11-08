@@ -4,7 +4,6 @@
 
 from pathlib import Path
 from iatoolkit import BaseCompany
-from iatoolkit.repositories.profile_repo import ProfileRepo
 from iatoolkit.repositories.models import Company
 from iatoolkit.common.util import Utility
 from injector import inject
@@ -18,9 +17,7 @@ class ConfigurationService:
 
     @inject
     def __init__(self,
-                 profile_repo: ProfileRepo,
                  utility: Utility):
-        self.profile_repo = profile_repo
         self.utility = utility
         self._loaded_configs = {}   # cache for store loaded configurations
 
@@ -39,26 +36,22 @@ class ConfigurationService:
         """
         logging.info(f"⚙️  Starting configuration for company '{company_short_name}'...")
 
-        # 1. identify the instance with his name and load info from database
-        company_instance.company_short_name = company_short_name
-        company_instance.company = self.profile_repo.get_company_by_short_name(company_short_name)
-        if not company_instance.company:
-            raise ValueError(f"Company '{company_short_name}' not found in database.")
-
-        # 2. Load the main configuration file and supplementary content files
+        # 1. Load the main configuration file and supplementary content files
         config = self._load_and_merge_configs(company_short_name)
 
-        # 3. Register core company details and get the database object
+        # 2. Register core company details and get the database object
         company_db_object = self._register_core_details(company_instance, config)
 
-        # 4. Register tools (functions)
+        # 3. Register tools (functions)
         self._register_tools(company_instance, config.get('tools', []))
 
-        # 5. Register prompt categories and prompts
+        # 4. Register prompt categories and prompts
         self._register_prompts(company_instance, config)
 
-        # 6. Link the persisted Company object back to the running instance
+        # 5. Link the persisted Company object back to the running instance
+        company_instance.company_short_name = company_short_name
         company_instance.company = company_db_object
+        company_instance.id = company_instance.company.id
 
         logging.info(f"✅ Company '{company_short_name}' configured successfully.")
 
@@ -97,8 +90,8 @@ class ConfigurationService:
     def _register_core_details(self, company_instance: BaseCompany, config: dict) -> Company:
         """Calls _create_company with data from the merged YAML config."""
         return company_instance._create_company(
-            name=config['name'],
             short_name=config['id'],
+            name=config['name'],
             parameters=config.get('parameters', {})
         )
 
