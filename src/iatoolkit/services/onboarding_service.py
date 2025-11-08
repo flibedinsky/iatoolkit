@@ -4,7 +4,9 @@
 # IAToolkit is open source software.
 
 from iatoolkit.repositories.models import Company
+from iatoolkit.services.configuration_service import ConfigurationService
 from typing import List, Dict, Any
+from injector import inject
 
 
 class OnboardingService:
@@ -12,11 +14,13 @@ class OnboardingService:
     Servicio para gestionar las tarjetas de contenido que se muestran
     durante la pantalla de carga (onboarding).
     """
-
-    def __init__(self):
+    @inject
+    def __init__(self, config_service: ConfigurationService):
         """
         Define el conjunto de tarjetas de onboarding por defecto.
         """
+        self.config_service = config_service
+
         self._default_cards = [
             {'icon': 'fas fa-users', 'title': 'Clientes',
              'text': 'Conozco en detalle a nuestros clientes: antigüedad, contactos, historial de operaciones.<br><br><strong>Ejemplo:</strong> ¿cuántos clientes nuevos se incorporaron a mi cartera este año?'},
@@ -37,7 +41,9 @@ class OnboardingService:
         Si la compañía tiene tarjetas personalizadas, las devuelve.
         De lo contrario, devuelve las tarjetas por defecto.
         """
-        if company and company.onboarding_cards:
-            return company.onboarding_cards
+        if company:
+            onboarding_cards = self.config_service.get_company_content(company.short_name, 'onboarding_cards')
+
+            return onboarding_cards
 
         return self._default_cards

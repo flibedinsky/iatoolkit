@@ -2,6 +2,7 @@
 import pytest
 from unittest.mock import Mock
 from iatoolkit.services.branding_service import BrandingService
+from iatoolkit.services.configuration_service import ConfigurationService
 from iatoolkit.repositories.models import Company
 
 
@@ -13,8 +14,11 @@ class TestBrandingService:
         Fixture de Pytest que se ejecuta automáticamente para cada método de test.
         Crea una instancia del servicio y almacena los valores por defecto para fácil acceso.
         """
-        self.branding_service = BrandingService()
+        self.configuration_service = Mock(spec=ConfigurationService)
+        self.branding_service = BrandingService(self.configuration_service)
         self.default_styles = self.branding_service._default_branding
+
+        self.configuration_service.get_company_content.return_value = self.default_styles
 
     def test_get_branding_with_no_company(self):
         """
@@ -71,9 +75,11 @@ class TestBrandingService:
             "primary_font_size": "1.2rem"
         }
 
+        self.configuration_service.get_company_content.return_value = full_custom_styles
+
+
         mock_company = Mock(spec=Company)
         mock_company.name = "Full Brand LLC"
-        mock_company.branding = full_custom_styles
 
         # Act
         branding = self.branding_service.get_company_branding(mock_company)

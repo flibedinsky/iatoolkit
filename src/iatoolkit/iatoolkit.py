@@ -318,6 +318,7 @@ class IAToolkit:
         from iatoolkit.services.branding_service import BrandingService
         from iatoolkit.services.i18n_service import I18nService
         from iatoolkit.services.language_service import LanguageService
+        from iatoolkit.services.onboarding_service import OnboardingService
         from iatoolkit.services.configuration_service import ConfigurationService
 
         binder.bind(QueryService, to=QueryService)
@@ -332,6 +333,7 @@ class IAToolkit:
         binder.bind(JWTService, to=JWTService)
         binder.bind(Dispatcher, to=Dispatcher)
         binder.bind(BrandingService, to=BrandingService)
+        binder.bind(OnboardingService, to=OnboardingService)
         binder.bind(I18nService, to=I18nService)
         binder.bind(LanguageService, to=LanguageService)
         binder.bind(ConfigurationService, to=ConfigurationService)

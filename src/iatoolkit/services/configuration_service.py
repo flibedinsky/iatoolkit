@@ -97,8 +97,6 @@ class ConfigurationService:
         return company_instance._create_company(
             name=config['name'],
             short_name=config['id'],
-            branding=config.get('branding', {}),
-            onboarding_cards=config.get('onboarding_cards', []),
             parameters=config.get('parameters', {})
         )
 

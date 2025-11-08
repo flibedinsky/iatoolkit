@@ -25,14 +25,10 @@ class BaseCompany(ABC):
                         short_name: str,
                         name: str,
                         parameters: dict | None = None,
-                        branding: dict | None = None,
-                        onboarding_cards: dict | None = None,
                         ) -> Company:
         company_obj = Company(short_name=short_name,
                               name=name,
-                              parameters=parameters,
-                              branding=branding,
-                              onboarding_cards=onboarding_cards)
+                              parameters=parameters)
         self.company = self.profile_repo.create_company(company_obj)
         return self.company
 

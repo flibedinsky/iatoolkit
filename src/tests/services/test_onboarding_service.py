@@ -2,6 +2,7 @@
 import pytest
 from unittest.mock import Mock
 from iatoolkit.services.onboarding_service import OnboardingService
+from iatoolkit.services.configuration_service import ConfigurationService
 from iatoolkit.repositories.models import Company
 
 class TestOnboardingService:
@@ -15,8 +16,12 @@ class TestOnboardingService:
         Fixture de Pytest que se ejecuta para cada test.
         Crea una instancia del servicio y almacena las tarjetas por defecto.
         """
-        self.onboarding_service = OnboardingService()
+        self.configuration_service = Mock(spec=ConfigurationService)
+        self.onboarding_service = OnboardingService(self.configuration_service)
         self.default_cards = self.onboarding_service._default_cards
+
+        self.configuration_service.get_company_content.return_value = self.default_cards
+
 
     def test_get_cards_with_no_company(self):
         """Prueba que se retornen las tarjetas por defecto cuando company es None."""
@@ -59,7 +64,7 @@ class TestOnboardingService:
             {'icon': 'fas fa-rocket', 'title': 'Tarjeta Personalizada', 'text': 'Este es un contenido único.'}
         ]
         mock_company = Mock(spec=Company)
-        mock_company.onboarding_cards = custom_cards
+        self.configuration_service.get_company_content.return_value = custom_cards
 
         # Act
         cards = self.onboarding_service.get_onboarding_cards(mock_company)

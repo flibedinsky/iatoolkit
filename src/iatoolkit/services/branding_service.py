@@ -4,6 +4,7 @@
 # IAToolkit is open source software.
 
 from iatoolkit.repositories.models import Company
+from iatoolkit.services.configuration_service import ConfigurationService
 from injector import inject
 
 
@@ -12,7 +13,8 @@ class BrandingService:
     Branding configuration for IAToolkit
     """
     @inject
-    def __init__(self):
+    def __init__(self, config_service: ConfigurationService):
+        self.config_service = config_service
         """
         Define los estilos de branding por defecto para la aplicación.
         """
@@ -74,8 +76,9 @@ class BrandingService:
         """
         final_branding_values = self._default_branding.copy()
 
-        if company and company.branding:
-            final_branding_values.update(company.branding)
+        if company:
+            branding_data = self.config_service.get_company_content(company.short_name, 'branding')
+            final_branding_values.update(branding_data)
 
         # Función para convertir HEX a RGB
         def hex_to_rgb(hex_color):
