@@ -35,9 +35,10 @@ data_sources:
         - table_name: "territories"
         - table_name: "employees"
         - table_name: "employee_territories"
+          schema_name: "employee_territory"
         - table_name: "orders"
         - table_name: "order_details"
-          schema_name: "order_detail" # Opcional: solo si el nombre del esquema difiere del de la tabla
+          schema_name: "order_detail"   # Optional: only is schema name is different from table name
 
 # 3. Tools (Functions)
 # Defines the custom actions the LLM can take, including their parameters.
@@ -65,10 +66,10 @@ tools:
 # Defines the ordered list of categories and the prompts available in the UI.
 prompt_categories:
   - "General"
-  - "Análisis Avanzado" # Ejemplo de cómo se agregarían más categorías
+  - "Análisis Avanzado"     # sample for adding more categories
 
 prompts:
-  - category: "General" # Asigna este prompt a la categoría 'General'
+  - category: "General"     # assign this prompt to the category "General"
     name: "analisis_ventas"
     description: "Analisis de ventas"
     order: 1

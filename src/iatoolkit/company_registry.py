@@ -31,10 +31,9 @@ class CompanyRegistry:
 
                     # save the created instance in the registry
                     self._company_instances[company_key] = company_instance
-                    logging.info(f"company '{company_key}' instantiated")
 
                 except Exception as e:
-                    logging.error(f"Error instanciando empresa {company_key}: {e}")
+                    logging.error(f"Error while creating company instance for {company_key}: {e}")
                     logging.exception(e)
                     raise
 

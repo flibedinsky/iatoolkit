@@ -66,7 +66,6 @@ class SampleCompany(BaseCompany):
             {'table_name': 'employee_territories', 'schema_name': 'employee_territory'},
             {'table_name': 'orders', 'schema_name': 'order'},
             {'table_name': 'order_details', 'schema_name': 'order_detail'},
-
         ]
 
         db_context = ''
