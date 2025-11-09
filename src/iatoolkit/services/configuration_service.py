@@ -3,7 +3,6 @@
 # Product: IAToolkit
 
 from pathlib import Path
-from iatoolkit import BaseCompany
 from iatoolkit.repositories.models import Company
 from iatoolkit.common.util import Utility
 from injector import inject
@@ -21,7 +20,7 @@ class ConfigurationService:
         self.utility = utility
         self._loaded_configs = {}   # cache for store loaded configurations
 
-    def get_company_content(self, company_short_name: str, content_key: str) -> dict | list | None:
+    def get_company_content(self, company_short_name: str, content_key: str):
         """
         Public method to provide a specific section of a company's configuration.
         It uses a cache to avoid reading files from disk on every call.
@@ -29,7 +28,7 @@ class ConfigurationService:
         self._ensure_config_loaded(company_short_name)
         return self._loaded_configs[company_short_name].get(content_key)
 
-    def register_company(self, company_short_name: str, company_instance: BaseCompany):
+    def register_company(self, company_short_name: str, company_instance):
         """
         Main entry point for configuring a company instance.
         This method is invoked by the dispatcher for each registered company.
@@ -87,7 +86,7 @@ class ConfigurationService:
 
         return config
 
-    def _register_core_details(self, company_instance: BaseCompany, config: dict) -> Company:
+    def _register_core_details(self, company_instance, config: dict) -> Company:
         """Calls _create_company with data from the merged YAML config."""
         return company_instance._create_company(
             short_name=config['id'],
@@ -95,7 +94,7 @@ class ConfigurationService:
             parameters=config.get('parameters', {})
         )
 
-    def _register_tools(self, company_instance: BaseCompany, tools_config: list):
+    def _register_tools(self, company_instance, tools_config: list):
         """Calls _create_function for each tool defined in the YAML."""
         for tool in tools_config:
             company_instance._create_function(
@@ -104,7 +103,7 @@ class ConfigurationService:
                 params=tool['params']
             )
 
-    def _register_prompts(self, company_instance: BaseCompany, config: dict):
+    def _register_prompts(self, company_instance, config: dict):
         """
         Creates prompt categories first, then creates each prompt and assigns
         it to its respective category.

@@ -53,14 +53,12 @@ class Company(Base):
     id = Column(Integer, primary_key=True)
     short_name = Column(String(20), nullable=False, unique=True, index=True)
     name = Column(String(256), nullable=False)
-    default_language = Column(String(5), nullable=False, default='es')
 
     # encrypted api-key
     openai_api_key = Column(String, nullable=True)
     gemini_api_key = Column(String, nullable=True)
     parameters = Column(JSON, nullable=True)
     created_at = Column(DateTime, default=datetime.now)
-    allow_jwt = Column(Boolean, default=True, nullable=True)
 
     documents = relationship("Document",
                              back_populates="company",

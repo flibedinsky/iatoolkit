@@ -4,6 +4,7 @@ import logging
 from injector import inject, singleton
 from flask import g, request
 from iatoolkit.repositories.profile_repo import ProfileRepo
+from iatoolkit.services.configuration_service import ConfigurationService
 from iatoolkit.common.session_manager import SessionManager
 
 @singleton
@@ -17,7 +18,10 @@ class LanguageService:
     FALLBACK_LANGUAGE = 'es'
 
     @inject
-    def __init__(self, profile_repo: ProfileRepo):
+    def __init__(self,
+                 config_service: ConfigurationService,
+                 profile_repo: ProfileRepo):
+        self.config_service = config_service
         self.profile_repo = profile_repo
 
     def _get_company_short_name(self) -> str | None:
@@ -64,10 +68,11 @@ class LanguageService:
             # Priority 2: Company's default language
             company_short_name = self._get_company_short_name()
             if company_short_name:
-                company = self.profile_repo.get_company_by_short_name(company_short_name)
-                if company and company.default_language:
-                    logging.debug(f"Language determined by company default: {company.default_language}")
-                    g.lang = company.default_language
+                locale = self.config_service.get_company_content(company_short_name, 'locale')
+                if locale:
+                    company_language = locale.split('_')[0]
+                    logging.debug(f"Language determined by company default: {company_language}")
+                    g.lang = company_language
                     return g.lang
         except Exception as e:
             logging.info(f"Could not determine language, falling back to default. Reason: {e}")
