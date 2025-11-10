@@ -34,7 +34,7 @@ data_sources:
         - "test_table"
         - "logs"
       # exclude these columns from all tables
-      exclude_columns: [ created', 'updated' ]
+      exclude_columns: [ 'created', 'updated' ]
       #    El servicio usará esta sección para añadir detalles a las tablas
       #    que se cargaron automáticamente con 'include_all_tables'.
       tables:
