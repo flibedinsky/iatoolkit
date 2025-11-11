@@ -3,11 +3,10 @@
 #
 # IAToolkit is open source software.
 
-from iatoolkit import IAToolkit, BaseCompany
-from iatoolkit import LoadDocumentsService, SearchService
+from iatoolkit import BaseCompany
+from iatoolkit import LoadDocumentsService, SearchService, SqlService
 from injector import inject
 from companies.sample_company.sample_database import SampleCompanyDatabase
-import os
 import click
 import logging
 
@@ -15,9 +14,13 @@ import logging
 class SampleCompany(BaseCompany):
     @inject
     def __init__(self,
-            search_service: SearchService):
+                sql_service: SqlService,
+                search_service: SearchService,
+                load_document_service: LoadDocumentsService,):
         super().__init__()
+        self.sql_service = sql_service
         self.search_service = search_service
+        self.load_document_service = load_document_service
 
     def handle_request(self, action: str, **kwargs) -> str:
         if action == "document_search":
@@ -26,10 +29,6 @@ class SampleCompany(BaseCompany):
         else:
             return self.unsupported_operation(action)
 
-    def get_metadata_from_filename(self, filename: str) -> dict:
-        if filename.startswith('contract_'):
-            return {'type': 'employee_contract'}
-        return {}
 
     def get_user_info(self, user_identifier: str) -> dict:
         user_data = {
@@ -66,36 +65,12 @@ class SampleCompany(BaseCompany):
 
         @app.cli.command("load")
         def load_documents():
-            if os.getenv('FLASK_ENV') == 'dev':
-                connector_config = {'type': 'local', 'path': "" }
-
-            else:
-                connector_config = {'type': 's3',
-                                  'bucket': "iatoolkit",
-                                  'prefix': 'sample_company'}
-
-            load_documents_service = IAToolkit.get_instance().get_injector().get(LoadDocumentsService)
-
-            # documents are loaded from 2 different folders
-            # as a sample, only add metadata 'type' for one of them: supplier_manual
-            # for the other one, we will add metadata from the filename in get_metadata_from_filename method
-            # metadata es optional always
-            types_to_load = [
-                {'type': 'supplier_manual', 'folder': 'supplier_manuals'},
-                {'folder': 'employee_contracts'}
-                ]
-
-            for doc in types_to_load:
-                connector_config['path'] = f"companies/sample_company/sample_data/{doc['folder']}"
-                try:
-                    predefined_metadata = {'type': doc['type']} if 'type' in doc else {}
-                    result = load_documents_service.load_company_files(
-                        company=self.company,
-                        connector_config=connector_config,
-                        predefined_metadata=predefined_metadata,
-                        filters={"filename_contains": ".pdf"})
-                    click.echo(f'folder {doc["folder"]}: {result} documents processed successfully.')
-                except Exception as e:
-                    logging.exception(e)
-                    click.echo(f"Error: {str(e)}")
+            try:
+                self.load_document_service.load_sources(
+                            company=self.company,
+                            sources_to_load=["employee_contracts", "supplier_manuals"]
+                        )
+            except Exception as e:
+                logging.exception(e)
+                click.echo(f"Error: {str(e)}")
 

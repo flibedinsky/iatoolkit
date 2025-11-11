@@ -5,7 +5,7 @@
 
 import click
 import logging
-from iatoolkit import IAToolkit
+from .iatoolkit import IAToolkit
 from iatoolkit.services.profile_service import ProfileService
 
 def register_core_commands(app):

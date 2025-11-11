@@ -156,10 +156,10 @@ class Document(Base):
     company_id = Column(Integer, ForeignKey('iat_companies.id',
                     ondelete='CASCADE'), nullable=False)
     filename = Column(String(256), nullable=False, index=True)
-    content = Column(Text, nullable=False)
-    content_b64 = Column(Text, nullable=False)
     meta = Column(JSON, nullable=True)
     created_at = Column(DateTime, default=datetime.now)
+    content = Column(Text, nullable=False)
+    content_b64 = Column(Text, nullable=False)
 
     company = relationship("Company", back_populates="documents")
 

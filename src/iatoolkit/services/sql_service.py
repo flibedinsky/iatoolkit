@@ -39,6 +39,8 @@ class SqlService:
             return
 
         logging.debug(f"Registering and creating connection for database: '{db_name}'")
+
+        # create the database connection and save it on the cache
         db_manager = DatabaseManager(db_uri, register_pgvector=False)
         self._db_connections[db_name] = db_manager
 

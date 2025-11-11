@@ -48,7 +48,7 @@ class FileStoreApiView(MethodView):
             # get the file content from base64
             content = base64.b64decode(base64_content)
 
-            new_document = self.doc_service.load_file_callback(
+            new_document = self.doc_service._file_processing_callback(
                 filename=filename,
                 content=content,
                 company=company,

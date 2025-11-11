@@ -26,7 +26,6 @@ data_sources:
         Contiene toda la información comercial y operativa la empresa.
         Es la fuente principal para responder preguntas sobre ventas, despachos,
         ordenes de compra, empleados, paises y territorios.
-        Para consultar los datos, debes utilizar el servicio de SQL de IAToolkit.
 
       # Loads all the databases tables automatically
       include_all_tables: true
@@ -111,19 +110,36 @@ help_files:
   onboarding_cards: "onboarding_cards.yaml"
   help_content: "help_content.yaml"
 
-# 7. Document Loader (RAG)
-document_loader:
-  dev_connector:
-    type: "local"
-  prod_connector:
-    type: "s3"
-    bucket: "iatoolkit"
-    prefix: "sample_company"
-    aws_access_key_id_env: "AWS_ACCESS_KEY_ID"
-    aws_secret_access_key_env: "AWS_SECRET_ACCESS_KEY"
-    aws_region_env: "AWS_REGION"
-  folders_to_load:
-    - path: "companies/sample_company/sample_data/supplier_manuals"
-      predefined_metadata:
+
+# 7. Knowledge Base (RAG)
+# Defines the sources of unstructured documents for indexing.
+knowledge_base:
+
+  # 7.1. Connectors
+  # Defines how to connect to the document storage for different environments.
+  # El comando 'load' usará el conector apropiado según el FLASK_ENV.
+  connectors:
+    development:
+      type: "local"
+    production:
+      type: "s3"
+      bucket: "iatoolkit"
+      prefix: "sample_company"
+      aws_access_key_id_env: "AWS_ACCESS_KEY_ID"
+      aws_secret_access_key_env: "AWS_SECRET_ACCESS_KEY"
+      aws_region_env: "AWS_REGION"
+
+  # 7.2. Document Sources
+  # A map defining the logical groups of documents to be indexed.
+  # Cada clave es un tipo de fuente, que contiene su ubicación y metadatos.
+  document_sources:
+    supplier_manuals:
+      path: "companies/sample_company/sample_data/supplier_manuals"
+      # Metadatos que se aplicarán a todos los documentos de esta fuente.
+      metadata:
         type: "supplier_manual"
-    - path: "companies/sample_company/sample_data/employee_contracts"
+
+    employee_contracts:
+      path: "companies/sample_company/sample_data/employee_contracts"
+      metadata:
+        type: "employee_contract"

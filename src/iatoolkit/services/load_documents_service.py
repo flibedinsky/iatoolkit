@@ -1,15 +1,11 @@
 # Copyright (c) 2024 Fernando Libedinsky
 # Product: IAToolkit
-#
-# IAToolkit is open source software.
 
 from iatoolkit.repositories.vs_repo import VSRepo
 from iatoolkit.repositories.document_repo import DocumentRepo
-from iatoolkit.repositories.profile_repo import ProfileRepo
-from iatoolkit.repositories.llm_query_repo import LLMQueryRepo
-
 from iatoolkit.repositories.models import Document, VSDoc, Company
 from iatoolkit.services.document_service import DocumentService
+from iatoolkit.services.configuration_service import ConfigurationService
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from iatoolkit.infra.connectors.file_connector_factory import FileConnectorFactory
 from iatoolkit.services.file_processor_service import FileProcessorConfig, FileProcessor
@@ -17,34 +13,32 @@ from iatoolkit.services.dispatcher_service import Dispatcher
 from iatoolkit.common.exceptions import IAToolkitException
 import logging
 import base64
-from injector import inject
-from typing import Dict
+from injector import inject, singleton
+import os
 
 
+@singleton
 class LoadDocumentsService:
     """
     Orchestrates the process of loading, processing, and storing documents
-    from various sources for different companies.
+    from various sources defined in the company's configuration.
     """
     @inject
     def __init__(self,
+                 config_service: ConfigurationService,
                  file_connector_factory: FileConnectorFactory,
                  doc_service: DocumentService,
                  doc_repo: DocumentRepo,
                  vector_store: VSRepo,
-                 profile_repo: ProfileRepo,
-                 dispatcher: Dispatcher,
-                 llm_query_repo: LLMQueryRepo
+                 dispatcher: Dispatcher
                  ):
+        self.config_service = config_service
         self.doc_service = doc_service
         self.doc_repo = doc_repo
-        self.profile_repo = profile_repo
-        self.llm_query_repo = llm_query_repo
         self.vector_store = vector_store
         self.file_connector_factory = file_connector_factory
         self.dispatcher = dispatcher
 
-        # lower warnings
         logging.getLogger().setLevel(logging.ERROR)
 
         self.splitter = RecursiveCharacterTextSplitter(
@@ -53,135 +47,131 @@ class LoadDocumentsService:
             separators=["\n\n", "\n", "."]
         )
 
-    def load_company_files(self,
-                         company: Company,
-                         connector_config: Dict,
-                         predefined_metadata: Dict = None,
-                         filters: Dict = None):
+    def load_sources(self,
+                     company: Company,
+                     sources_to_load: list[str] = None,
+                     filters: dict = None) -> int:
         """
-        Loads all the company files from a connector
+        Loads documents from one or more configured sources for a company.
 
         Args:
             company (Company): The company to load files for.
-            connector_config (Dict): The configuration for the file connector.
-            predefined_metadata (Dict, optional): Metadata to be added to all documents from this source.
-            filters (Dict, optional): Filters to apply to the files.
+            sources_to_load (list[str], optional): A list of specific source names to load.
+                                                  If None, all configured sources will be loaded.
+            filters (dict, optional): Filters to apply when listing files (e.g., file extension).
 
         Returns:
-            int: The number of processed files.
+            int: The total number of processed files.
         """
-        if not connector_config:
-            raise IAToolkitException(IAToolkitException.ErrorType.MISSING_PARAMETER,
-                        f"Missing connector config")
+        knowledge_base_config = self.config_service.get_configuration(company.short_name, 'knowledge_base')
+        if not knowledge_base_config:
+            raise IAToolkitException(IAToolkitException.ErrorType.CONFIG_ERROR,
+                                     f"Missing 'knowledge_base' configuration for company '{company.short_name}'.")
 
-        try:
-            if not filters:
-                filters = {"filename_contains": ".pdf"}
+        if not sources_to_load:
+            raise IAToolkitException(IAToolkitException.ErrorType.PARAM_NOT_FILLED,
+                                f"Missing sources to load for company '{company.short_name}'.")
 
-            # Pasar metadata predefinida como parte del contexto al procesador
-            # para que esté disponible en la función load_file_callback
-            context = {
-                'company': company,
-                'metadata': {}
-            }
+        base_connector_config = self._get_base_connector_config(knowledge_base_config)
+        all_sources = knowledge_base_config.get('document_sources', {})
 
-            if predefined_metadata:
-                context['metadata'] = predefined_metadata
+        total_processed_files = 0
+        for source_name in sources_to_load:
+            source_config = all_sources.get(source_name)
+            if not source_config:
+                logging.warning(f"Source '{source_name}' not found in configuration for company '{company.short_name}'. Skipping.")
+                continue
 
-            # config the processor
-            processor_config = FileProcessorConfig(
-                callback=self.load_file_callback,
-                context=context,
-                filters=filters,
-                continue_on_error=True,
-                echo=True
-            )
+            try:
+                logging.info(f"Processing source '{source_name}' for company '{company.short_name}'...")
 
-            connector = self.file_connector_factory.create(connector_config)
-            processor = FileProcessor(connector, processor_config)
+                # Combine the base connector configuration with the specific path from the source.
+                full_connector_config = base_connector_config.copy()
+                full_connector_config['path'] = source_config.get('path')
 
-            # process the files
-            processor.process_files()
+                # Prepare the context for the callback function.
+                context = {
+                    'company': company,
+                    'metadata': source_config.get('metadata', {})
+                }
 
-            return processor.processed_files
-        except Exception as e:
-            logging.exception("Loading files error: %s", str(e))
-            return {"error": str(e)}
+                processor_config = FileProcessorConfig(
+                    callback=self._file_processing_callback,
+                    context=context,
+                    filters=filters or {"filename_contains": ".pdf"},
+                    continue_on_error=True,
+                    echo=True
+                )
 
-    def load_file_callback(self, company: Company, filename: str, content: bytes, context: dict = {}):
+                connector = self.file_connector_factory.create(full_connector_config)
+                processor = FileProcessor(connector, processor_config)
+                processor.process_files()
+
+                total_processed_files += processor.processed_files
+                logging.info(f"Finished processing source '{source_name}'. Processed {processor.processed_files} files.")
+
+            except Exception as e:
+                logging.exception(f"Failed to process source '{source_name}' for company '{company.short_name}': {e}")
+
+        return total_processed_files
+
+    def _get_base_connector_config(self, knowledge_base_config: dict) -> dict:
+        """Determines and returns the appropriate base connector configuration (dev vs prod)."""
+        connectors = knowledge_base_config.get('connectors', {})
+        env = os.getenv('FLASK_ENV', 'dev')
+
+        if env == 'dev':
+            return connectors.get('development', {'type': 'local'})
+        else:
+            prod_config = connectors.get('production')
+            if not prod_config:
+                raise IAToolkitException(IAToolkitException.ErrorType.CONFIG_ERROR,
+                                         "Production connector configuration is missing.")
+            # The S3 connector itself is responsible for reading AWS environment variables.
+            # No need to pass credentials explicitly here.
+            return prod_config
+
+    def _file_processing_callback(self, company: Company, filename: str, content: bytes, context: dict = None):
         """
-        Processes a single file: extracts text, generates metadata, and saves it
-        to the relational database and the vector store.
-        This method is intended to be used as the 'action' for FileProcessor.
-
-        Args:
-            company (Company): The company associated with the file.
-            filename (str): The name of the file.
-            content (bytes): The binary content of the file.
-            context (dict, optional): A context dictionary, may contain predefined metadata.
+        Callback method to process a single file. It extracts text, merges metadata,
+        and saves the document to both relational and vector stores.
         """
-
         if not company:
-            raise IAToolkitException(IAToolkitException.ErrorType.MISSING_PARAMETER,
-                        f"missing company")
+            raise IAToolkitException(IAToolkitException.ErrorType.MISSING_PARAMETER, "Missing company object in callback.")
 
-        # check if file exist in repositories
-        if self.doc_repo.get(company_id=company.id,filename=filename):
+        if self.doc_repo.get(company_id=company.id, filename=filename):
+            logging.debug(f"File '{filename}' already exists for company '{company.id}'. Skipping.")
             return
 
         try:
-            # extract text from the document
             document_content = self.doc_service.file_to_txt(filename, content)
-            content_base64 = base64.b64encode(content).decode('utf-8')
 
-            # generate metada based on the filename structure
-            dynamic_metadata = self.dispatcher.get_metadata_from_filename(company_name=company.short_name, filename=filename)
+            # Get predefined metadata from the context passed by the processor.
+            predefined_metadata = context.get('metadata', {}) if context else {}
 
-            # Obtener metadatos del contexto si existen
-            context_metadata = context.get('metadata', {}).copy() if context else {}
-
-            # Fusionar los metadatos. El orden de prioridad es:
-            # 1. dynamic_metadata (tiene mayor prioridad)
-            # 2. context_metadata (del parámetro context)
-            # Los valores en dynamic_metadata tendrán precedencia sobre los de context_metadata
-            final_meta = {**context_metadata, **dynamic_metadata}
-
-            # save the file in the document repositories
+            # Save the document to the relational database.
+            session = self.doc_repo.session
             new_document = Document(
                 company_id=company.id,
                 filename=filename,
                 content=document_content,
-                content_b64=content_base64,
-                meta=final_meta
+                content_b64=base64.b64encode(content).decode('utf-8'),
+                meta=predefined_metadata
             )
-
-            # insert the document into the Database (without commit)
-            session = self.doc_repo.session
             session.add(new_document)
-            session.flush()     # get the ID without commit
+            session.flush()  # Flush to get the new_document.id without committing.
 
-            # split the content, and create the chunk list
-            splitted_content = self.splitter.split_text(document_content)
-            chunk_list = [
-                VSDoc(
-                    company_id=company.id,
-                    document_id=new_document.id,
-                    text=text
-                )
-                for text in splitted_content
-            ]
+            # Split into chunks and prepare for vector store.
+            chunks = self.splitter.split_text(document_content)
+            vs_docs = [VSDoc(company_id=company.id, document_id=new_document.id, text=text) for text in chunks]
 
-            # save to vector store
-            self.vector_store.add_document(chunk_list)
+            # Add document chunks to the vector store.
+            self.vector_store.add_document(vs_docs)
 
-            # confirm the transaction
             session.commit()
-
             return new_document
         except Exception as e:
             self.doc_repo.session.rollback()
-
-            # if something fails, throw exception
-            logging.exception("Error processing file %s: %s", filename, str(e))
+            logging.exception(f"Error processing file '{filename}': {e}")
             raise IAToolkitException(IAToolkitException.ErrorType.LOAD_DOCUMENT_ERROR,
-                               f"Error while processing file: {filename}")
+                                     f"Error while processing file: {filename}")

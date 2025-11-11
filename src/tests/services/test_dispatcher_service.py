@@ -148,30 +148,6 @@ class TestDispatcher:
         instance_none = self.dispatcher.get_company_instance("non_existent")
         assert instance_none is None
 
-    def test_get_metadata_from_filename_success(self):
-        """Tests that get_metadata_from_filename successfully calls the company's method."""
-        filename = "test.txt"
-        expected_metadata = {"meta": "data"}
-        self.mock_sample_company_instance.get_metadata_from_filename.return_value = expected_metadata
-
-        result = self.dispatcher.get_metadata_from_filename("sample", filename)
-
-        self.mock_sample_company_instance.get_metadata_from_filename.assert_called_once_with(filename)
-        assert result == expected_metadata
-
-    def test_get_metadata_from_filename_invalid_company(self):
-        """Tests get_metadata_from_filename with an invalid company."""
-        with pytest.raises(IAToolkitException) as excinfo:
-            self.dispatcher.get_metadata_from_filename("invalid_company", "test.txt")
-        assert 'company not configured: invalid_company'in str(excinfo.value)
-
-    def test_get_metadata_from_filename_company_exception(self):
-        """Tests get_metadata_from_filename when the company method raises an exception."""
-        self.mock_sample_company_instance.get_metadata_from_filename.side_effect = Exception("Company error")
-        with pytest.raises(IAToolkitException) as excinfo:
-            self.dispatcher.get_metadata_from_filename("sample", "test.txt")
-        assert "Error in get_metadata_from_filename" in str(excinfo.value)
-
 
     def test_get_user_info_external_user(self):
         """Tests get_user_info for an external user."""

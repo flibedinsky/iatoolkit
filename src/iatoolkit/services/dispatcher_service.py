@@ -89,7 +89,6 @@ class Dispatcher:
         data_sources_config = self.config_service.get_configuration(company_name, 'data_sources')
 
         if not data_sources_config or not data_sources_config.get('sql'):
-            logging.info(f"  -> No SQL data sources to register for '{company_name}'.")
             return
 
         for db_config in data_sources_config['sql']:
@@ -99,8 +98,8 @@ class Dispatcher:
             # resolve the URI connection string from the environment variable
             db_uri = os.getenv(db_env_var) if db_env_var else None
             if not db_uri:
-                logging.warning(
-                    f"-> Skipping database registration for '{company_name}' due to missing 'database' name or connection URI.")
+                logging.error(
+                    f"-> Skipping database registration for '{company_name}' due to missing 'database' name or invalid connection URI.")
                 return
 
             self.sql_service.register_database(db_name, db_uri)
@@ -191,23 +190,9 @@ class Dispatcher:
 
         return external_user_profile
 
-    def get_metadata_from_filename(self, company_name: str, filename: str) -> dict:
-        if company_name not in self.company_instances:
-            raise IAToolkitException(IAToolkitException.ErrorType.EXTERNAL_SOURCE_ERROR,
-                               f"company not configured: {company_name}")
-
-        company_instance = self.company_instances[company_name]
-        try:
-            return company_instance.get_metadata_from_filename(filename)
-        except Exception as e:
-            logging.exception(e)
-            raise IAToolkitException(IAToolkitException.ErrorType.EXTERNAL_SOURCE_ERROR,
-                               f"Error in get_metadata_from_filename: {company_name}: {str(e)}") from e
-
     def get_company_instance(self, company_name: str):
         """Returns the instance for a given company name."""
         return self.company_instances.get(company_name)
-
 
 
 # iatoolkit system prompts

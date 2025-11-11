@@ -9,7 +9,7 @@ from iatoolkit.repositories.profile_repo import ProfileRepo
 from iatoolkit.repositories.llm_query_repo import LLMQueryRepo
 from iatoolkit.services.prompt_manager_service import PromptService
 from iatoolkit.repositories.models import Company, Function, PromptCategory
-from iatoolkit import IAToolkit
+from .iatoolkit import IAToolkit
 
 
 class BaseCompany(ABC):
@@ -20,6 +20,7 @@ class BaseCompany(ABC):
         self.llm_query_repo: LLMQueryRepo = injector.get(LLMQueryRepo)
         self.prompt_service: PromptService = injector.get(PromptService)
         self.company: Company | None = None
+        self.company_short_name: str
 
     def _create_company(self,
                         short_name: str,
@@ -78,10 +79,6 @@ class BaseCompany(ABC):
     def handle_request(self, tag: str, params: dict) -> dict:
         raise NotImplementedError("La subclase debe implementar el método handle_request()")
 
-    @abstractmethod
-    # get context specific for the query
-    def get_metadata_from_filename(self, filename: str) -> dict:
-        raise NotImplementedError("La subclase debe implementar el método get_query_context()")
 
     def register_cli_commands(self, app):
         """
