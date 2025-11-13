@@ -202,7 +202,10 @@ class VSDoc(Base):
     document_id = Column(Integer, ForeignKey('iat_documents.id',
                         ondelete='CASCADE'), nullable=False)
     text = Column(Text, nullable=False)
-    embedding = Column(Vector(384), nullable=False)  # Ajusta la dimensión si es necesario
+
+    # the size of this vector should be set depending on the embedding model used
+    # for OpenAI is 1536, and for huggingface is 384
+    embedding = Column(Vector(1536), nullable=False)
 
     company = relationship("Company", back_populates="vsdocs")
 

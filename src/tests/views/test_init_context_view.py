@@ -60,7 +60,7 @@ class TestInitContextApiView:
         self.mock_query_service.finalize_context_rebuild.return_value = {'response_id': 'messagge_1234'}
         response = self.client.post(
             f'/api/{MOCK_COMPANY_SHORT_NAME}/init-context',
-            json={'external_user_id': MOCK_USER_IDENTIFIER}
+            json={'external_user_id': MOCK_USER_IDENTIFIER, 'model':'gpt-5-mini'}
         )
 
         assert response.status_code == 200
@@ -73,7 +73,9 @@ class TestInitContextApiView:
         self.mock_query_service.prepare_context.assert_called_once_with(company_short_name=MOCK_COMPANY_SHORT_NAME,
                                                                         user_identifier=MOCK_USER_IDENTIFIER)
         self.mock_query_service.finalize_context_rebuild.assert_called_once_with(
-            company_short_name=MOCK_COMPANY_SHORT_NAME, user_identifier=MOCK_USER_IDENTIFIER)
+            company_short_name=MOCK_COMPANY_SHORT_NAME,
+            user_identifier=MOCK_USER_IDENTIFIER,
+            model='gpt-5-mini')
 
     def test_rebuild_fails_if_auth_fails(self):
         """
@@ -97,5 +99,5 @@ class TestInitContextApiView:
         )
 
         # Assert
-        assert response.status_code == 500
+        assert response.status_code == 406
         assert response.json['error_message'] == 'translated:errors.general.unexpected_error'

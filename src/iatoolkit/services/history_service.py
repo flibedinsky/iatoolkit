@@ -9,7 +9,6 @@ from iatoolkit.repositories.profile_repo import ProfileRepo
 from iatoolkit.services.i18n_service import I18nService
 
 
-
 class HistoryService:
     @inject
     def __init__(self, llm_query_repo: LLMQueryRepo,

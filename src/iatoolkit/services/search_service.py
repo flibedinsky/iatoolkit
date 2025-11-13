@@ -41,7 +41,7 @@ class SearchService:
         if not company:
             return f"error: company {company_short_name} not found"
 
-        document_list = self.vs_repo.query(company_id=company.id,
+        document_list = self.vs_repo.query(company_short_name=company_short_name,
                                            query_text=query,
                                            metadata_filter=metadata_filter)
 

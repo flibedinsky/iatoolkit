@@ -48,7 +48,7 @@ class LLMQueryApiView(MethodView):
                 files=data.get('files', [])
             )
             if 'error' in result:
-                return jsonify(result), 400
+                return jsonify(result), 407
 
             return jsonify(result), 200
 

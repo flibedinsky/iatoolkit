@@ -1,107 +1,137 @@
-# Copyright (c) 2024 Fernando Libedinsky
-# Product: IAToolkit
-#
-# IAToolkit is open source software.
+# tests/repositories/test_vs_repo.py
 
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call
 from iatoolkit.common.exceptions import IAToolkitException
 from iatoolkit.repositories.vs_repo import VSRepo
-from iatoolkit.repositories.models import VSDoc, Document
+from iatoolkit.repositories.models import VSDoc, Document, Company
+from iatoolkit.services.embedding_service import EmbeddingService
+from iatoolkit.repositories.database_manager import DatabaseManager
 
 
 class TestVSRepo:
-    @pytest.fixture
-    def mock_db_manager(self):
-        """Fixture para mockear el DatabaseManager."""
-        mock_manager = MagicMock()
-        mock_session = MagicMock()
-        mock_manager.get_session.return_value = mock_session
-        return mock_manager
+    MOCK_COMPANY_SHORT_NAME = "test-corp"
+    MOCK_COMPANY_ID = 123
+    MOCK_EMBEDDING_VECTOR = [0.1, 0.2, 0.3]
 
-    @pytest.fixture
-    def mock_embedder(self):
-        """Fixture para mockear el modelo de SentenceTransformer."""
-        with patch('iatoolkit.repositories.vs_repo.InferenceClient') as MockEmbedder:
-            mock_instance = MockEmbedder.return_value
-            mock_instance.feature_extraction.return_value = [0.1, 0.2, 0.3]  # Retorna un embedding simulado
-            yield mock_instance
+    @pytest.fixture(autouse=True)
+    def setup_method(self):
+        """Set up mocks and instantiate VSRepo before each test."""
+        # Mock dependencies
+        self.mock_db_manager = MagicMock(spec=DatabaseManager)
+        self.mock_session = self.mock_db_manager.get_session.return_value
+        self.mock_embedding_service = MagicMock(spec=EmbeddingService)
 
-    @pytest.fixture
-    def vs_repo(self, mock_db_manager, mock_embedder):
-        """Fixture para inicializar el repositorio VSRepo con dependencias mockeadas."""
-        return VSRepo(mock_db_manager)
+        # Instantiate the class under test
+        self.vs_repo = VSRepo(
+            db_manager=self.mock_db_manager,
+            embedding_service=self.mock_embedding_service
+        )
 
-    def test_add_document_rollback_on_error(self, vs_repo, mock_db_manager, mock_embedder):
-        """Prueba que verifica el rollback cuando ocurre un error en add_document."""
-        mock_session = mock_db_manager.get_session.return_value
+        # Default mock behavior
+        self.mock_embedding_service.embed_text.return_value = self.MOCK_EMBEDDING_VECTOR
 
-        mock_embedder.feature_extraction.side_effect = Exception("Error al generar embeddings")
-        vs_chunk_list = [VSDoc(id=1, text="Documento con error")]
-
-        with pytest.raises(IAToolkitException) as excinfo:
-            vs_repo.add_document(vs_chunk_list)
-
-        assert excinfo.value.error_type == IAToolkitException.ErrorType.VECTOR_STORE_ERROR
-        assert "Error insertando documentos en PostgreSQL" in str(excinfo.value)
-        mock_session.rollback.assert_called_once()
-
-    def test_add_document_success(self, vs_repo, mock_db_manager, mock_embedder):
-        mock_session = mock_db_manager.get_session.return_value
-
+    def test_add_document_success(self):
+        """Tests that add_document correctly generates embeddings and commits to the DB."""
+        # Arrange
         vs_chunk_list = [
             VSDoc(id=1, text="Documento de prueba 1"),
             VSDoc(id=2, text="Documento de prueba 2")
         ]
 
-        vs_repo.add_document(vs_chunk_list)
+        # Act
+        self.vs_repo.add_document(self.MOCK_COMPANY_SHORT_NAME, vs_chunk_list)
 
-        # Verificar que las embeddings se generaron y los documentos fueron añadidos
-        assert mock_embedder.feature_extraction.call_count == len(vs_chunk_list)
-        assert mock_session.add.call_count == len(vs_chunk_list)
-        mock_session.commit.assert_called_once()
-
-
-    def test_query_raises_exception_on_error(self, vs_repo, mock_db_manager, mock_embedder):
-        mock_session = mock_db_manager.get_session.return_value
-        mock_session.execute.side_effect = Exception("Error en la base de datos")
-
-        with pytest.raises(IAToolkitException) as excinfo:
-            vs_repo.query(company_id=123, query_text="texto de prueba", n_results=3)
-
-        assert excinfo.value.error_type == IAToolkitException.ErrorType.VECTOR_STORE_ERROR
-        assert "Error en la consulta" in str(excinfo.value)
-
-    def test_query_success(self, vs_repo, mock_db_manager, mock_embedder):
-        mock_session = mock_db_manager.get_session.return_value
-
-        # Simular resultados de la consulta en la base de datos
-        mock_session.execute.return_value.fetchall.return_value = [
-            (1, "filename1.txt", "contenido1", 'conb64'),
-            (2, "filename2.txt", "contenido2", 'conb64')
+        # Assert
+        # Check that embed_text was called for each document with the correct context
+        expected_calls = [
+            call(self.MOCK_COMPANY_SHORT_NAME, "Documento de prueba 1" ),
+            call(self.MOCK_COMPANY_SHORT_NAME, "Documento de prueba 2")
         ]
+        self.mock_embedding_service.embed_text.assert_has_calls(expected_calls)
 
-        result = vs_repo.query(company_id=123, query_text="prompt_llm.txt de prueba", n_results=2)
+        # Check database interactions
+        assert self.mock_session.add.call_count == 2
+        self.mock_session.commit.assert_called_once()
+        self.mock_session.rollback.assert_not_called()
 
-        # Verificar resultados
-        assert len(result) == 2
-        assert result[0].id == 1
-        assert result[0].filename == "filename1.txt"
-        assert result[0].content == "contenido1"
-        mock_embedder.feature_extraction.assert_called_once_with(["prompt_llm.txt de prueba"])
+    def test_add_document_rollback_on_embedding_error(self):
+        """Tests that a DB rollback occurs if the embedding service fails."""
+        # Arrange
+        self.mock_embedding_service.embed_text.side_effect = Exception("Embedding service unavailable")
+        vs_chunk_list = [VSDoc(id=1, text="Documento con error")]
 
+        # Act & Assert
+        with pytest.raises(IAToolkitException, match="Error inserting documents into PostgreSQL"):
+            self.vs_repo.add_document(self.MOCK_COMPANY_SHORT_NAME, vs_chunk_list)
 
-    def test_remove_duplicates_by_id(self, vs_repo):
-        """Prueba para verificar la eliminación de duplicados por ID."""
+        self.mock_session.rollback.assert_called_once()
+        self.mock_session.commit.assert_not_called()
+
+    def test_query_success(self):
+        """Tests the happy path for the query method."""
+        # Arrange
+        # Mock the lookup for company_id from company_short_name
+        mock_company = Company(id=self.MOCK_COMPANY_ID, short_name=self.MOCK_COMPANY_SHORT_NAME)
+        self.mock_session.query.return_value.filter.return_value.one_or_none.return_value = mock_company
+
+        # Mock the final DB query result
+        db_rows = [(1, "file1.txt", "content1", "b64_1", {}), (2, "file2.txt", "content2", "b64_2", {})]
+        self.mock_session.execute.return_value.fetchall.return_value = db_rows
+
+        # Act
+        result_docs = self.vs_repo.query(company_short_name=self.MOCK_COMPANY_SHORT_NAME, query_text="test query")
+
+        # Assert
+        # 1. Check embedding service was called
+        self.mock_embedding_service.embed_text.assert_called_once_with(self.MOCK_COMPANY_SHORT_NAME, "test query")
+
+        # 2. Check company lookup
+        self.mock_session.query.assert_called_once_with(Company)
+
+        # 3. Check final results
+        assert len(result_docs) == 2
+        assert result_docs[0].id == 1
+        assert result_docs[0].filename == "file1.txt"
+        assert result_docs[0].company_id == self.MOCK_COMPANY_ID
+
+    def test_query_raises_exception_on_db_error(self):
+        """Tests that an IAToolkitException is raised if the DB query fails."""
+        # Arrange
+        mock_company = Company(id=self.MOCK_COMPANY_ID, short_name=self.MOCK_COMPANY_SHORT_NAME)
+        self.mock_session.query.return_value.filter.return_value.one_or_none.return_value = mock_company
+        self.mock_session.execute.side_effect = Exception("Database connection failed")
+
+        # Act & Assert
+        with pytest.raises(IAToolkitException, match="Error en la consulta"):
+            self.vs_repo.query(company_short_name=self.MOCK_COMPANY_SHORT_NAME, query_text="test query")
+
+    def test_query_raises_exception_for_unknown_company(self):
+        """Tests that an exception is raised if the company_short_name does not exist."""
+        # Arrange: Simulate that the company is not found
+        self.mock_session.query.return_value.filter.return_value.one_or_none.return_value = None
+
+        # Act & Assert
+        with pytest.raises(IAToolkitException,
+                           match=f"Company with short name '{self.MOCK_COMPANY_SHORT_NAME}' not found"):
+            self.vs_repo.query(company_short_name=self.MOCK_COMPANY_SHORT_NAME, query_text="test query")
+
+        self.mock_embedding_service.embed_text.assert_called_once()
+        self.mock_session.execute.assert_not_called()
+
+    def test_remove_duplicates_by_id(self):
+        """Tests the static-like helper method for removing duplicate documents."""
+        # Arrange
         documents = [
-            Document(id=1, company_id=123, filename="doc1.txt", content="contenido1", content_b64=''),
-            Document(id=2, company_id=123, filename="doc2.txt", content="contenido2", content_b64=''),
-            Document(id=1, company_id=123, filename="doc1.txt", content="contenido1", content_b64=''),  # Duplicado
+            Document(id=1, company_id=1, filename="doc1.txt", content="c1"),
+            Document(id=2, company_id=1, filename="doc2.txt", content="c2"),
+            Document(id=1, company_id=1, filename="doc1_copy.txt", content="c1_copy"),  # Duplicate ID
         ]
 
-        result = vs_repo.remove_duplicates_by_id(documents)
+        # Act
+        result = self.vs_repo.remove_duplicates_by_id(documents)
 
-        # Verificar que solo queden 2 documentos
+        # Assert
         assert len(result) == 2
         assert result[0].id == 1
         assert result[1].id == 2

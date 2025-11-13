@@ -26,7 +26,7 @@ def register_views(injector, app):
     from iatoolkit.views.history_api_view import HistoryApiView
     from iatoolkit.views.help_content_api_view import HelpContentApiView
     from iatoolkit.views.profile_api_view import UserLanguageApiView  # <-- Importa la nueva vista
-
+    from iatoolkit.views.embedding_api_view import EmbeddingApiView
     from iatoolkit.views.login_view import LoginView, FinalizeContextView
     from iatoolkit.views.external_login_view import ExternalLoginView, RedeemTokenApiView
     from iatoolkit.views.logout_api_view import LogoutApiView
@@ -98,6 +98,10 @@ def register_views(injector, app):
 
     # this endpoint is for upload documents into the vector store (api-key)
     app.add_url_rule('/api/load', view_func=FileStoreApiView.as_view('load_api'))
+
+    # this endpoint is for generating embeddings for a given text
+    app.add_url_rule('/<company_short_name>/api/embedding',
+                     view_func=EmbeddingApiView.as_view('embedding_api'))
 
 
     @app.route('/download/<path:filename>')

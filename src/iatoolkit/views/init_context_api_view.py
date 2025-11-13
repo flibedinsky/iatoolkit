@@ -4,7 +4,7 @@ from iatoolkit.services.query_service import QueryService
 from iatoolkit.services.profile_service import ProfileService
 from iatoolkit.services.auth_service import AuthService
 from iatoolkit.services.i18n_service import I18nService
-from flask import jsonify
+from flask import jsonify, request
 import logging
 
 
@@ -49,9 +49,14 @@ class InitContextApiView(MethodView):
                 user_identifier=user_identifier
             )
 
+            # check if model was sent as a parameter
+            data = request.get_json(silent=True) or {}
+            model = data.get('model', '')
+
             response = self.query_service.finalize_context_rebuild(
                 company_short_name=company_short_name,
-                user_identifier=user_identifier
+                user_identifier=user_identifier,
+                model=model
             )
 
             # 3. Respond with JSON, as this is an API endpoint.
@@ -67,7 +72,7 @@ class InitContextApiView(MethodView):
         except Exception as e:
             logging.exception(f"errors while reloading context: {e}")
             error_message = self.i18n_service.t('errors.general.unexpected_error', error=str(e))
-            return jsonify({"error_message": error_message}), 500
+            return jsonify({"error_message": error_message}), 406
 
     def options(self, company_short_name):
         """
