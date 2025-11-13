@@ -25,16 +25,16 @@ class TestEmbeddingService:
     """
 
     # --- Test Data ---
-    MOCK_CONFIG_HF = {
+    MOCK_EMBEDDING_CONFIG_HF = {
         'provider': 'huggingface',
-        'model': 'hf-model',
-        'api_key_name': 'HF_KEY'
+        'model': 'hf-model'
     }
-    MOCK_CONFIG_OPENAI = {
+    MOCK_LLM_CONFIG_HF = {'api_key': 'HF_KEY'}
+    MOCK_EMBEDDING_CONFIG_OPENAI = {
         'provider': 'openai',
-        'model': 'openai-model',
-        'api_key_name': 'OPENAI_KEY'
+        'model': 'openai-model'
     }
+    MOCK_LLM_CONFIG_OPENAI = {'api_key': 'OPENAI_KEY'}
     SAMPLE_VECTOR = [0.1, 0.2, 0.3, 0.4]
 
     @pytest.fixture(autouse=True)
@@ -48,9 +48,14 @@ class TestEmbeddingService:
         def get_config_side_effect(company_short_name, key):
             if key == 'embedding_provider':
                 if company_short_name == 'company_hf':
-                    return self.MOCK_CONFIG_HF
+                    return self.MOCK_EMBEDDING_CONFIG_HF
                 if company_short_name == 'company_openai':
-                    return self.MOCK_CONFIG_OPENAI
+                    return self.MOCK_EMBEDDING_CONFIG_OPENAI
+            elif key == 'llm':
+                if company_short_name == 'company_hf':
+                    return self.MOCK_LLM_CONFIG_HF
+                if company_short_name == 'company_openai':
+                    return self.MOCK_LLM_CONFIG_OPENAI
             return None
 
         self.mock_config_service.get_configuration.side_effect = get_config_side_effect

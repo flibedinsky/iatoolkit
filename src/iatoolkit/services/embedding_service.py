@@ -73,7 +73,10 @@ class EmbeddingClientFactory:
                 raise ValueError(f"Embedding provider not configured for company '{company_short_name}'.")
             model = embedding_config.get('model')
 
-            api_key_name = embedding_config.get('api_key_name')
+            # API-KEY is getted from llm configuration
+            llm_config = self.config_service.get_configuration(company_short_name, 'llm')
+            api_key_name = llm_config.get('api_key')
+
             api_key = os.getenv(api_key_name)
             if not api_key:
                 raise ValueError(f"Environment variable '{api_key_name}' is not set.")
