@@ -333,7 +333,7 @@ This powerful section defines the sources of unstructured documents (like PDFs, 
 # Defines the sources of unstructured documents for indexing.
 knowledge_base:
 
-  # 7.1. Connectors
+  # Connectors
   # Defines how to connect to the document storage for different environments.
   # El comando 'load' usará el conector apropiado según el FLASK_ENV.
   connectors:
@@ -343,11 +343,8 @@ knowledge_base:
       type: "s3"
       bucket: "iatoolkit"
       prefix: "sample_company"
-      aws_access_key_id_env: "AWS_ACCESS_KEY_ID"
-      aws_secret_access_key_env: "AWS_SECRET_ACCESS_KEY"
-      aws_region_env: "AWS_REGION"
 
-  # 7.2. Document Sources
+  # Document Sources
   # A map defining the logical groups of documents to be indexed.
   # Cada clave es un tipo de fuente, que contiene su ubicación y metadatos.
   document_sources:
