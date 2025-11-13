@@ -50,7 +50,6 @@ class EmbeddingClientFactory:
     def __init__(self, config_service: ConfigurationService):
         self.config_service = config_service
         self._clients = {}  # Cache for storing initialized client wrappers
-        self._lock = Lock()
 
     def get_client(self, company_short_name: str) -> EmbeddingClientWrapper:
         """
@@ -60,45 +59,42 @@ class EmbeddingClientFactory:
         if company_short_name in self._clients:
             return self._clients[company_short_name]
 
-        with self._lock:
-            if company_short_name in self._clients:
-                return self._clients[company_short_name]
+        # Get the embedding provider and model from the company.yaml
+        embedding_config = self.config_service.get_configuration(company_short_name, 'embedding_provider')
+        if not embedding_config:
+            raise ValueError(f"Embedding provider not configured for company '{company_short_name}'.")
 
-            embedding_config = self.config_service.get_configuration(company_short_name, 'embedding_provider')
-            if not embedding_config:
-                raise ValueError(f"Embedding provider not configured for company '{company_short_name}'.")
+        provider = embedding_config.get('provider')
+        if not provider:
+            raise ValueError(f"Embedding provider not configured for company '{company_short_name}'.")
+        model = embedding_config.get('model')
 
-            provider = embedding_config.get('provider')
-            if not provider:
-                raise ValueError(f"Embedding provider not configured for company '{company_short_name}'.")
-            model = embedding_config.get('model')
+        # IMPORTANT: API-KEY is obtained  from the llm configuration
+        llm_config = self.config_service.get_configuration(company_short_name, 'llm')
+        api_key_name = llm_config.get('api-key')
 
-            # API-KEY is getted from llm configuration
-            llm_config = self.config_service.get_configuration(company_short_name, 'llm')
-            api_key_name = llm_config.get('api_key')
+        api_key = os.getenv(api_key_name)
+        if not api_key:
+            raise ValueError(f"Environment variable '{api_key_name}' is not set.")
 
-            api_key = os.getenv(api_key_name)
-            if not api_key:
-                raise ValueError(f"Environment variable '{api_key_name}' is not set.")
+        # Logic to handle multiple providers
+        wrapper = None
+        if provider == 'huggingface':
+            if not model:
+                model='sentence-transformers/all-MiniLM-L6-v2'
+            client = InferenceClient(model=model, token=api_key)
+            wrapper = HuggingFaceClientWrapper(client, model)
+        elif provider == 'openai':
+            client = OpenAI(api_key=api_key)
+            if not model:
+                model='text-embedding-ada-002'
+            wrapper = OpenAIClientWrapper(client, model)
+        else:
+            raise NotImplementedError(f"Embedding provider '{provider}' is not implemented.")
 
-            # Logic to handle multiple providers
-            wrapper = None
-            if provider == 'huggingface':
-                if not model:
-                    model='sentence-transformers/all-MiniLM-L6-v2'
-                client = InferenceClient(model=model, token=api_key)
-                wrapper = HuggingFaceClientWrapper(client, model)
-            elif provider == 'openai':
-                client = OpenAI(api_key=api_key)
-                if not model:
-                    model='text-embedding-ada-002'
-                wrapper = OpenAIClientWrapper(client, model)
-            else:
-                raise NotImplementedError(f"Embedding provider '{provider}' is not implemented.")
-
-            logging.info(f"Embedding client for '{company_short_name}' created with model: {model} via {provider}")
-            self._clients[company_short_name] = wrapper
-            return wrapper
+        logging.info(f"Embedding client for '{company_short_name}' created with model: {model} via {provider}")
+        self._clients[company_short_name] = wrapper
+        return wrapper
 
 class EmbeddingService:
     """
