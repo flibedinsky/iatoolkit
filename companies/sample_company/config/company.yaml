@@ -11,6 +11,7 @@ llm:
   model: "gpt-5"
   api-key: "OPENAI_API_KEY"
 
+# in case don't want to pay form openai embeddings
 # embedding_provider:
 #  provider: "huggingface"
 #  model: "sentence-transformers/all-MiniLM-L6-v2"
@@ -19,17 +20,7 @@ llm:
 embedding_provider:
   provider: "openai"
   model: "text-embedding-ada-002"
-  api_key_name: "OPENAI_API_KEY"
 
-
-parameters:
-  cors_origin:
-    - "https://portal-interno.empresa_de_ejemplo.cl"
-  user_feedback:
-    channel: "email"
-    destination: "fernando.libedinsky@gmail.com"
-  external_urls:
-    logout_url: ""
 
 # 2. Data Sources
 data_sources:
@@ -111,7 +102,17 @@ prompts:
         label: "Fecha hasta"
         type: "date"
 
-# 5. Branding and Content Files
+# 5. Company-specific Parameters
+parameters:
+  cors_origin:
+    - "https://portal-interno.empresa_de_ejemplo.cl"
+  user_feedback:
+    channel: "email"
+    destination: "fernando.libedinsky@gmail.com"
+  external_urls:
+    logout_url: ""
+
+# 6. Branding and Content Files
 branding:
   header_background_color: "#4C6A8D"
   header_text_color: "#FFFFFF"
@@ -120,13 +121,13 @@ branding:
   brand_text_on_primary: "#FFFFFF"
   brand_text_on_secondary: "#FFFFFF"
 
-# 6. Help files
+# 7. Help files
 help_files:
   onboarding_cards: "onboarding_cards.yaml"
   help_content: "help_content.yaml"
 
 
-# 7. Knowledge Base (RAG)
+# 8. Knowledge Base (RAG)
 # Defines the sources of unstructured documents for indexing.
 knowledge_base:
 

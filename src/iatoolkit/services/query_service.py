@@ -189,7 +189,7 @@ class QueryService:
             if not prepared_context:
                 return
 
-            logging.info(f"sending context to LLM for: {company_short_name}/{user_identifier}...")
+            logging.info(f"sending context to LLM model {effective_model} for: {company_short_name}/{user_identifier}...")
 
             # clean only the chat history and the last response ID for this user/company
             self.session_context.clear_llm_history(company_short_name, user_identifier)
