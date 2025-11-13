@@ -25,9 +25,7 @@ Every Company resides in its own directory within the `companies/` folder. The *
 ## 2. The `company.yaml` Configuration File
 
 The `company.yaml` file is where you define the behavior and resources for your Company. It's structured into several logical sections. Let's break down each part using the `sample_company` configuration as a reference.
-The configuration file for the Sample Company can be found at:
-
-**[`companies/sample_company/config/company.yaml`](../companies/sample_company/config/company.yaml)**
+The configuration file for the Sample Company can be found at **[`companies/sample_company/config/company.yaml`](../companies/sample_company/config/company.yaml)**
 
 This file serves as a complete, working example that you can use as a template when creating your own company configurations.
 ```yaml
@@ -124,9 +122,20 @@ knowledge_base:
       metadata:
         type: "supplier_manual"
 ```
+In the following sections, we'll walk through each component of the `company.yaml` file 
+in detail, explaining its purpose, available options, and best practices. 
+By understanding these building blocks, you'll be able to fully customize your 
+AI assistant to meet your specific business requirements.
+
 ### 2.1 General Information
 
-This section defines the basic identity of the company and the primary LLM it will use.
+This section establishes the core identity of your company within IAToolkit. 
+Here you define the unique identifier that will be used in URLs and routing, 
+the display name shown to users, and the default language/locale for the interface.
+Most importantly, this is where you specify which Large Language Model (LLM) your AI 
+assistant will use for reasoning and generating responses. 
+The LLM configuration includes both the model name and a reference to the environment 
+variable that securely stores your API key.
 ```yaml
 # General Company Information
 id: "sample_company"
@@ -146,7 +155,8 @@ llm:
 
 ### 2.2 Embedding Provider
 
-This configures the model used for creating vector embeddings, which is essential for semantic search (RAG).
+Embeddings are numerical representations of text that enable semantic search capabilities. 
+This section configures which embedding model your company will use to convert documents and queries into vectors for similarity matching. IAToolkit supports multiple providers, allowing you to choose between OpenAI's models (offering high quality at a cost) or HuggingFace's open-source alternatives (offering flexibility and potential cost savings). The embedding provider works behind the scenes to power your document search and RAG (Retrieval-Augmented Generation) features. Note that you can use a different provider for embeddings than you use for your main LLM.
 ```yaml
 # Embeddings: supported only openai and huggingface. only one at a atime
 embedding_provider:
@@ -162,7 +172,16 @@ embedding_provider:
 
 ### 2.3 Data Sources (SQL)
 
-This section defines the structured data sources (databases) the AI can query.
+This is one of the most powerful features of IAToolkit: the ability to connect your 
+AI directly to your corporate databases. 
+In this section, you declaratively define which databases the AI can access, 
+along with metadata that helps the LLM understand when and how to query them. 
+The framework supports automatic table discovery, meaning it can inspect your 
+database schema and make all tables available to the AI with minimal configuration. 
+You also have fine-grained control to exclude sensitive tables or columns, 
+and you can provide custom descriptions to guide the AI toward better query generation. 
+This zero-code approach to database integration is what enables natural language to 
+SQL translation without manual schema mapping.
 ```yaml
 # Data Sources
 data_sources:
@@ -214,7 +233,17 @@ data_sources:
 
 ### 2.4 Tools (Functions)
 
-Here, you define custom functions the LLM can call to perform actions. This is the foundation of the agent's capabilities.
+Tools (also called functions or actions) extend your AI assistant's capabilities beyond 
+simple conversation. They are custom operations that the LLM can invoke to perform 
+specific tasks—from searching documents and querying databases to sending emails, 
+generating reports, or calling external APIs. In this section, 
+you declare what tools are available to your AI, along with clear descriptions 
+that help the LLM understand when each tool should be used. 
+The parameter schemas follow the OpenAPI standard, ensuring type safety and providing 
+the LLM with precise information about what inputs each tool expects. 
+This declarative approach means you can add powerful capabilities to your assistant
+without complex integration code—just define the tool in YAML and implement its logic 
+in Python.
 ```yaml
 # ools (Functions)
 # Defines the custom actions the LLM can take, including their parameters.
@@ -236,7 +265,16 @@ tools:
 
 ### 2.5 Prompts
 
-This section configures the list of pre-defined prompts that appear in the user interface, helping guide users toward common tasks.
+Prompts are pre-configured, reusable conversation starters that appear in your 
+application's user interface. They serve as guided entry points for common tasks,
+helping users get started quickly without needing to know exactly what to ask. 
+This section allows you to organize prompts into categories and define custom 
+input fields for each one. For example, a "Sales Analysis" prompt might include 
+date pickers for selecting a time range, or a "Supplier Report" prompt might have 
+a text field for entering a supplier ID. These structured prompts combine the power 
+of your custom Jinja2 templates (stored in the `prompts/` directory) with a 
+user-friendly UI, making complex multi-step tasks accessible to non-technical users.
+
 ```yaml
 # Prompts
 # Defines the ordered list of categories and the prompts available in the UI.
@@ -283,7 +321,16 @@ prompts:
 
 ### 2.6 Company-specific Parameters
 
-A flexible key-value store for any custom parameters your company's logic might need.
+This section acts as a flexible storage area for any custom configuration parameters 
+your company might need. It's a key-value map where you can define company-specific 
+settings that don't fit into the other structured sections. 
+Common uses include CORS origin configurations for web integrations, 
+user feedback channels (email, webhooks, etc.), 
+external URLs for logout redirects or SSO integrations, 
+and any other custom parameters your business logic requires. 
+This flexibility ensures that IAToolkit can adapt to unique requirements without 
+requiring framework modifications.
+
 ```yaml
 parameters:
   cors_origin:
@@ -300,7 +347,16 @@ parameters:
 
 ### 2.7 Branding
 
-Defines the color scheme to give the UI a custom look and feel for this company.
+One of IAToolkit's most powerful multi-tenant features is the ability to fully 
+customize the look and feel of the interface for each company. 
+In this section, you define the color scheme that will be applied throughout 
+the user interface—from headers and buttons to text and backgrounds. 
+This allows you to create white-labeled experiences where each client or 
+department sees an interface that matches their brand identity. 
+All customization is done through simple hexadecimal color values, 
+with no front-end coding required. The system automatically applies 
+these colors to all UI components, ensuring a consistent branded experience.
+
 ```yaml
 # Branding and Content Files
 branding:
@@ -315,7 +371,15 @@ All colors are specified in hexadecimal format. These values control various UI 
 
 ### 2.8 Help Files
 
-Points to other YAML files containing content for UI elements like onboarding tutorials or help modals.
+User assistance and onboarding are critical for adoption. 
+This section points to additional YAML files that contain structured content 
+for help systems, onboarding tutorials, and contextual assistance. 
+These files allow you to create rich, interactive help experiences—such as 
+step-by-step onboarding cards that guide new users through the system, 
+or context-sensitive help content that appears when users need assistance. 
+By keeping this content in separate, structured files, you can easily update 
+help documentation without touching code, and even localize it for different languages.
+
 ```yaml
 # Help files
 help_files:
@@ -327,7 +391,18 @@ These files should be located in the company's `config/` directory.
 
 ### 2.9 Knowledge Base (RAG)
 
-This powerful section defines the sources of unstructured documents (like PDFs, Word docs, etc.) that will be indexed into the vector store for Retrieval-Augmented Generation (RAG).
+This section enables one of the most valuable AI capabilities: the ability to answer 
+questions based on your organization's private documents. 
+Here you define where your unstructured documents (PDFs, Word files, text files, etc.) 
+are stored and how they should be organized. The system automatically handles the complex 
+process of chunking documents, generating embeddings, 
+and storing them in a vector database for fast semantic search. 
+You can configure different storage connectors for different environments 
+(local files for development, S3 for production), and you can organize documents 
+into logical groups with metadata tags that enable filtered searches. 
+This Retrieval-Augmented Generation (RAG) capability transforms your static 
+documents into an interactive knowledge base that your AI can query and reason over.
+
 ```yaml
 # Knowledge Base (RAG)
 # Defines the sources of unstructured documents for indexing.
