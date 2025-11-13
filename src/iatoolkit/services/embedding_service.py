@@ -65,12 +65,16 @@ class EmbeddingClientFactory:
                 return self._clients[company_short_name]
 
             embedding_config = self.config_service.get_configuration(company_short_name, 'embedding_provider')
+            if not embedding_config:
+                raise ValueError(f"Embedding provider not configured for company '{company_short_name}'.")
 
             provider = embedding_config.get('provider')
+            if not provider:
+                raise ValueError(f"Embedding provider not configured for company '{company_short_name}'.")
             model = embedding_config.get('model')
+
             api_key_name = embedding_config.get('api_key_name')
             api_key = os.getenv(api_key_name)
-
             if not api_key:
                 raise ValueError(f"Environment variable '{api_key_name}' is not set.")
 
