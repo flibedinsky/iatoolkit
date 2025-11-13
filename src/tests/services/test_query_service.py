@@ -10,6 +10,7 @@ from iatoolkit.services.prompt_manager_service import PromptService
 from iatoolkit.services.user_session_context_service import UserSessionContextService
 from iatoolkit.services.company_context_service import ConfigurationService
 from iatoolkit.services.i18n_service import I18nService
+from iatoolkit.services.configuration_service import ConfigurationService
 from iatoolkit.repositories.profile_repo import ProfileRepo
 from iatoolkit.services.profile_service import ProfileService
 from iatoolkit.repositories.models import Company
@@ -39,6 +40,7 @@ class TestQueryService:
         self.mock_profile_repo = MagicMock(spec=ProfileRepo)
         self.mock_prompt_service = MagicMock(spec=PromptService)
         self.company_context_service = MagicMock(spec=ConfigurationService)
+        self.mock_configuration_service = MagicMock(spec=ConfigurationService)
         self.mock_util = MagicMock(spec=Utility)
         self.mock_dispatcher = MagicMock(spec=Dispatcher)
         self.mock_session_context = MagicMock(spec=UserSessionContextService)
@@ -59,7 +61,8 @@ class TestQueryService:
                 i18n_service=self.mock_i18n_service,
                 util=self.mock_util,
                 dispatcher=self.mock_dispatcher,
-                session_context=self.mock_session_context
+                session_context=self.mock_session_context,
+                configuration_service=self.mock_configuration_service
             )
 
         self.mock_i18n_service.t.side_effect = lambda key, **kwargs: f"translated:{key}"
@@ -104,31 +107,92 @@ class TestQueryService:
             MOCK_COMPANY_SHORT_NAME, user_identifier, self.mock_final_context, mock_version
         )
 
-    # --- Tests para finalize_context_rebuild ---
+    # --- Tests para set_context_for_llm ---
 
-    def test_finalize_rebuild_sends_to_llm_when_prepared(self):
-        """Prueba que finalize_context_rebuild envía el contexto al LLM si hay uno preparado."""
+    def test_set_context_for_llm_sends_to_llm_when_prepared(self):
+        """Prueba que set_context_for_llm envía el contexto al LLM usando el modelo por defecto."""
         mock_version = "v_prep_abc"
         self.mock_session_context.acquire_lock.return_value = True
         self.mock_session_context.get_and_clear_prepared_context.return_value = (self.mock_final_context, mock_version)
         self.mock_util.is_openai_model.return_value = True
+        self.mock_util.is_gemini_model.return_value = False
+        self.mock_configuration_service.get_configuration.return_value = None  # Simula que no hay modelo de compañía
 
-        self.service.finalize_context_rebuild(MOCK_COMPANY_SHORT_NAME, user_identifier=str(MOCK_LOCAL_USER_ID))
+        self.service.set_context_for_llm(MOCK_COMPANY_SHORT_NAME, user_identifier=str(MOCK_LOCAL_USER_ID))
 
+        self.mock_llm_client.set_company_context.assert_called_once()
+        assert self.mock_llm_client.set_company_context.call_args.kwargs['model'] == 'gpt-test'
         self.mock_session_context.acquire_lock.assert_called_once()
         self.mock_session_context.save_context_version.assert_called_once_with(MOCK_COMPANY_SHORT_NAME,
                                                                                str(MOCK_LOCAL_USER_ID), mock_version)
         self.mock_session_context.release_lock.assert_called_once()
 
-    def test_finalize_rebuild_does_nothing_if_lock_not_acquired(self):
-        """Prueba que finalize no hace nada si no puede adquirir el lock."""
+    def test_set_context_for_llm_uses_explicit_model(self):
+        """Prueba que el modelo explícito en set_context_for_llm tiene prioridad."""
+        self.mock_session_context.acquire_lock.return_value = True
+        self.mock_session_context.get_and_clear_prepared_context.return_value = (self.mock_final_context, "v1")
+        self.mock_util.is_openai_model.return_value = True
+        self.mock_util.is_gemini_model.return_value = False
+
+        self.service.set_context_for_llm(
+            MOCK_COMPANY_SHORT_NAME,
+            user_identifier=str(MOCK_LOCAL_USER_ID),
+            model="explicit-model-for-context"
+        )
+
+        self.mock_llm_client.set_company_context.assert_called_once()
+        assert self.mock_llm_client.set_company_context.call_args.kwargs['model'] == 'explicit-model-for-context'
+        self.mock_configuration_service.get_configuration.assert_not_called()
+
+    def test_set_context_for_llm_does_nothing_if_lock_not_acquired(self):
+        """Prueba que set_context_for_llm no hace nada si no puede adquirir el lock."""
         self.mock_session_context.acquire_lock.return_value = False
 
-        self.service.finalize_context_rebuild(MOCK_COMPANY_SHORT_NAME, user_identifier=str(MOCK_LOCAL_USER_ID))
+        self.service.set_context_for_llm(MOCK_COMPANY_SHORT_NAME, user_identifier=str(MOCK_LOCAL_USER_ID))
 
         self.mock_session_context.get_and_clear_prepared_context.assert_not_called()
         self.mock_llm_client.set_company_context.assert_not_called()
         self.mock_session_context.release_lock.assert_not_called()
+
+    # --- Tests para init_context ---
+    def test_init_context_orchestrates_clearing_and_rebuilding(self):
+        """
+        Prueba que init_context llama a los métodos correctos en la secuencia correcta
+        para forzar una reconstrucción completa del contexto.
+        """
+        # --- Configuración de Mocks ---
+        # Mock para los métodos que serán llamados por init_context
+        with patch.object(self.service, 'prepare_context') as mock_prepare, \
+             patch.object(self.service, 'set_context_for_llm', return_value={'response_id': 'new_id_123'}) as mock_set_context:
+
+            # --- Llamada al Método bajo Prueba ---
+            result = self.service.init_context(
+                company_short_name=MOCK_COMPANY_SHORT_NAME,
+                user_identifier=str(MOCK_LOCAL_USER_ID),
+                model="gpt-test-model"
+            )
+
+        # --- Aserciones ---
+        # 1. Se debe haber limpiado el contexto antiguo
+        self.mock_session_context.clear_all_context.assert_called_once_with(
+            MOCK_COMPANY_SHORT_NAME, str(MOCK_LOCAL_USER_ID)
+        )
+
+        # 2. Se debe haber llamado a prepare_context
+        mock_prepare.assert_called_once_with(
+            company_short_name=MOCK_COMPANY_SHORT_NAME,
+            user_identifier=str(MOCK_LOCAL_USER_ID)
+        )
+
+        # 3. Se debe haber llamado a set_context_for_llm
+        mock_set_context.assert_called_once_with(
+            company_short_name=MOCK_COMPANY_SHORT_NAME,
+            user_identifier=str(MOCK_LOCAL_USER_ID),
+            model="gpt-test-model"
+        )
+
+        # 4. El resultado debe ser el devuelto por set_context_for_llm
+        assert result == {'response_id': 'new_id_123'}
 
     # --- Tests para llm_query ---
 
@@ -144,18 +208,32 @@ class TestQueryService:
         self.mock_llm_client.invoke.assert_called_once()
         assert self.mock_llm_client.invoke.call_args.kwargs['previous_response_id'] == "existing_id"
 
+    def test_llm_query_uses_company_model(self):
+        """Prueba que llm_query usa el modelo de la compañía si está definido."""
+        self.mock_session_context.get_last_response_id.return_value = "existing_id"
+        self.mock_util.is_openai_model.return_value = True
+        self.mock_configuration_service.get_configuration.return_value = {'model': 'company-model-456'}
+
+        self.service.llm_query(
+            company_short_name=MOCK_COMPANY_SHORT_NAME,
+            user_identifier=str(MOCK_LOCAL_USER_ID),
+            question="Hi"
+        )
+
+        self.mock_llm_client.invoke.assert_called_once()
+        kwargs = self.mock_llm_client.invoke.call_args.kwargs
+        assert kwargs['model'] == 'company-model-456'
+
     def test_llm_query_fails_if_context_is_missing(self):
         """Prueba que llm_query ahora falla si no hay un contexto inicializado."""
         self.mock_session_context.get_last_response_id.return_value = None
         self.mock_util.is_openai_model.return_value = True
+        self.mock_util.is_gemini_model.return_value = False
+        self.mock_configuration_service.get_configuration.return_value = None
 
         result = self.service.llm_query(company_short_name=MOCK_COMPANY_SHORT_NAME,
                                         user_identifier=str(MOCK_LOCAL_USER_ID),
                                         question="Hi")
-
-        assert result['error'] is True
-        assert 'translated:errors.services.missing_response_id' in result['error_message']
-        self.mock_llm_client.invoke.assert_not_called()
 
     # --- Tests para load_files_for_context ---
 

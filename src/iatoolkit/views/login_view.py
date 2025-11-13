@@ -122,7 +122,7 @@ class FinalizeContextView(MethodView):
             branding_data = self.branding_service.get_company_branding(company_short_name)
 
             # 2. Finalize the context rebuild (the heavy task).
-            self.query_service.finalize_context_rebuild(
+            self.query_service.set_context_for_llm(
                 company_short_name=company_short_name,
                 user_identifier=user_identifier
             )

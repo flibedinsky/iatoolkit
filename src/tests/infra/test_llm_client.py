@@ -53,19 +53,13 @@ class TestLLMClient:
         """Limpieza después de cada test"""
         patch.stopall()
 
-    def test_init_missing_llm_model(self):
-        """Test que la inicialización falla si falta LLM_MODEL."""
-        with patch.dict('os.environ', {}, clear=True):
-            with pytest.raises(IAToolkitException, match="LLM_MODEL"):
-                llmClient(self.llmquery_repo, self.util_mock, self.llm_proxy_factory)
-
     def test_invoke_success(self):
         """Test de una llamada invoke exitosa."""
         self.mock_proxy.create_response.return_value = self.mock_llm_response
 
         result = self.client.invoke(
             company=self.company, user_identifier='user1', previous_response_id='prev1',
-            question='q', context='c', tools=[], text={}
+            model='gpt-5',question='q', context='c', tools=[], text={}
         )
 
         self.llm_proxy_factory.create_for_company.assert_called_once_with(self.company)
@@ -100,7 +94,7 @@ class TestLLMClient:
             # 6. Invoke the client. Now, when it calls current_iatoolkit, it will get our mock.
             self.client.invoke(
                 company=self.company, user_identifier='user1', previous_response_id='prev1',
-                question='q', context='c', tools=[{}], text={}
+                model='gpt-5',question='q', context='c', tools=[{}], text={}
             )
 
         # 7. Assertions
@@ -124,7 +118,7 @@ class TestLLMClient:
         with pytest.raises(IAToolkitException, match="Error calling LLM API"):
             self.client.invoke(
                 company=self.company, user_identifier='user1', previous_response_id='prev1',
-                question='q', context='c', tools=[], text={}
+                model='gpt-5', question='q', context='c', tools=[], text={}
             )
         # Verificar que se guarda un registro de error en la BD
         self.llmquery_repo.add_query.assert_called_once()

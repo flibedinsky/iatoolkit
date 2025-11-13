@@ -157,7 +157,7 @@ class TestLoginView:
 
         assert resp.status_code == 200
         assert resp.data == b"CHAT"
-        self.query_service.finalize_context_rebuild.assert_called_once_with(
+        self.query_service.set_context_for_llm.assert_called_once_with(
             company_short_name=self.company_short_name,
             user_identifier=self.user_identifier,
         )
@@ -186,7 +186,7 @@ class TestLoginView:
         self.profile_service.get_current_session_info.return_value = {
             "user_identifier": self.user_identifier
         }
-        self.query_service.finalize_context_rebuild.side_effect = Exception("boom")
+        self.query_service.set_context_for_llm.side_effect = Exception("boom")
 
         with patch("iatoolkit.views.login_view.render_template") as mock_rt:
             mock_rt.return_value = "<html>error</html>"
@@ -216,7 +216,7 @@ class TestLoginView:
 
         # Debe haberse validado el token y usado el user_identifier del payload
         self.jwt_service.validate_chat_jwt.assert_called_once_with("abc123")
-        self.query_service.finalize_context_rebuild.assert_called_once_with(
+        self.query_service.set_context_for_llm.assert_called_once_with(
             company_short_name=self.company_short_name,
             user_identifier=self.user_identifier,
         )

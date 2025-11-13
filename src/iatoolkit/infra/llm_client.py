@@ -38,12 +38,6 @@ class llmClient:
         self.util = util
         self._dispatcher = None # Cache for the lazy-loaded dispatcher
 
-        # get the model from the environment variable
-        self.model = os.getenv("LLM_MODEL", "")
-        if not self.model:
-            raise IAToolkitException(IAToolkitException.ErrorType.API_KEY,
-                               "La variable de entorno 'LLM_MODEL' no está configurada.")
-
         # library for counting tokens
         self.encoding = tiktoken.encoding_for_model("gpt-4o")
 
@@ -70,6 +64,7 @@ class llmClient:
                context: str,
                tools: list[dict],
                text: dict,
+               model: str,
                context_history: Optional[List[Dict]] = None,
                ) -> dict:
 
@@ -80,13 +75,13 @@ class llmClient:
         force_tool_name = None
         reasoning = {}
 
-        if 'gpt-5' in self.model:
+        if 'gpt-5' in model:
             text['verbosity'] = "low"
             reasoning = {"effort": 'minimal'}
 
         try:
             start_time = time.time()
-            logging.info(f"calling llm model '{self.model}' with {self.count_tokens(context)} tokens...")
+            logging.info(f"calling llm model '{model}' with {self.count_tokens(context)} tokens...")
 
             # get the proxy for the company
             llm_proxy = self.llm_proxy_factory.create_for_company(company)
@@ -99,7 +94,7 @@ class llmClient:
                 }]
 
                 response = llm_proxy.create_response(
-                    model=self.model,
+                    model=model,
                     previous_response_id=previous_response_id,
                     context_history=context_history,
                     input=input_messages,
@@ -186,7 +181,7 @@ class llmClient:
                     tool_choice_value = "required"
 
                 response = llm_proxy.create_response(
-                    model=self.model,
+                    model=model,
                     input=input_messages,
                     previous_response_id=response.id,
                     context_history=context_history,
@@ -200,7 +195,7 @@ class llmClient:
             # save the statistices
             stats['response_time']=int(time.time() - start_time)
             stats['sql_retry_count'] = sql_retry_count
-            stats['model'] = response.model
+            stats['model'] = model
 
             # decode the LLM response
             decoded_response = self.decode_response(response)
@@ -392,6 +387,7 @@ class llmClient:
 
     def add_stats(self, stats1: dict, stats2: dict) -> dict:
         stats_dict = {
+            "model": stats1.get('model', ''),
             "input_tokens": stats1.get('input_tokens', 0) + stats2.get('input_tokens', 0),
             "output_tokens": stats1.get('output_tokens', 0) + stats2.get('output_tokens', 0),
             "total_tokens": stats1.get('total_tokens', 0) + stats2.get('total_tokens', 0),

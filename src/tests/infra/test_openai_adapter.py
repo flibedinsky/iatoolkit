@@ -28,7 +28,8 @@ class TestLLMProxy:
         self.proxy = LLMProxy(
             openai_client=self.mock_openai_client,
             gemini_client=self.mock_gemini_client,
-            util=self.util_mock
+            util=self.util_mock,
+            configuration_service=self.mock_gemini_client
         )
 
         # Obtenemos una referencia a las instancias mockeadas que LLMProxy crea internamente

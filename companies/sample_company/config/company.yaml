@@ -8,7 +8,7 @@ id: "sample_company"
 name: "Sample Company"
 locale: "es_ES"
 llm:
-  model: "gpt-5-mini"
+  model: "gpt-5"
   api-key: "OPENAI_API_KEY"
 
 # embedding_provider:

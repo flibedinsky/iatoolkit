@@ -19,7 +19,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from injector import Binder, Injector, singleton
 from importlib.metadata import version as _pkg_version, PackageNotFoundError
 
-IATOOLKIT_VERSION = "0.71.0"
+IATOOLKIT_VERSION = "0.71.1"
 
 # global variable for the unique instance of IAToolkit
 _iatoolkit_instance: Optional['IAToolkit'] = None
@@ -90,6 +90,9 @@ class IAToolkit:
 
         # Step 6: initialize dispatcher and registered companies
         self._init_dispatcher_and_company_instances()
+
+        # Re-apply logging configuration in case it was modified by company-specific code
+        self._setup_logging()
 
         # Step 7: Finalize setup within the application context
         self._setup_redis_sessions()

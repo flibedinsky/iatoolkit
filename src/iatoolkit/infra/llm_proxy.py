@@ -7,6 +7,7 @@ from typing import Dict, List, Any
 from abc import ABC, abstractmethod
 from iatoolkit.common.util import Utility
 from iatoolkit.infra.llm_response import LLMResponse
+from iatoolkit.services.configuration_service import ConfigurationService
 from iatoolkit.infra.openai_adapter import OpenAIAdapter
 from iatoolkit.infra.gemini_adapter import GeminiAdapter
 from iatoolkit.common.exceptions import IAToolkitException
@@ -41,12 +42,16 @@ class LLMProxy:
     _clients_cache_lock = threading.Lock()
 
     @inject
-    def __init__(self, util: Utility, openai_client = None, gemini_client = None):
+    def __init__(self, util: Utility,
+                 configuration_service: ConfigurationService,
+                 openai_client = None,
+                 gemini_client = None):
         """
         Inicializa una instancia del proxy. Puede ser una instancia "base" (fábrica)
         o una instancia de "trabajo" con clientes configurados.
         """
         self.util = util
+        self.configuration_service = configuration_service
         self.openai_adapter = OpenAIAdapter(openai_client) if openai_client else None
         self.gemini_adapter = GeminiAdapter(gemini_client) if gemini_client else None
 
@@ -71,7 +76,11 @@ class LLMProxy:
             )
 
         # Devuelve una NUEVA instancia con los clientes configurados
-        return LLMProxy(util=self.util, openai_client=openai_client, gemini_client=gemini_client)
+        return LLMProxy(
+                    util=self.util,
+                    configuration_service=self.configuration_service,
+                    openai_client=openai_client,
+                    gemini_client=gemini_client)
 
     def create_response(self, model: str, input: List[Dict], **kwargs) -> LLMResponse:
         """Enruta la llamada al adaptador correcto basado en el modelo."""
@@ -103,7 +112,7 @@ class LLMProxy:
                     elif provider == LLMProvider.GEMINI:
                         client = self._create_gemini_client(company)
                     else:
-                        raise IAToolkitException(f"Proveedor no soportado: {provider.value}")
+                        raise IAToolkitException(f"provider not supported: {provider.value}")
 
                     if client:
                         LLMProxy._clients_cache[cache_key] = client
@@ -115,22 +124,41 @@ class LLMProxy:
 
     def _create_openai_client(self, company: Company) -> OpenAI:
         """Crea un cliente de OpenAI con la API key."""
-        if company.openai_api_key:
-            decrypted_api_key = self.util.decrypt_key(company.openai_api_key)
+        decrypted_api_key = ''
+        llm_config = self.configuration_service.get_configuration(company.short_name, 'llm')
+
+        # Try to get API key name from config first
+        if llm_config and llm_config.get('api-key'):
+            api_key_env_var = llm_config['api-key']
+            decrypted_api_key = os.getenv(api_key_env_var, '')
         else:
-            decrypted_api_key = os.getenv("OPENAI_API_KEY", '')
+            # Fallback to old logic
+            if company.openai_api_key:
+                decrypted_api_key = self.util.decrypt_key(company.openai_api_key)
+            else:
+                decrypted_api_key = os.getenv("OPENAI_API_KEY", '')
+
         if not decrypted_api_key:
             raise IAToolkitException(IAToolkitException.ErrorType.API_KEY,
-                               f"La empresa '{company.name}' no tiene API key de OpenAI.")
+                                     f"La empresa '{company.name}' no tiene API key de OpenAI.")
         return OpenAI(api_key=decrypted_api_key)
 
     def _create_gemini_client(self, company: Company) -> Any:
         """Configura y devuelve el cliente de Gemini."""
 
-        if company.gemini_api_key:
-            decrypted_api_key = self.util.decrypt_key(company.gemini_api_key)
+        decrypted_api_key = ''
+        llm_config = self.configuration_service.get_configuration(company.short_name, 'llm')
+
+        # Try to get API key name from config first
+        if llm_config and llm_config.get('api-key'):
+            api_key_env_var = llm_config['api-key']
+            decrypted_api_key = os.getenv(api_key_env_var, '')
         else:
-            decrypted_api_key = os.getenv("GEMINI_API_KEY", '')
+            # Fallback to old logic
+            if company.gemini_api_key:
+                decrypted_api_key = self.util.decrypt_key(company.gemini_api_key)
+            else:
+                decrypted_api_key = os.getenv("GEMINI_API_KEY", '')
 
         if not decrypted_api_key:
             return None

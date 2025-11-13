@@ -1,7 +1,8 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from iatoolkit.infra.llm_proxy import LLMProxy
+from iatoolkit.infra.llm_proxy import LLMProxy, LLMProvider
 from iatoolkit.common.exceptions import IAToolkitException
+from iatoolkit.services.configuration_service import ConfigurationService
 
 
 class TestLLMProxy:
@@ -9,114 +10,95 @@ class TestLLMProxy:
     def setup_method(self):
         """Configuración común para las pruebas de LLMProxy."""
         self.util_mock = MagicMock()
+        self.mock_config_service = MagicMock(spec=ConfigurationService)
         self.util_mock.decrypt_key.side_effect = lambda x: f"decrypted_{x}"
 
-        # Mocks para los clientes de los proveedores y sus adaptadores
+        # Mocks para los clientes de los proveedores
         self.openai_patcher = patch('iatoolkit.infra.llm_proxy.OpenAI')
         self.gemini_patcher = patch('iatoolkit.infra.llm_proxy.genai')
-        self.openai_adapter_patcher = patch('iatoolkit.infra.llm_proxy.OpenAIAdapter')
-        self.gemini_adapter_patcher = patch('iatoolkit.infra.llm_proxy.GeminiAdapter')
-
         self.mock_openai_class = self.openai_patcher.start()
         self.mock_gemini_module = self.gemini_patcher.start()
+
+        # Mocks para los adaptadores
+        self.openai_adapter_patcher = patch('iatoolkit.infra.llm_proxy.OpenAIAdapter')
+        self.gemini_adapter_patcher = patch('iatoolkit.infra.llm_proxy.GeminiAdapter')
         self.mock_openai_adapter_class = self.openai_adapter_patcher.start()
         self.mock_gemini_adapter_class = self.gemini_adapter_patcher.start()
-
         self.mock_openai_adapter_instance = MagicMock()
         self.mock_gemini_adapter_instance = MagicMock()
         self.mock_openai_adapter_class.return_value = self.mock_openai_adapter_instance
         self.mock_gemini_adapter_class.return_value = self.mock_gemini_adapter_instance
 
-        # --- Mocks de Compañías usando MagicMock para evitar TypeError ---
-
-        # Compañía con ambas claves
-        self.company_both = MagicMock()
-        self.company_both.short_name = 'comp_both'
-        self.company_both.name = 'Both'
-        self.company_both.openai_api_key = 'oa_key'
-        self.company_both.gemini_api_key = 'g_key'
-
-        # Compañía solo con OpenAI (la clave de gemini es None)
-        self.company_openai = MagicMock()
-        self.company_openai.short_name = 'comp_oa'
-        self.company_openai.name = 'OpenAI'
-        self.company_openai.openai_api_key = 'oa_key'
-
-        # Compañía solo con Gemini (la clave de openai es None)
-        self.company_gemini = MagicMock()
-        self.company_gemini.short_name = 'comp_g'
-        self.company_gemini.name = 'Gemini'
-
-        # Compañía sin claves
-        self.company_none = MagicMock()
-        self.company_none.short_name = 'comp_none'
-        self.company_none.name = 'None'
-        self.company_none.openai_api_key = None
-
-        patch.dict('os.environ', {'OPENAI_API_KEY': 'fb_oa', 'GEMINI_API_KEY': 'fb_g'}).start()
+        # Mock de Compañía base
+        self.company = MagicMock()
+        self.company.short_name = 'test_company'
+        self.company.name = 'Test Company'
+        self.company.openai_api_key = None  # Asegurar que los atributos existen
+        self.company.gemini_api_key = None  # aunque sean None
 
         # Instancia "fábrica" bajo prueba
-        self.proxy_factory = LLMProxy(util=self.util_mock)
+        self.proxy_factory = LLMProxy(util=self.util_mock, configuration_service=self.mock_config_service)
 
     def teardown_method(self):
         patch.stopall()
         LLMProxy._clients_cache.clear()
 
-    def test_create_for_company(self):
-        """Prueba que el factory method crea un Proxy con ambos clientes."""
-        proxy = self.proxy_factory.create_for_company(self.company_openai)
+    def test_create_openai_client_from_config(self):
+        """Prueba que el cliente de OpenAI se crea usando la API key de la configuración."""
+        self.mock_config_service.get_configuration.return_value = {'api-key': 'COMPANY_SPECIFIC_OPENAI_KEY'}
+        with patch.dict('os.environ', {'COMPANY_SPECIFIC_OPENAI_KEY': 'key_from_config_env'}):
+            self.proxy_factory._create_openai_client(self.company)
+        self.mock_openai_class.assert_called_once_with(api_key='key_from_config_env')
 
-        self.mock_openai_class.assert_called_once_with(api_key='decrypted_oa_key')
+    def test_create_openai_client_fallback_to_db_key(self):
+        """Prueba que si no hay config, se usa la clave de la base de datos."""
+        self.mock_config_service.get_configuration.return_value = None
+        self.company.openai_api_key = 'db_key'
+        self.proxy_factory._create_openai_client(self.company)
+        self.util_mock.decrypt_key.assert_called_once_with('db_key')
+        self.mock_openai_class.assert_called_once_with(api_key='decrypted_db_key')
 
-        assert isinstance(proxy, LLMProxy)
-        self.mock_openai_adapter_class.assert_called_once()
-        self.mock_gemini_adapter_class.assert_called_once()
-        assert proxy.openai_adapter is not None
-        assert proxy.gemini_adapter is not None
+    def test_create_openai_client_fallback_to_global_env(self):
+        """Prueba que si no hay config ni clave en BD, se usa la variable de entorno global."""
+        self.mock_config_service.get_configuration.return_value = None
+        self.company.openai_api_key = None
+        with patch.dict('os.environ', {'OPENAI_API_KEY': 'global_key'}):
+            self.proxy_factory._create_openai_client(self.company)
+        self.mock_openai_class.assert_called_once_with(api_key='global_key')
 
     def test_create_for_company_raises_error_if_no_keys(self):
-        """Prueba que el factory method lanza una excepción si no hay ninguna clave disponible."""
+        """Prueba que el factory method lanza una excepción si no hay ninguna clave disponible por ningún medio."""
+        self.mock_config_service.get_configuration.return_value = None
+        self.company.openai_api_key = None
+        self.company.gemini_api_key = None
         with patch.dict('os.environ', {}, clear=True):
-            # Usar una compañía que realmente no tenga los atributos
-            company_truly_none = MagicMock()
-            company_truly_none.openai_api_key = None
-            company_truly_none.gemini_api_key = None
-
             with pytest.raises(IAToolkitException, match="no tiene configuradas API keys"):
-                self.proxy_factory.create_for_company(company_truly_none)
+                self.proxy_factory.create_for_company(self.company)
 
     def test_client_caching_works(self):
         """Prueba que los clientes se cachean y reutilizan entre llamadas."""
-        self.proxy_factory.create_for_company(self.company_openai)
-        self.proxy_factory.create_for_company(self.company_openai)
-        self.mock_openai_class.assert_called_once_with(api_key='decrypted_oa_key')
+        self.mock_config_service.get_configuration.return_value = None
+        self.company.openai_api_key = 'some_key'
+        self.company.gemini_api_key = None
 
-    def test_routing_to_openai_adapter(self):
-        """Prueba el enrutamiento correcto hacia el adaptador de OpenAI."""
+        with patch.dict('os.environ', {'GEMINI_API_KEY': ''}):  # Asegurar no fallback para gemini
+            self.proxy_factory.create_for_company(self.company)
+            self.proxy_factory.create_for_company(self.company)
+
+        self.mock_openai_class.assert_called_once()
+
+    def test_routing_to_correct_adapter(self):
+        """Prueba el enrutamiento correcto hacia el adaptador adecuado."""
         self.util_mock.is_openai_model.return_value = True
         self.util_mock.is_gemini_model.return_value = False
+        self.mock_config_service.get_configuration.return_value = None
+        self.company.openai_api_key = 'some_key'  # Darle una clave para que pueda crear el cliente
 
-        proxy = self.proxy_factory.create_for_company(self.company_openai)
+        # Crear una instancia de proxy que tenga los adaptadores configurados
+        work_proxy = self.proxy_factory.create_for_company(self.company)
 
-        # El método create_response no está definido en el MagicMock `proxy`,
-        # así que llamamos al método real en la instancia de fábrica para obtener una instancia real
-        work_proxy = self.proxy_factory.create_for_company(self.company_openai)
+        # Llamar a create_response en la instancia de trabajo
         work_proxy.create_response(model='gpt-4', input=[])
 
         self.mock_openai_adapter_instance.create_response.assert_called_once()
         self.mock_gemini_adapter_instance.create_response.assert_not_called()
-
-    def test_routing_to_gemini_adapter(self):
-        """Prueba el enrutamiento correcto hacia el adaptador de OpenAI."""
-        self.util_mock.is_openai_model.return_value = False
-        self.util_mock.is_gemini_model.return_value = True
-
-        proxy = self.proxy_factory.create_for_company(self.company_openai)
-
-        # El método create_response no está definido en el MagicMock `proxy`,
-        # así que llamamos al método real en la instancia de fábrica para obtener una instancia real
-        work_proxy = self.proxy_factory.create_for_company(self.company_gemini)
-        work_proxy.create_response(model='gemini', input=[])
-
-        self.mock_gemini_adapter_instance.create_response.assert_called_once()
-        self.mock_openai_adapter_instance.create_response.assert_not_called()

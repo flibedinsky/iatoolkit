@@ -10,6 +10,7 @@ from iatoolkit.repositories.profile_repo import ProfileRepo
 from iatoolkit.services.document_service import DocumentService
 from iatoolkit.services.company_context_service import CompanyContextService
 from iatoolkit.services.i18n_service import I18nService
+from iatoolkit.services.configuration_service import ConfigurationService
 from iatoolkit.repositories.llm_query_repo import LLMQueryRepo
 from iatoolkit.repositories.models import Task
 from iatoolkit.services.dispatcher_service import Dispatcher
@@ -43,7 +44,8 @@ class QueryService:
                  i18n_service: I18nService,
                  util: Utility,
                  dispatcher: Dispatcher,
-                 session_context: UserSessionContextService
+                 session_context: UserSessionContextService,
+                 configuration_service: ConfigurationService
                  ):
         self.profile_service = profile_service
         self.company_context_service = company_context_service
@@ -56,13 +58,37 @@ class QueryService:
         self.util = util
         self.dispatcher = dispatcher
         self.session_context = session_context
+        self.configuration_service = configuration_service
         self.llm_client = llm_client
 
         # get the model from the environment variable
-        self.model = os.getenv("LLM_MODEL", "")
-        if not self.model:
+        self.default_model = os.getenv("LLM_MODEL", "")
+        if not self.default_model:
             raise IAToolkitException(IAToolkitException.ErrorType.API_KEY,
                                "missing ENV variable 'LLM_MODEL' configuration.")
+
+    def init_context(self, company_short_name: str,
+                     user_identifier: str,
+                     model: str = None) -> dict:
+
+        # 1. Execute the forced rebuild sequence using the unified identifier.
+        self.session_context.clear_all_context(company_short_name, user_identifier)
+        logging.info(f"Context for {company_short_name}/{user_identifier} has been cleared.")
+
+        # 2. LLM context is clean, now we can load it again
+        self.prepare_context(
+            company_short_name=company_short_name,
+            user_identifier=user_identifier
+        )
+
+        # 3. communicate the new context to the LLM
+        response = self.set_context_for_llm(
+            company_short_name=company_short_name,
+            user_identifier=user_identifier,
+            model=model
+        )
+
+        return response
 
     def _build_context_and_profile(self, company_short_name: str, user_identifier: str) -> tuple:
         # this method read the user/company context from the database and renders the system prompt
@@ -118,16 +144,33 @@ class QueryService:
 
         if rebuild_is_needed:
             # Guardar el contexto preparado y su versión para que `finalize_context_rebuild` los use.
-            self.session_context.save_prepared_context(company_short_name, user_identifier, final_system_context,
+            self.session_context.save_prepared_context(company_short_name,
+                                                       user_identifier,
+                                                       final_system_context,
                                                        current_version)
 
         return {'rebuild_needed': rebuild_is_needed}
 
-    def finalize_context_rebuild(self, company_short_name: str, user_identifier: str, model: str = ''):
+    def set_context_for_llm(self,
+                            company_short_name: str,
+                            user_identifier: str,
+                            model: str = ''):
 
-        # This service  finish the initilization, if there is a prepare context send it to llm
-        if not model:
-            model = self.model
+        # This service takes a pre-built context and send to the LLM
+        company = self.profile_repo.get_company_by_short_name(company_short_name)
+        if not company:
+            logging.error(f"Company not found: {company_short_name} in set_context_for_llm")
+            return
+
+        # --- Model Resolution ---
+        # Priority: 1. Explicit model -> 2. Company config -> 3. Global default
+        effective_model = model
+        if not effective_model:
+            llm_config = self.configuration_service.get_configuration(company_short_name, 'llm')
+            if llm_config and llm_config.get('model'):
+                effective_model = llm_config['model']
+
+        effective_model = effective_model or self.default_model
 
         # blocking logic to avoid multiple requests for the same user/company at the same time
         lock_key = f"lock:context:{company_short_name}/{user_identifier}"
@@ -152,12 +195,15 @@ class QueryService:
             self.session_context.clear_llm_history(company_short_name, user_identifier)
 
             response_id = ''
-            if self.util.is_gemini_model(model):
+            if self.util.is_gemini_model(effective_model):
                 context_history = [{"role": "user", "content": prepared_context}]
                 self.session_context.save_context_history(company_short_name, user_identifier, context_history)
-            elif self.util.is_openai_model(model):
+            elif self.util.is_openai_model(effective_model):
+                # Here is the call to the LLM client for settling the company/user context
                 response_id = self.llm_client.set_company_context(
-                    company=company, company_base_context=prepared_context, model=model
+                    company=company,
+                    company_base_context=prepared_context,
+                    model=effective_model
                 )
                 self.session_context.save_last_response_id(company_short_name, user_identifier, response_id)
 
@@ -183,7 +229,8 @@ class QueryService:
                   question: str = '',
                   client_data: dict = {},
                   response_id: str = '',
-                  files: list = []) -> dict:
+                  files: list = [],
+                  model: Optional[str] = None) -> dict:
         try:
             company = self.profile_repo.get_company_by_short_name(short_name=company_short_name)
             if not company:
@@ -194,11 +241,21 @@ class QueryService:
                 return {"error": True,
                         "error_message": self.i18n_service.t('services.start_query')}
 
+            # --- Model Resolution ---
+            # Priority: 1. Explicit model -> 2. Company config -> 3. Global default
+            effective_model = model
+            if not effective_model:
+                llm_config = self.configuration_service.get_configuration(company_short_name, 'llm')
+                if llm_config and llm_config.get('model'):
+                    effective_model = llm_config['model']
+
+            effective_model = effective_model or self.default_model
+
             # get the previous response_id and context history
             previous_response_id = None
             context_history = self.session_context.get_context_history(company.short_name, user_identifier) or []
 
-            if self.util.is_openai_model(self.model):
+            if self.util.is_openai_model(effective_model):
                 if response_id:
                     # context is getting from this response_id
                     previous_response_id = response_id
@@ -209,7 +266,7 @@ class QueryService:
                         return {'error': True,
                                 "error_message": self.i18n_service.t('errors.services.missing_response_id', company_short_name=company.short_name, user_identifier=user_identifier)
                                 }
-            elif self.util.is_gemini_model(self.model):
+            elif self.util.is_gemini_model(effective_model):
                 # check the length of the context_history and remove old messages
                 self._trim_context_history(context_history)
 
@@ -248,7 +305,7 @@ class QueryService:
                 user_turn_prompt += f'\n### Contexto Adicional: El usuario ha aportado este contexto puede ayudar: {question}'
 
             # add to the history context
-            if self.util.is_gemini_model(self.model):
+            if self.util.is_gemini_model(effective_model):
                 context_history.append({"role": "user", "content": user_turn_prompt})
 
             # service list for the function calls
@@ -261,8 +318,9 @@ class QueryService:
             response = self.llm_client.invoke(
                 company=company,
                 user_identifier=user_identifier,
+                model=effective_model,
                 previous_response_id=previous_response_id,
-                context_history=context_history if self.util.is_gemini_model(self.model) else None,
+                context_history=context_history if self.util.is_gemini_model(effective_model) else None,
                 question=question,
                 context=user_turn_prompt,
                 tools=tools,
@@ -275,7 +333,7 @@ class QueryService:
             # save last_response_id for the history chain
             if "response_id" in response:
                 self.session_context.save_last_response_id(company.short_name, user_identifier, response["response_id"])
-            if self.util.is_gemini_model(self.model):
+            if self.util.is_gemini_model(effective_model):
                 self.session_context.save_context_history(company.short_name, user_identifier, context_history)
 
             return response
@@ -297,10 +355,10 @@ class QueryService:
         - Gemini: context_history con al menos 1 mensaje.
         """
         try:
-            if self.util.is_openai_model(self.model):
+            if self.util.is_openai_model(self.default_model):
                 prev_id = self.session_context.get_last_response_id(company_short_name, user_identifier)
                 return bool(prev_id)
-            if self.util.is_gemini_model(self.model):
+            if self.util.is_gemini_model(self.default_model):
                 history = self.session_context.get_context_history(company_short_name, user_identifier) or []
                 return len(history) >= 1
             return False
