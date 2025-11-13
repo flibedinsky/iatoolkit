@@ -48,10 +48,6 @@ embedding_provider:
   model: "text-embedding-ada-002"
   api_key_name: "OPENAI_API_KEY"
 
-#  provider: "huggingface" this is the other option
-#  model: "sentence-transformers/all-MiniLM-L6-v2"
-#  api_key_name: "huggingface_token"
-
 # Data Sources
 # Defines the SQL data sources available to the LLM.
 data_sources:
@@ -80,15 +76,12 @@ tools:
 
 # Prompts
 # Defines the ordered list of categories and the prompts available in the UI.
-# Prompts are files in the company prompts/ folder, abd the 
-# name of the file is the prompt name.prompt.
-# Example: analisis_ventas.prompt
 prompt_categories:
   - "General"
-  - "Análisis Avanzado"     # sample for adding more categories
+  - "Análisis Avanzado" 
 
 prompts:
-  - category: "General"     # assign this prompt to the category "General"
+  - category: "General"   
     name: "analisis_ventas"
     description: "Analisis de ventas"
     order: 1
