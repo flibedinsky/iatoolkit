@@ -126,7 +126,6 @@ class EmbeddingService:
 
             # 2. Use the wrapper's common interface to get the embedding
             embedding = client_wrapper.get_embedding(text)
-
             # 3. Process the result
             if to_base64:
                 return base64.b64encode(np.array(embedding, dtype=np.float32).tobytes()).decode('utf-8')

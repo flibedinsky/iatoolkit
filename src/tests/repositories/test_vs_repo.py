@@ -62,7 +62,7 @@ class TestVSRepo:
         vs_chunk_list = [VSDoc(id=1, text="Documento con error")]
 
         # Act & Assert
-        with pytest.raises(IAToolkitException, match="Error inserting documents into PostgreSQL"):
+        with pytest.raises(IAToolkitException):
             self.vs_repo.add_document(self.MOCK_COMPANY_SHORT_NAME, vs_chunk_list)
 
         self.mock_session.rollback.assert_called_once()

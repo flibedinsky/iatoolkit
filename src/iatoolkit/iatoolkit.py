@@ -141,6 +141,8 @@ class IAToolkit:
             force=True
         )
 
+        logging.getLogger("httpx").setLevel(logging.WARNING)
+
     def _register_routes(self):
         """Registers routes by passing the configured injector."""
         from iatoolkit.common.routes import register_views

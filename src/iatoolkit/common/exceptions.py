@@ -37,6 +37,7 @@ class IAToolkitException(Exception):
         LOAD_DOCUMENT_ERROR = 25
         INVALID_USER = 26
         VECTOR_STORE_ERROR = 27
+        EMBEDDING_ERROR = 28
 
 
 

@@ -29,10 +29,10 @@ class VSRepo:
                 self.session.add(doc)
             self.session.commit()
         except Exception as e:
-            logging.error(f"Error inserting documents into PostgreSQL: {str(e)}")
+            logging.error(f"Error while inserting embedding chunk list: {str(e)}")
             self.session.rollback()
             raise IAToolkitException(IAToolkitException.ErrorType.VECTOR_STORE_ERROR,
-                               f"Error inserting documents into PostgreSQL: {str(e)}")
+                               f"Error while inserting embedding chunk list: {str(e)}")
 
     def query(self,
               company_short_name: str,
@@ -53,7 +53,12 @@ class VSRepo:
             list of documents matching the query and filters
         """
         # Generate the embedding with the query text for the specific company
-        query_embedding = self.embedding_service.embed_text(company_short_name, query_text)
+        try:
+            query_embedding = self.embedding_service.embed_text(company_short_name, query_text)
+        except Exception as e:
+            logging.error(f"error while creating text embedding: {str(e)}")
+            raise IAToolkitException(IAToolkitException.ErrorType.EMBEDDING_ERROR,
+                               f"embedding error: {str(e)}")
 
         sql_query, params = None, None
         try:
