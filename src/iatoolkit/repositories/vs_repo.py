@@ -4,40 +4,38 @@
 # IAToolkit is open source software.
 
 from sqlalchemy import  text
-from huggingface_hub import InferenceClient
 from injector import inject
 from iatoolkit.common.exceptions import IAToolkitException
 from iatoolkit.repositories.database_manager import DatabaseManager
-from iatoolkit.repositories.models import Document, VSDoc
-import os
+from iatoolkit.services.embedding_service import EmbeddingService
+from iatoolkit.repositories.models import Document, VSDoc, Company
 import logging
+
 
 class VSRepo:
     @inject
-    def __init__(self, db_manager: DatabaseManager):
+    def __init__(self,
+                 db_manager: DatabaseManager,
+                 embedding_service: EmbeddingService):
         self.session = db_manager.get_session()
-
-        # Inicializar el modelo de embeddings
-        self.embedder = InferenceClient(
-            model="sentence-transformers/all-MiniLM-L6-v2",
-            token=os.getenv('HF_TOKEN'))
+        self.embedding_service = embedding_service
 
 
-    def add_document(self, vs_chunk_list: list[VSDoc]):
+    def add_document(self, company_short_name, vs_chunk_list: list[VSDoc]):
         try:
             for doc in vs_chunk_list:
                 # calculate the embedding for the text
-                doc.embedding = self.embedder.feature_extraction(doc.text)
+                doc.embedding = self.embedding_service.embed_text(company_short_name, doc.text)
                 self.session.add(doc)
             self.session.commit()
         except Exception as e:
-            logging.error(f"Error insertando documentos en PostgreSQL: {str(e)}")
+            logging.error(f"Error inserting documents into PostgreSQL: {str(e)}")
             self.session.rollback()
             raise IAToolkitException(IAToolkitException.ErrorType.VECTOR_STORE_ERROR,
-                               f"Error insertando documentos en PostgreSQL: {str(e)}")
+                               f"Error inserting documents into PostgreSQL: {str(e)}")
 
     def query(self,
-              company_id: int,
+              company_short_name: str,
               query_text: str,
               n_results=5,
               metadata_filter=None
@@ -46,18 +44,25 @@ class VSRepo:
         search documents similar to the query for a company
 
         Args:
-            company_id:
+            company_short_name: The company's unique short name.
             query_text: query text
             n_results: max number of results to return
-            metadata_filter:  (ej: {"document_type": "certificate"})
+            metadata_filter:  (e.g., {"document_type": "certificate"})
 
         Returns:
             list of documents matching the query and filters
         """
-        # Generate the embedding with the query text
-        query_embedding = self.embedder.feature_extraction([query_text])[0]
+        # Generate the embedding with the query text for the specific company
+        query_embedding = self.embedding_service.embed_text(company_short_name, query_text)
 
+        sql_query, params = None, None
         try:
+            # Get company ID from its short name for the SQL query
+            company = self.session.query(Company).filter(Company.short_name == company_short_name).one_or_none()
+            if not company:
+                raise IAToolkitException(IAToolkitException.ErrorType.VECTOR_STORE_ERROR,
+                                   f"Company with short name '{company_short_name}' not found.")
+
             # build the SQL query
             sql_query_parts = ["""
                                SELECT iat_documents.id, \
@@ -73,10 +78,11 @@ class VSRepo:
 
             # query parameters
             params = {
-                "company_id": company_id,
+                "company_id": company.id,
                 "query_embedding": query_embedding,
                 "n_results": n_results
             }
+
 
             # add metadata filter, if exists
             if metadata_filter and isinstance(metadata_filter, dict):
@@ -108,7 +114,7 @@ class VSRepo:
                 meta_data = row[4] if len(row) > 4 and row[4] is not None else {}
                 doc = Document(
                     id=row[0],
-                    company_id=company_id,
+                    company_id=company.id,
                     filename=row[1],
                     content=row[2],
                     content_b64=row[3],

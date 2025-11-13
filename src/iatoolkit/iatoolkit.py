@@ -19,7 +19,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from injector import Binder, Injector, singleton
 from importlib.metadata import version as _pkg_version, PackageNotFoundError
 
-IATOOLKIT_VERSION = "0.70.1"
+IATOOLKIT_VERSION = "0.71.0"
 
 # global variable for the unique instance of IAToolkit
 _iatoolkit_instance: Optional['IAToolkit'] = None
@@ -155,18 +155,11 @@ class IAToolkit:
                          static_folder=static_folder,
                          template_folder=template_folder)
 
-        is_https = self._get_config_value('USE_HTTPS', 'false').lower() == 'true'
-        is_dev = self._get_config_value('FLASK_ENV') == 'development'
-
-        # get the iatoolkit domain
-        parsed_url = urlparse(os.getenv('IATOOLKIT_BASE_URL'))
-        domain = parsed_url.netloc
-
+        # get the IATOOLKIT_VERSION from the package metadata
         try:
             self.version = _pkg_version("iatoolkit")
         except PackageNotFoundError:
             pass
-
 
         self.app.config.update({
             'VERSION': self.version,
@@ -180,6 +173,7 @@ class IAToolkit:
             'JWT_EXPIRATION_SECONDS_CHAT': int(self._get_config_value('JWT_EXPIRATION_SECONDS_CHAT', 3600))
         })
 
+        parsed_url = urlparse(os.getenv('IATOOLKIT_BASE_URL'))
         if parsed_url.scheme == 'https':
             self.app.config['PREFERRED_URL_SCHEME'] = 'https'
 
@@ -187,7 +181,7 @@ class IAToolkit:
         self.app.wsgi_app = ProxyFix(self.app.wsgi_app, x_proto=1)
 
         # Configuración para tokenizers en desarrollo
-        if is_dev:
+        if self._get_config_value('FLASK_ENV') == 'dev':
             os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
     def _setup_database(self):
@@ -318,6 +312,7 @@ class IAToolkit:
         from iatoolkit.services.i18n_service import I18nService
         from iatoolkit.services.language_service import LanguageService
         from iatoolkit.services.configuration_service import ConfigurationService
+        from iatoolkit.services.embedding_service import EmbeddingService
 
         binder.bind(QueryService, to=QueryService)
         binder.bind(TaskService, to=TaskService)
@@ -334,6 +329,7 @@ class IAToolkit:
         binder.bind(I18nService, to=I18nService)
         binder.bind(LanguageService, to=LanguageService)
         binder.bind(ConfigurationService, to=ConfigurationService)
+        binder.bind(EmbeddingService, to=EmbeddingService)
 
     def _bind_infrastructure(self, binder: Binder):
         from iatoolkit.infra.llm_client import llmClient

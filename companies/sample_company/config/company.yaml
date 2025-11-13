@@ -7,6 +7,21 @@
 id: "sample_company"
 name: "Sample Company"
 locale: "es_ES"
+llm:
+  model: "gpt-5-mini"
+  api-key: "OPENAI_API_KEY"
+
+# embedding_provider:
+#  provider: "huggingface"
+#  model: "sentence-transformers/all-MiniLM-L6-v2"
+#  api_key_name: "HF_TOKEN"
+
+embedding_provider:
+  provider: "openai"
+  model: "text-embedding-ada-002"
+  api_key_name: "OPENAI_API_KEY"
+
+
 parameters:
   cors_origin:
     - "https://portal-interno.empresa_de_ejemplo.cl"

@@ -9,7 +9,6 @@ from iatoolkit.services.configuration_service import ConfigurationService
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from iatoolkit.infra.connectors.file_connector_factory import FileConnectorFactory
 from iatoolkit.services.file_processor_service import FileProcessorConfig, FileProcessor
-from iatoolkit.services.dispatcher_service import Dispatcher
 from iatoolkit.common.exceptions import IAToolkitException
 import logging
 import base64
@@ -30,14 +29,12 @@ class LoadDocumentsService:
                  doc_service: DocumentService,
                  doc_repo: DocumentRepo,
                  vector_store: VSRepo,
-                 dispatcher: Dispatcher
                  ):
         self.config_service = config_service
         self.doc_service = doc_service
         self.doc_repo = doc_repo
         self.vector_store = vector_store
         self.file_connector_factory = file_connector_factory
-        self.dispatcher = dispatcher
 
         logging.getLogger().setLevel(logging.ERROR)
 
@@ -166,7 +163,7 @@ class LoadDocumentsService:
             vs_docs = [VSDoc(company_id=company.id, document_id=new_document.id, text=text) for text in chunks]
 
             # Add document chunks to the vector store.
-            self.vector_store.add_document(vs_docs)
+            self.vector_store.add_document(company.short_name, vs_docs)
 
             session.commit()
             return new_document

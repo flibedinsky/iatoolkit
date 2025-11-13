@@ -8,7 +8,6 @@ from iatoolkit.infra.connectors.file_connector_factory import FileConnectorFacto
 from iatoolkit.services.document_service import DocumentService
 from iatoolkit.repositories.document_repo import DocumentRepo
 from iatoolkit.repositories.vs_repo import VSRepo
-from iatoolkit.services.dispatcher_service import Dispatcher
 from iatoolkit.repositories.models import Company, Document
 from iatoolkit.common.exceptions import IAToolkitException
 
@@ -35,7 +34,6 @@ class TestLoadDocumentsService:
         self.mock_doc_service = MagicMock(spec=DocumentService)
         self.mock_doc_repo = MagicMock(spec=DocumentRepo)
         self.mock_vector_store = MagicMock(spec=VSRepo)
-        self.mock_dispatcher = MagicMock(spec=Dispatcher)
 
         # SOLUCIÓN: Crear un mock para 'session' y adjuntarlo al mock del repositorio.
         self.mock_session = MagicMock()
@@ -47,7 +45,6 @@ class TestLoadDocumentsService:
             doc_service=self.mock_doc_service,
             doc_repo=self.mock_doc_repo,
             vector_store=self.mock_vector_store,
-            dispatcher=self.mock_dispatcher
         )
         self.company = Company(id=1, short_name='acme')
 
