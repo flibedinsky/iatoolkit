@@ -1,60 +1,74 @@
-# Welcome to IAToolkit
 
-## 1. What is IAToolkit?
+# Welcome to IAToolkit Documentation
 
 IAToolkit is a powerful, flexible framework designed to build sophisticated, 
-AI-powered assistants that integrate seamlessly with your corporate data. 
-Its primary purpose is to bridge the gap between the advanced reasoning capabilities 
-of Large Language Models (LLMs) and the valuable, often siloed, data within your organization.
+AI-powered assistants that integrate seamlessly with your corporate data.
 
-With IAToolkit, you can create secure, multi-tenant, and highly customizable chat assistants 
-that can query databases, process documents, and execute custom business logic on behalf 
-of your users or clients.
+This documentation will guide you through everything from installation to advanced customization and development.
 
 ---
 
-## 2. The Problem it Solves
+## 📖 Documentation Guide
 
-In today's enterprise landscape, data is everything. 
-However, this data is often locked away in SQL databases, proprietary systems, 
-and vast collections of documents. 
-Integrating this private, structured, and unstructured data with modern AI in a secure and reliable 
-way is a significant challenge.
+### For All Users
 
-IAToolkit solves this by providing a structured, scalable, and developer-friendly architecture to:
+**[Quickstart Guide](./quickstart.md)**  
+Get up and running in minutes. Install, configure, and launch your first AI assistant.
 
-*   **Connect securely** to corporate SQL databases.
-*   **Index and search** through private document repositories (like PDFs).
-*   **Define and execute** custom business functions and workflows.
-*   **Manage multiple tenants** (or "Companies") with isolated data, branding, and configurations.
+*What you'll learn:*
+- Installation and environment setup
+- Running the application
+- Working with sample data
 
 ---
 
-## 3. Multi-LLM by Design
+### For Implementers & Configurators
 
-The world of AI is evolving rapidly. To ensure your application remains future-proof, 
-IAToolkit is built with a provider-agnostic approach. You are not locked into a single LLM vendor.
+**[Understanding and Configuring Companies](./companies_and_components.md)**  
+Master the "Company" concept and configure your AI assistant through the `company.yaml` file.
 
-*   **Built-in Support**: Out-of-the-box support for leading models from providers like **OpenAI** (e.g., GPT-4) and **Google** (e.g., Gemini).
-*   **Extensible Architecture**: A clean, dependency-injected architecture makes it straightforward to add new LLM providers as they emerge.
-*   **Per-Company Configuration**: You can even configure different LLMs for different "Companies," allowing you to optimize for cost, performance, or specific capabilities.
-
----
-
-## 4. Key Components of the Toolkit
-
-IAToolkit is composed of several key building blocks that work together to deliver a rich user experience:
-
-*   **Companies**: The core concept for multi-tenancy. Each "Company" is an isolated environment with its own data sources, branding, prompts, business logic, and LLM configuration. [Learn more about Companies →](./companies_and_components.md)
-*   **YAML Schema & Data Integration**: A declarative YAML-based schema allows you to map your corporate SQL databases. The toolkit uses this schema to automatically generate SQL queries from natural language, enabling the LLM to interact directly with your data.
-*   **Branding & Configuration**: Each "Company" can have a unique look and feel, including custom logos, colors, and UI text (i18n support).
-*   **Prompt & Function Management**: A powerful prompt manager using Jinja templates allows for dynamic and context-aware interactions. You can define custom Python functions (e.g., for calling external APIs, sending emails, generating reports) that the LLM can invoke.
-*   **Document & Vector Stores (RAG)**: The toolkit includes a built-in system for uploading documents (like PDFs). These are automatically indexed into a vector store, enabling Retrieval-Augmented Generation (RAG) for question-answering over your private knowledge base.
+*What you'll learn:*
+- Multi-tenant Company architecture
+- Complete `company.yaml` reference
+- SQL database configuration
+- Tool and function definitions
+- Branding and UI customization
+- Knowledge base setup (RAG)
+- Best practices
 
 ---
 
-## 5. How to Get Started
+### For Developers & Contributors
 
-Ready to build your first AI assistant? Jump right into our quickstart guide to get your server up and running in minutes.
+**[Programming Guide](./programming_guide.md)**  
+Understand IAToolkit's internal architecture and learn how to extend the framework.
 
-➡️ **[Quickstart: Installation and First Queries](./quickstart.md)**
+*What you'll learn:*
+- Project structure and architecture
+- Design patterns (Dependency Injection, Repository, Adapter)
+- Core services reference
+- Testing strategy
+- Adding new features
+- Contributing guidelines
+
+---
+
+## Getting Started
+
+New to IAToolkit? Start with the **[Quickstart Guide](./quickstart.md)** to get your first assistant running.
+
+Already familiar with the basics? Jump to **[Companies and Components](./companies_and_components.md)** to learn about configuration.
+
+Want to contribute or extend? Check out the **[Programming Guide](./programming_guide.md)**.
+
+---
+
+## Additional Resources
+
+- **GitHub Repository**: [github.com/flibedinsky/iatoolkit](https://github.com/flibedinsky/iatoolkit)
+- **Issues & Support**: [GitHub Issues](https://github.com/flibedinsky/iatoolkit/issues)
+- **Website**: [www.iatoolkit.com](https://www.iatoolkit.com)
+
+---
+
+Ready to build your AI assistant? **[Let's get started! →](./quickstart.md)** 🚀
