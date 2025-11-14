@@ -22,26 +22,13 @@ to add new features.
 
 ### Layer Responsibilities
 
-**Common Layer (`common/`)**
-Contains cross-cutting concerns and utilities used throughout the application:
-- `exceptions.py`: Custom exception classes for error handling
-- `util.py`: Helper functions (encryption, validation, etc.)
-- `routes.py`: Route registration and view handlers
-- `session_manager.py`: Session handling utilities
-
-**Infrastructure Layer (`infra/`)**
-Handles all external system integrations:
-- LLM provider adapters (OpenAI, Gemini)
-- Email services
-- Cloud storage connectors (S3, GCS)
-- Google Chat integration
-
-**Repository Layer (`repositories/`)**
-Manages all data persistence and retrieval:
-- Database models (SQLAlchemy ORM)
-- Data access objects (DAOs)
-- Query builders
-- Database connection management
+**Views Layer (`views/`)**
+The presentation layer that handles HTTP requests and renders responses:
+- Route handlers for web pages and API endpoints
+- Request validation and parameter extraction
+- Response formatting (HTML, JSON)
+- Integration with templates for server-side rendering
+- Session management and user context handling
 
 **Service Layer (`services/`)**
 Contains the core business logic:
@@ -50,6 +37,32 @@ Contains the core business logic:
 - User authentication
 - Configuration management
 - And much more (detailed below)
+
+**Repository Layer (`repositories/`)**
+Manages all data persistence and retrieval:
+- Database models (SQLAlchemy ORM)
+- Data access objects (DAOs)
+- Query builders
+- Database connection management
+
+
+**Infrastructure Layer (`infra/`)**
+Handles all external system integrations:
+- LLM provider adapters (OpenAI, Gemini)
+- Email services
+- Cloud storage connectors (S3, GCS)
+- Google Chat integration
+
+**Common Layer (`common/`)**
+Contains cross-cutting concerns and utilities used throughout the application:
+- `exceptions.py`: Custom exception classes for error handling
+- `util.py`: Helper functions (encryption, validation, etc.)
+- `routes.py`: Route registration and view handlers
+- `session_manager.py`: Session handling utilities
+
+**Templates & Static Assets**
+- `templates/`: Jinja2 HTML templates for rendering web pages
+- `static/`: CSS stylesheets, JavaScript files, and images for the UI
 
 ---
 
