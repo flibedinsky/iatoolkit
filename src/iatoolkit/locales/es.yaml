@@ -139,6 +139,7 @@
     flash_messages:
       password_changed_success: "Tu contraseña ha sido restablecida exitosamente. Ahora puedes iniciar sesión."
       signup_success: "Registro exitoso. Por favor, revisa tu correo para verificar tu cuenta."
+      signup_success_no_verification: "Registro exitoso."
       user_associated_success: "Usuario existente asociado exitosamente a la nueva empresa."
       account_verified_success: "Tu cuenta ha sido verificada exitosamente. ¡Bienvenido!"
       forgot_password_success: "Si tu correo está registrado, recibirás un enlace para restablecer tu contraseña."

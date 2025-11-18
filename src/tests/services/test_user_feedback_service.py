@@ -9,15 +9,14 @@ from iatoolkit.services.i18n_service import I18nService
 from iatoolkit.services.user_feedback_service import UserFeedbackService
 from iatoolkit.repositories.models import Company, UserFeedback
 from iatoolkit.infra.google_chat_app import GoogleChatApp
-from iatoolkit.infra.mail_app import MailApp
-
+from iatoolkit.services.mail_service import MailService
 
 class TestUserFeedbackService:
     def setup_method(self):
         """Set up a fresh service instance and mocks for each test."""
         self.profile_repo = MagicMock(ProfileRepo)
         self.google_chat_app = MagicMock(GoogleChatApp)
-        self.mail_app = MagicMock(MailApp)
+        self.mail_service = MagicMock(MailService)
         self.mock_i18n_service = MagicMock(spec=I18nService)
 
         self.mock_i18n_service.t.side_effect = lambda key, **kwargs: f"translated:{key}"
@@ -27,7 +26,7 @@ class TestUserFeedbackService:
             profile_repo=self.profile_repo,
             i18n_service=self.mock_i18n_service,
             google_chat_app=self.google_chat_app,
-            mail_app=self.mail_app
+            mail_service=self.mail_service
         )
 
         # A base company object; params can be overridden in each test
@@ -84,7 +83,7 @@ class TestUserFeedbackService:
         assert '*Usuario:* chat_user' in call_args['message']['text']
         assert '*Mensaje:* A message for Google Chat' in call_args['message']['text']
         assert '*Calificación:* 4' in call_args['message']['text']
-        self.mail_app.send_email.assert_not_called()
+        self.mail_service.send_mail.assert_not_called()
 
     def test_sends_email_notification_on_correct_config(self):
         """Test that an email notification is sent when configured for 'rmail'."""
@@ -102,12 +101,13 @@ class TestUserFeedbackService:
             rating=3
         )
 
-        self.mail_app.send_email.assert_called_once_with(
+        self.mail_service.send_mail.assert_called_once_with(
+            company_short_name='my_company',
             to='test@example.com',
             subject='Nuevo Feedback de my_company',
             body=ANY  # Check body content separately if needed
         )
-        call_body = self.mail_app.send_email.call_args[1]['body']
+        call_body = self.mail_service.send_mail.call_args[1]['body']
         assert 'Nuevo feedback de my_company' in call_body
         assert 'Usuario:* email_user' in call_body
         assert 'Mensaje:* A message for email' in call_body
@@ -126,7 +126,7 @@ class TestUserFeedbackService:
         )
 
         self.google_chat_app.send_message.assert_not_called()
-        self.mail_app.send_email.assert_not_called()
+        self.mail_service.send_mail.assert_not_called()
 
     def test_no_notification_if_config_is_incomplete(self):
         """Test that no notification is sent if 'channel' or 'destination' is missing."""
@@ -139,7 +139,7 @@ class TestUserFeedbackService:
         self.service.new_feedback('my_company', 'msg', 'user', 1)
 
         self.google_chat_app.send_message.assert_not_called()
-        self.mail_app.send_email.assert_not_called()
+        self.mail_service.send_mail.assert_not_called()
 
     def test_notification_failure_does_not_prevent_saving_feedback(self):
         """Test that if a notification fails (e.g., raises an exception), feedback is still saved."""

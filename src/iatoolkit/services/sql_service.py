@@ -57,7 +57,7 @@ class SqlService:
                 f"Database '{db_name}' is not registered with the SqlService."
             )
 
-    def exec_sql(self, database: str, query: str) -> str:
+    def exec_sql(self, company_short_name: str, database: str, query: str) -> str:
         """
         Executes a raw SQL statement against a registered database and returns the result as a JSON string.
         """

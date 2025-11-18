@@ -144,6 +144,7 @@ flash_messages:
   password_changed_success: "Your password has been successfully reset. You can now log in."
   login_required: "Please log in to continue."
   signup_success: "Registration successful. Please check your email to verify your account."
+  signup_success_no_verification: "Registration successful."
   user_associated_success: "Existing user successfully associated with the new company."
   account_verified_success: "Your account has been successfully verified. Welcome!"
   forgot_password_success: "If your email is registered, you will receive a link to reset your password."

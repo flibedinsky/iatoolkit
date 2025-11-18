@@ -25,7 +25,7 @@ class ExcelService:
         self.util = util
         self.i18n_service = i18n_service
 
-    def excel_generator(self, **kwargs) -> str:
+    def excel_generator(self, company_short_name: str, **kwargs) -> str:
         """
         Genera un Excel a partir de una lista de diccionarios.
 

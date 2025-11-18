@@ -19,7 +19,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from injector import Binder, Injector, singleton
 from importlib.metadata import version as _pkg_version, PackageNotFoundError
 
-IATOOLKIT_VERSION = "0.71.4"
+IATOOLKIT_VERSION = "0.72.0"
 
 # global variable for the unique instance of IAToolkit
 _iatoolkit_instance: Optional['IAToolkit'] = None
@@ -340,14 +340,14 @@ class IAToolkit:
         from iatoolkit.infra.llm_client import llmClient
         from iatoolkit.infra.llm_proxy import LLMProxy
         from iatoolkit.infra.google_chat_app import GoogleChatApp
-        from iatoolkit.infra.mail_app import MailApp
+        from iatoolkit.infra.brevo_mail_app import BrevoMailApp
         from iatoolkit.services.auth_service import AuthService
         from iatoolkit.common.util import Utility
 
         binder.bind(LLMProxy, to=LLMProxy)
         binder.bind(llmClient, to=llmClient)
         binder.bind(GoogleChatApp, to=GoogleChatApp)
-        binder.bind(MailApp, to=MailApp)
+        binder.bind(BrevoMailApp, to=BrevoMailApp)
         binder.bind(AuthService, to=AuthService)
         binder.bind(Utility, to=Utility)
 

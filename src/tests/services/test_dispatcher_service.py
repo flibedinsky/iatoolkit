@@ -135,7 +135,7 @@ class TestDispatcher:
 
         result = self.dispatcher.dispatch("sample", "iat_generate_excel", filename="test.xlsx")
 
-        self.excel_service.excel_generator.assert_called_once_with(filename="test.xlsx")
+        self.excel_service.excel_generator.assert_called_once_with("sample", filename="test.xlsx")
         self.mock_sample_company_instance.handle_request.assert_not_called()
         assert result == {"file": "test.xlsx"}
 

@@ -141,7 +141,7 @@ class Dispatcher:
 
         # check if action is a system function
         if action in self.tool_handlers:
-            return  self.tool_handlers[action](**kwargs)
+            return  self.tool_handlers[action](company_short_name, **kwargs)
 
         company_instance = self.company_instances[company_short_name]
         try:
@@ -271,12 +271,10 @@ _FUNCTION_LIST = [
     {
         'function_name': "iat_send_email",
         'description':  "iatoolkit mail system. "        
-            "envia mails cuando un usuario lo solicita."
-            "Si no te indican quien envia el correo utiliza la dirección iatoolkit@iatoolkit.com",
+            "envia mails cuando un usuario lo solicita.",
          'parameters': {
             "type": "object",
             "properties": {
-                "from_email": {"type": "string","description": "dirección de correo electrónico  que esta enviando el email."},
                 "recipient": {"type": "string", "description": "email del destinatario"},
                 "subject": {"type": "string", "description": "asunto del email"},
                 "body": {"type": "string", "description": "HTML del email"},
@@ -304,7 +302,7 @@ _FUNCTION_LIST = [
                     }
                 }
             },
-            "required": ["from_email","recipient", "subject", "body", "attachments"]
+            "required": ["recipient", "subject", "body", "attachments"]
         }
      }
 ]
