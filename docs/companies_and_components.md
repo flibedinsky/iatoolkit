@@ -17,7 +17,6 @@ without them interfering with one another.
 Each Company module is a self-contained directory that encapsulates all company-specific 
 resources—from configuration and AI context to prompt templates and sample data. 
 
-
 The structure below shows the organization of a typical company module, 
 using `sample_company` as the reference implementation:
 
@@ -48,10 +47,6 @@ companies/
 │   │
 │   ├── templates/                    # Company-specific HTML templates (optional)
 │   │   └── custom_page.html          # Example of a custom page for this company
-│   │
-│   ├── sample_data/                  # Sample documents for RAG (optional)
-│   │   ├── supplier_manuals/         # Supplier manuals
-│   │   └── employee_contracts/       # Employee contracts
 │   │
 │   └── sample_company.py             # Python entry point (class SampleCompany)```
 ```
@@ -86,10 +81,6 @@ In detail, each folder plays a specific role:
   Company-specific HTML templates used by Flask:  
   - Customized pages, special views, additional screens for that company.  
   This allows you to have a differentiated UI beyond just color branding.
-
-- **`sample_data/`**  
-  Optional directory for sample data used as the basis for the **Knowledge Base** (RAG).  
-  - For example, `supplier_manuals/` and `employee_contracts/` with PDFs or sample documents.
 
 - **`sample_company.py`**  
   The Python module that defines the company’s main class (e.g., `SampleCompany`) inheriting from `BaseCompany`.  
@@ -330,7 +321,6 @@ a text field for entering a supplier ID. These structured prompts combine the po
 of your custom Jinja2 templates (stored in the `prompts/` directory) with a 
 user-friendly UI, making complex multi-step tasks accessible to non-technical users.
 
-#todo: mostrar un prompt de ejemplo.
 
 ```yaml
 # Prompts
@@ -399,8 +389,6 @@ parameters:
 *   **`cors_origin`**: List of allowed origins for CORS (Cross-Origin Resource Sharing).
 *   **`user_feedback`**: Configuration for user feedback collection.
 *   **`external_urls`**: External URLs for integration (e.g., custom logout redirects).
-
-#todo: mostrar las opciones de configuración de user_feedback y explicarla
 
 ### 2.7 Branding
 
@@ -490,7 +478,6 @@ knowledge_base:
       path: "companies/sample_company/sample_data/employee_contracts"
       metadata:
         type: "employee_contract"
-
 ```
 *   **`connectors`**: Defines where to find the documents depending on the environment (`development` vs. `production`). This allows you to test with local files and use cloud storage like S3 in production.
     *   **`development`**: Typically uses `type: "local"` to read from the local filesystem.
@@ -499,7 +486,6 @@ knowledge_base:
 *   **`document_sources`**: A map of logical document groups. Each source has:
     *   **`path`**: The local or S3 path where the documents are located.
     *   **`metadata`**: Key-value pairs that will be automatically attached to every document indexed from this source. This is extremely useful for filtering searches later (e.g., searching *only* within employee contracts using `metadata_filter={"type": "employee_contract"}`).
-
 ---
 
 ## 3. Creating a New Company
@@ -515,30 +501,48 @@ To create a new company, you can scaffold it from the `sample_company` template:
 4. **Update the Configuration**: Edit `companies/my_company/config/company.yaml` and update all the configuration values according to your needs.
 
 5. **Register the New Company**: Open `app.py` and add the following lines:
-#todo: mostrar el codigo en app.py , mostrar el codigo de sample_company.py
+
+```python
+from iatoolkit.iatoolkit import IAToolkit
+from iatoolkit.company_registry import register_company
+from companies.sample_company.sample_company import SampleCompany
+from companies.my_company.my_company import MyCompany
+
+
+def create_app():
+    # IMPORTANT: companies must be registered before creating the IAToolkit
+    register_company('sample_company', SampleCompany)
+    register_company('my_company', MyCompany)
+
+
+    # create the IAToolkit and Flask instance
+    toolkit = IAToolkit()
+    return toolkit.create_iatoolkit()
+
+app = create_app()
+
+```
 
 6. **Add Context and Resources**:
    - Place Markdown files in `companies/my_company/context/`
    - Add schema files to `companies/my_company/schema/`
    - Create prompt templates in `companies/my_company/prompts/`
 
-7. **Set Environment Variables**: Ensure all required environment variables referenced in your `company.yaml` (like database URIs and API keys) are properly set.
-
 ---
-## 4. System Prompts (context)
+## 7. System Prompts (context)
 
-#fdo: explicar cuales son los system prompts y que tene c/u
+#todo: explicar cuales son los system prompts y que tene c/u
 ---
 
-## 5. company specific repo en github
+## 8. company specific repo en github
 
-#fdo: explicar la estructura y como se integra
+#todo: explicar la estructura y como se integra
 ---
 
 
-## 6. Best Practices
+## 9. Best Practices
 
-### 6.1 Organizing Context Files
+### 9.1 Organizing Context Files
 
 Structure your context files logically. For example:
 - `context/company_overview.md` - General company information
@@ -546,7 +550,7 @@ Structure your context files logically. For example:
 - `context/procedures.md` - Standard operating procedures
 - `context/faqs.md` - Frequently asked questions
 
-### 6.2 Writing Good Tool Descriptions
+### 9.2 Writing Good Tool Descriptions
 
 The `description` field in your tools configuration is critical. Write descriptions that:
 - Clearly state what the tool does
@@ -554,7 +558,7 @@ The `description` field in your tools configuration is critical. Write descripti
 - Mention the types of questions it can answer
 - Include relevant examples if helpful
 
-### 6.3 Schema Files and Database Tables
+### 9.3 Schema Files and Database Tables
 
 When configuring data sources:
 - Provide clear, comprehensive descriptions for databases
@@ -562,7 +566,7 @@ When configuring data sources:
 - Add table-specific descriptions for complex or important tables
 - Test your queries to ensure the AI has access to the right data
 
-### 6.4 Prompt Templates
+### 9.4 Prompt Templates
 
 When creating `.prompt` files:
 - Use clear, descriptive filenames that match the `name` in `company.yaml`
@@ -572,7 +576,7 @@ When creating `.prompt` files:
 
 ---
 
-## 6. Summary
+## 10. Summary
 
 By combining the Python module for logic and the `company.yaml` for configuration, you can create a powerful, 
 context-aware, and fully customized AI agent that is deeply integrated with your unique business environment. 

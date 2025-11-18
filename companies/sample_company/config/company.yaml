@@ -7,8 +7,10 @@
 id: "sample_company"
 name: "Sample Company"
 locale: "es_ES"
+
+# Language Model and api-key for provider
 llm:
-  model: "gpt-5"
+  model: "gpt-5-mini"
   api-key: "OPENAI_API_KEY"
 
 # Embeddings: supported only openai and huggingface. only one at a atime
@@ -16,6 +18,32 @@ embedding_provider:
   provider: "openai"
   model: "text-embedding-ada-002"
   api_key_name: "OPENAI_API_KEY"
+
+security:
+  verify_account: false      # IMPORTANT! in production recommend to set to true
+
+# Email / Mail Provider configuration
+mail_provider:
+  # current provider to use:
+  provider: "brevo_mail"
+
+  # For mails sent from the Company, default sender email and name.
+  sender_email: "sample_ia@iatoolkit.com"
+  sender_name: "Sample Company IA"
+
+  brevo_mail:
+    # name of the env var that holds the Brevo API key
+    brevo_api: "BREVO_API_KEY"
+
+  smtplib:
+    # names of the env vars used by smtplib
+    host_env: "SMTP_HOST"
+    port_env: "SMTP_PORT"
+    username_env: "SMTP_USERNAME"
+    password_env: "SMTP_PASSWORD"
+    use_tls_env: "SMTP_USE_TLS"
+    use_ssl_env: "SMTP_USE_SSL"
+
 
 #  provider: "huggingface" this is the other option
 #  model: "sentence-transformers/all-MiniLM-L6-v2"

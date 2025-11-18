@@ -10,8 +10,9 @@ from iatoolkit.repositories.models import User, Company, ApiKey
 from flask_bcrypt import check_password_hash
 from iatoolkit.common.session_manager import SessionManager
 from iatoolkit.services.user_session_context_service import UserSessionContextService
+from iatoolkit.services.configuration_service import ConfigurationService
 from flask_bcrypt import Bcrypt
-from iatoolkit.infra.mail_app import MailApp
+from iatoolkit.services.mail_service import MailService
 import random
 import re
 import secrets
@@ -26,13 +27,15 @@ class ProfileService:
                  i18n_service: I18nService,
                  profile_repo: ProfileRepo,
                  session_context_service: UserSessionContextService,
+                 config_service: ConfigurationService,
                  dispatcher: Dispatcher,
-                 mail_app: MailApp):
+                 mail_service: MailService):
         self.i18n_service = i18n_service
         self.profile_repo = profile_repo
         self.dispatcher = dispatcher
         self.session_context = session_context_service
-        self.mail_app = mail_app
+        self.config_service = config_service
+        self.mail_service = mail_service
         self.bcrypt = Bcrypt()
 
 
@@ -214,12 +217,20 @@ class ProfileService:
             # encrypt the password
             hashed_password = self.bcrypt.generate_password_hash(password).decode('utf-8')
 
+            # account verification can be skiped with this security parameter
+            verified = False
+            message = self.i18n_service.t('flash_messages.signup_success')
+            cfg = self.config_service.get_configuration(company_short_name, 'security')
+            if cfg and not cfg.get('verify_account', True):
+                verified = True
+                message = self.i18n_service.t('flash_messages.signup_success_no_verification')
+
             # create the new user
             new_user = User(email=email,
                             password=hashed_password,
                             first_name=first_name.lower(),
                             last_name=last_name.lower(),
-                            verified=False,
+                            verified=verified,
                             verification_url=verification_url
                             )
 
@@ -229,9 +240,10 @@ class ProfileService:
             self.profile_repo.create_user(new_user)
 
             # send email with verification
-            self.send_verification_email(new_user, company_short_name)
+            if not verified:
+                self.send_verification_email(new_user, company_short_name)
 
-            return {"message": self.i18n_service.t('flash_messages.signup_success')}
+            return {"message": message}
         except Exception as e:
             return {"error": self.i18n_service.t('errors.general.unexpected_error', error=str(e))}
 
@@ -275,7 +287,7 @@ class ProfileService:
         except Exception as e:
             return {"error": self.i18n_service.t('errors.general.unexpected_error')}
 
-    def forgot_password(self, email: str, reset_url: str):
+    def forgot_password(self, company_short_name: str, email: str, reset_url: str):
         try:
             # Verificar si el usuario existe
             user = self.profile_repo.get_user_by_email(email)
@@ -287,7 +299,7 @@ class ProfileService:
             self.profile_repo.set_temp_code(email, temp_code)
 
             # send email to the user
-            self.send_forgot_password_email(user, reset_url)
+            self.send_forgot_password_email(company_short_name, user, reset_url)
 
             return {"message": self.i18n_service.t('flash_messages.forgot_password_success')}
         except Exception as e:
@@ -388,9 +400,12 @@ class ProfileService:
             </body>
             </html>
             """
-        self.mail_app.send_email(to=new_user.email, subject=subject, body=body)
+        self.mail_service.send_mail(company_short_name=company_short_name,
+                                    recipient=new_user.email,
+                                    subject=subject,
+                                    body=body)
 
-    def send_forgot_password_email(self, user: User, reset_url: str):
+    def send_forgot_password_email(self, company_short_name: str, user: User, reset_url: str):
         # send email to the user
         subject = f"Recuperación de Contraseña "
         body = f"""
@@ -441,5 +456,8 @@ class ProfileService:
                 </html>
                 """
 
-        self.mail_app.send_email(to=user.email, subject=subject, body=body)
+        self.mail_service.send_mail(company_short_name=company_short_name,
+                                    recipient=user.email,
+                                    subject=subject,
+                                    body=body)
         return {"message": "se envio mail para cambio de clave"}

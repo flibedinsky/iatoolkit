@@ -52,6 +52,9 @@ class ConfigurationService:
         company_instance.company = company_db_object
         company_instance.id = company_instance.company.id
 
+        # 6. validate configuration
+        self._validate_configuration(company_short_name, config)
+
         logging.info(f"✅ Company '{company_short_name}' configured successfully.")
 
     def _ensure_config_loaded(self, company_short_name: str):
@@ -131,3 +134,12 @@ class ConfigurationService:
                 active=prompt_data.get('active', True),
                 custom_fields=prompt_data.get('custom_fields', [])
             )
+
+    def _validate_configuration(self, company_instance, config: dict):
+        # embedding: model y api_key
+        # data_sources: database, connection_string
+        # tools: que existan las function_names
+        # prompts: que existan los prompt files
+        # user_feedback: que mail tenga destination
+        # knowledge_base: que los conectores esten completos
+        pass

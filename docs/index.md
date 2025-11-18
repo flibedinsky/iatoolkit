@@ -59,6 +59,9 @@ New to IAToolkit? Start with the **[Quickstart Guide](./quickstart.md)** to get 
 
 Already familiar with the basics? Jump to **[Companies and Components](./companies_and_components.md)** to learn about configuration.
 
+The IAToolkit database is documented here: **[Database Model](./database_guide.md)**.
+
+
 Want to contribute or extend? Check out the **[Programming Guide](./programming_guide.md)**.
 
 ---

@@ -53,7 +53,9 @@ class ForgotPasswordView(MethodView):
                                 company_short_name=company_short_name,
                                 token=token, _external=True)
 
-            response = self.profile_service.forgot_password(email=email, reset_url=reset_url)
+            response = self.profile_service.forgot_password(
+                        company_short_name=company_short_name,
+                        email=email, reset_url=reset_url)
             if "error" in response:
                 flash(response["error"], 'error')
                 return render_template(

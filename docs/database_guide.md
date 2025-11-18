@@ -34,7 +34,8 @@ At a high level, IAToolkit’s internal database can be thought of in terms of f
 4. **Tasks & Background Jobs**
    - Asynchronous jobs (e.g., document ingestion, long-running analyses)
 
-In addition to the **core IAToolkit schema**, each Company can connect to its **own business database** via the `data_sources.sql` section in `company.yaml`. Those external databases are **not owned** by IAToolkit; instead, they are *described* using YAML schemas in `companies/<company>/schema/`.
+In addition to the **core IAToolkit schema**, each Company can connect to its **own business database** via the `data_sources.sql` section in `company.yaml`. 
+Those external databases are **not owned** by IAToolkit; instead, they are *described* using YAML schemas in `companies/<company>/schema/`.
 
 ---
 
@@ -42,12 +43,12 @@ In addition to the **core IAToolkit schema**, each Company can connect to its **
 
 ### 3.1 Company
 
-**Table (example):** `iat_companies`  
+**Table:** `iat_companies`  
 **SQLAlchemy model:** `iatoolkit.repositories.models.Company`
 
 Represents a tenant (a “Company” or project) within IAToolkit.
 
-Typical fields include:
+Table fields:
 
 - `id` (PK, integer)
 - `short_name` (string): Unique identifier, e.g. `"sample_company"`. Used in URLs and routing.
@@ -56,15 +57,9 @@ Typical fields include:
 - `gemini_api_key` (encrypted string, optional): Legacy storage for Gemini keys.
 - `parameters` (JSON): Arbitrary per-company configuration (mirrors part of `company.yaml`).
 
-Although some keys can be stored in the DB, the **recommended** way is to configure LLMs and embeddings via:
-
-- `company.yaml` (under `config/`)
-- Environment variables (e.g., `OPENAI_API_KEY`, `GEMINI_API_KEY`)
-- `ConfigurationService`
-
 ### 3.2 Users and Profiles
 
-**Typical tables (names may vary by version):**
+**Tables:**
 
 - `iat_users`
 - `iat_profiles`
@@ -89,10 +84,10 @@ IAToolkit keeps a record of interactions with the LLM and tools to enable auditi
 
 ### 4.1 LLM Query Log
 
-**Typical table:** `iat_llm_queries`  
+**Table:** `iat_llm_queries`  
 **Model:** `LLMQuery` (in `repositories/llm_query_repo.py`)
 
-Typical fields:
+Table fields:
 
 - `id` (PK)
 - `company_id` – which tenant this query belongs to
@@ -129,7 +124,7 @@ Together, they allow the system to:
 
 Represents a logical document as seen by IAToolkit.
 
-Typical fields:
+Table fields:
 
 - `id` (PK)
 - `company_id` – which company this document belongs to

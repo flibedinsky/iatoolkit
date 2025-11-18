@@ -8,7 +8,7 @@ from injector import inject
 from iatoolkit.repositories.profile_repo import ProfileRepo
 from iatoolkit.services.i18n_service import I18nService
 from iatoolkit.infra.google_chat_app import GoogleChatApp
-from iatoolkit.infra.mail_app import MailApp
+from iatoolkit.services.mail_service import MailService
 import logging
 
 
@@ -18,11 +18,11 @@ class UserFeedbackService:
                  profile_repo: ProfileRepo,
                  i18n_service: I18nService,
                  google_chat_app: GoogleChatApp,
-                 mail_app: MailApp):
+                 mail_service: MailService):
         self.profile_repo = profile_repo
         self.i18n_service = i18n_service
         self.google_chat_app = google_chat_app
-        self.mail_app = mail_app
+        self.mail_service = mail_service
 
     def _send_google_chat_notification(self, space_name: str, message_text: str):
         """Envía una notificación de feedback a un espacio de Google Chat."""
@@ -38,13 +38,21 @@ class UserFeedbackService:
         except Exception as e:
             logging.exception(f"error sending notification to Google Chat: {e}")
 
-    def _send_email_notification(self, destination_email: str, company_name: str, message_text: str):
+    def _send_email_notification(self,
+                                 company_short_name: str,
+                                 destination_email: str,
+                                 company_name: str,
+                                 message_text: str):
         """Envía una notificación de feedback por correo electrónico."""
         try:
             subject = f"Nuevo Feedback de {company_name}"
             # Convertir el texto plano a un HTML simple para mantener los saltos de línea
             html_body = message_text.replace('\n', '<br>')
-            self.mail_app.send_email(to=destination_email, subject=subject, body=html_body)
+            self.mail_service.send_mail(
+                company_short_name=company_short_name,
+                to=destination_email,
+                subject=subject,
+                body=html_body)
         except Exception as e:
             logging.exception(f"error sending email de feedback: {e}")
 
@@ -65,7 +73,11 @@ class UserFeedbackService:
         if channel == 'google_chat':
             self._send_google_chat_notification(space_name=destination, message_text=message_text)
         elif channel == 'email':
-            self._send_email_notification(destination_email=destination, company_name=company.short_name, message_text=message_text)
+            self._send_email_notification(
+                company_short_name=company.short_name,
+                destination_email=destination,
+                company_name=company.short_name,
+                message_text=message_text)
         else:
             logging.warning(f"unknown feedback channel: '{channel}' for company {company.short_name}.")
 

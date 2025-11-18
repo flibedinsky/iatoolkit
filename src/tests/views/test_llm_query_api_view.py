@@ -52,7 +52,7 @@ class TestLLMQueryApiView:
 
         # Act
         response = self.client.post(self.url,
-                                    json={"external_user_id": MOCK_EXTERNAL_USER_ID})
+                                    json={"external_user_id": MOCK_EXTERNAL_USER_ID, "model": 'gpt-5'})
 
         # Assert
         assert response.status_code == 200
@@ -62,6 +62,7 @@ class TestLLMQueryApiView:
         self.mock_query.llm_query.assert_called_once_with(
             company_short_name=MOCK_COMPANY_SHORT_NAME,
             user_identifier=MOCK_EXTERNAL_USER_ID,
+            model='gpt-5',
             question='',
             prompt_name=None,
             client_data={},

@@ -13,12 +13,13 @@ import logging
 MAX_ATTACH_BYTES = int(os.getenv("BREVO_MAX_ATTACH_BYTES", str(5 * 1024 * 1024)))  # 5MB seguro
 
 
-class MailApp:
-    def __init__(self,):
+class BrevoMailApp:
+    def _init_brevo(self, provider_config: dict, sender: dict = None):
+        # config and init the brevo client
         self.configuration = sib_api_v3_sdk.Configuration()
-        self.configuration.api_key['api-key'] = os.getenv('BREVO_API_KEY')
+        self.configuration.api_key['api-key'] = provider_config.get("api_key")
         self.mail_api = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(self.configuration))
-        self.sender = {"email": "ia@iatoolkit.com", "name": "IA Toolkit"}
+
 
     @staticmethod
     def _strip_data_url_prefix(b64: str) -> str:
@@ -73,13 +74,20 @@ class MailApp:
 
 
     def send_email(self,
+                   provider_config: dict,
                    to: str,
                    subject: str,
                    body: str,
-                   sender: dict = None,
+                   sender: dict,
                    attachments: list[dict] = None):
-        if not sender:
-            sender = self.sender
+
+        if not provider_config.get("api_key"):
+            logging.error(f'Try to send brevo_mail without api_key in provider_config')
+            raise IAToolkitException(IAToolkitException.ErrorType.MAIL_ERROR,
+                                     f"Invalid mail configuration for Brevo")
+
+        # init the Brevo client
+        self._init_brevo(provider_config)
 
         try:
             sdk_attachments = self._normalize_attachments(attachments)
@@ -112,3 +120,4 @@ class MailApp:
             logging.exception("MAIL ERROR: %s", str(e))
             raise IAToolkitException(IAToolkitException.ErrorType.MAIL_ERROR,
                                f"No se pudo enviar correo: {str(e)}") from e
+

@@ -5,8 +5,9 @@ import pytest
 from unittest.mock import MagicMock, patch
 from iatoolkit.services.profile_service import ProfileService
 from iatoolkit.services.user_session_context_service import UserSessionContextService
+from iatoolkit.services.configuration_service import ConfigurationService
 from iatoolkit.repositories.profile_repo import ProfileRepo
-from iatoolkit.infra.mail_app import MailApp
+from iatoolkit.services.mail_service import MailService
 from iatoolkit.repositories.models import User, Company
 from flask_bcrypt import generate_password_hash
 from iatoolkit.services.dispatcher_service import Dispatcher
@@ -21,16 +22,18 @@ class TestProfileService:
         """Set up a consistent, mocked environment for each test."""
         self.mock_repo = MagicMock(spec=ProfileRepo)
         self.mock_session_context = MagicMock(spec=UserSessionContextService)
-        self.mock_mail_app = MagicMock(spec=MailApp)
+        self.mock_mail_service = MagicMock(spec=MailService)
         self.mock_dispatcher = MagicMock(spec=Dispatcher)
-        self.mock_i18n = MagicMock(spec=I18nService)  # <-- 2. Crea el mock
+        self.mock_i18n = MagicMock(spec=I18nService)
+        self.mock_config_service = MagicMock(spec=ConfigurationService)
 
         self.service = ProfileService(
             profile_repo=self.mock_repo,
             session_context_service=self.mock_session_context,
-            mail_app=self.mock_mail_app,
+            mail_service=self.mock_mail_service,
             dispatcher=self.mock_dispatcher,
             i18n_service=self.mock_i18n,
+            config_service=self.mock_config_service,
         )
 
         self.mock_user = User(id=1, email='test@email.com', first_name='Test', last_name='User',
@@ -43,6 +46,9 @@ class TestProfileService:
         # Simula el diccionario de traducciones cargado para la validación
         self.mock_i18n.translations = {'en': {}, 'es': {}}
         self.mock_i18n.t.side_effect = lambda key, **kwargs: f"translated:{key}"
+
+        self.mock_config_service.get_configuration.return_value = {}
+
 
     # --- Tests for New Unified Session Logic ---
 
@@ -198,7 +204,7 @@ class TestProfileService:
 
     def test_signup_when_ok(self, mock_session_manager):
         self.mock_repo.get_user_by_email.return_value = None
-        self.mock_mail_app.send_email.return_value = True
+        self.mock_mail_service.send_mail.return_value = True
 
         response = self.service.signup(
             self.mock_company.short_name,
@@ -209,7 +215,23 @@ class TestProfileService:
         )
 
         assert response['message'] == 'translated:flash_messages.signup_success'
-        self.mock_mail_app.send_email.assert_called()
+        self.mock_mail_service.send_mail.assert_called()
+
+    def test_signup_when_ok_and_mail_not_verified(self, mock_session_manager):
+        self.mock_repo.get_user_by_email.return_value = None
+        self.mock_mail_service.send_mail.return_value = True
+        self.mock_config_service.get_configuration.return_value = {'verify_account': False}
+
+        response = self.service.signup(
+            self.mock_company.short_name,
+            email='test@email.com',
+            first_name='Test', last_name='User',
+            password="Password$1", confirm_password="Password$1",
+            verification_url='http://verification'
+        )
+
+        assert response['message'] == 'translated:flash_messages.signup_success_no_verification'
+        self.mock_mail_service.send_mail.assert_not_called()
 
     def test_signup_when_exception(self, mock_session_manager):
         self.mock_repo.get_user_by_email.side_effect = Exception('an error')
@@ -302,6 +324,7 @@ class TestProfileService:
     def test_forgot_password_when_user_not_exist(self,mock_session_manager):
         self.mock_repo.get_user_by_email.return_value = None
         response = self.service.forgot_password(
+            company_short_name='test_company',
             email='test@email.com',
             reset_url='http://a_reset_utl'
         )
@@ -310,16 +333,18 @@ class TestProfileService:
     def test_forgot_password_when_ok(self,mock_session_manager):
         self.mock_repo.get_user_by_email.return_value = self.mock_user
         response = self.service.forgot_password(
+            company_short_name='test_company',
             email='test@email.com',
             reset_url='http://a_reset_utl'
         )
         assert 'translated:flash_messages.forgot_password_success' == response['message']
-        self.mock_mail_app.send_email.assert_called()
+        self.mock_mail_service.send_mail.assert_called()
 
     def test_forgot_password_when_exception(self,mock_session_manager):
         self.mock_repo.get_user_by_email.return_value = self.mock_user
-        self.mock_mail_app.send_email.side_effect = Exception('mail error')
+        self.mock_mail_service.send_mail.side_effect = Exception('mail error')
         response = self.service.forgot_password(
+            company_short_name='test_company',
             email='test@email.com',
             reset_url='http://a_reset_utl'
         )

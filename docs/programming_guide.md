@@ -145,14 +145,11 @@ The service layer is the heart of IAToolkit's business logic. Here's a detailed 
 **Key Responsibilities:**
 - Receives user queries from the UI
 - Manages conversation context and history
+- Handle the rendering of prompt templates through the prompt manager
 - Coordinates with the Dispatcher to route tool calls
 - Interfaces with LLM providers through the LLMClient
 - Handles streaming responses
 - Logs all interactions for auditing and cost tracking
-
-**Notable Methods:**
-- `llm_query()`: Main entry point for processing user queries
-- `_build_system_prompt()`: Constructs context-aware system prompts
 
 ---
 
@@ -201,84 +198,6 @@ This separation allows:
 - Easier onboarding of new companies: you create a new `BaseCompany` implementation and register its tools; the Dispatcher logic remains unchanged.
 
 ---
-
-#### Request Handling Flow (`handle_request`)
-
-The core entry point of the Dispatcher is typically a method like `handle_request`. Conceptually, this method performs the following steps:
-
-1. **Parse and validate the incoming request**
-   - Extracts fields such as `company_id`, `user_id`, `tool_name`, `tool_arguments`, and any additional context.
-   - Validates that the minimal required data is present (e.g., company identifier and user/session information).
-
-2. **Load and validate company configuration**
-   - Uses `company_id` (or equivalent) to look up the company configuration (API keys, endpoints, feature flags, permissions).
-   - Ensures that the company is active and properly configured.
-   - This step usually relies on shared logic defined or expected by `BaseCompany`.
-
-3. **Create the company service instance**
-   - Instantiates the appropriate `BaseCompany` subclass for the target company, injecting:
-     - The company configuration
-     - Any shared infrastructure clients (e.g., HTTP client, database/session, cache)
-   - The resulting object is the “company service” that contains all company-specific tools and helper methods.
-
-4. **Build the execution context**
-   - Gathers contextual information that might be required for tool execution:
-     - User data (when available)
-     - Current conversation/session metadata
-     - Company configuration and capabilities
-   - This context is often passed to company methods either explicitly (as parameters) or implicitly (through the company instance’s state).
-
-5. **Resolve and execute the tool/function**
-   - Using the requested `tool_name`, the Dispatcher looks up the corresponding registered tool in the company service.
-   - Performs basic validation:
-     - Check that the tool is **registered** for this company.
-     - Validate argument structure and types against the tool definition.
-   - Calls the tool implementation on the company service:
-     - For example: `company_service.handle_<tool_name>(**tool_arguments)`
-   - Wraps execution in error handling:
-     - Distinguishes between user errors (invalid input) and internal errors (exceptions, integration failures).
-     - Produces structured error responses for the LLM when needed.
-
-6. **Format the response for the LLM or API**
-   - Converts the raw return value from the tool into a normalized, serializable structure.
-   - Ensures that the output matches the schema expected by the LLM’s tool definition (e.g., JSON with defined fields).
-   - Returns this payload back to the caller (API layer or LLM integration).
-
----
-
-#### `user_info` Retrieval and Usage
-
-A key piece of context for almost any tool execution is the **user information** (`user_info`), which usually includes identifiers, roles, 
-permissions, and sometimes profile data.
-
-Within this architecture, `user_info` is generally obtained and used as follows:
-
-1. **User identification from the incoming request**
-
-2. **Delegating user lookup to the company service**
-   - Since user data sources are often **company-specific** (different databases, HR systems, identity providers), the Dispatcher delegates the retrieval to the `BaseCompany` subclass.
-   - The dispatch flow may call a method on the company service, such as:
-     - `company_service.get_user_info(user_identifier, **context)`  
-  
-3. **Building a normalized `user_info` object**
-   - The company service returns a **normalized structure** for `user_info`, for example:
-     - `id` (canonical internal ID)
-     - `display_name`
-     - `email`
-     - `roles` / `permissions`
-     - Optional additional metadata (organization, manager, locale, etc.)
-   - The Dispatcher does not need to know the underlying data model; it just expects the standard shape that `BaseCompany` guarantees.
-
-4. **Injecting `user_info` into tool execution**
-   - The Dispatcher passes `user_info` to the company tools in one of two ways:
-     1. **As part of the execution context**, stored on the company service instance (e.g. `self.user_info`).
-     2. **As an explicit argument** to each tool method that needs it.
-   - Tools rely on `user_info` to:
-     - Enforce authorization (e.g., “is this user allowed to perform this action?”)
-     - Apply company-specific rules depending on role or department
-     - Personalize results (language, locale, visibility filters, etc.)
----
-
 #### Why this design?
 
 - **Clear separation of concerns**  
@@ -380,9 +299,6 @@ on the current user_identity.
 - Manages provider-specific client configurations per company
 - Caches embedding clients for performance
 
-**Architecture Highlight:**
-Uses the Factory pattern (`EmbeddingClientFactory`) to create provider-specific wrappers, ensuring a consistent interface regardless of the underlying embedding service.
-
 ---
 ### 3.11 ProfileService (`profile_service.py`)
 
@@ -391,39 +307,25 @@ Uses the Factory pattern (`EmbeddingClientFactory`) to create provider-specific 
 **Key Responsibilities:**
 - Retrieves the current user’s profile based on the active session.
 - Resolves the current company for the user (especially when a user can access multiple companies).
-- Provides helper methods such as:
-  - `get_current_session_info()` – returns a dict with user and company info used by templates and services.
-  - Accessors for common profile fields (email, display name, roles, flags like `user_is_local`, etc.).
 - Integrates with `SessionManager` and `AuthService` to keep the profile in sync with the authentication state.
-
-**Typical Usage:**
-- In templates, via context processors, to show user-related information in the header.
-- In services, to adapt behavior based on user role or company-specific permissions.
 
 ---
 
-### 3.12 HistoryService and UserFeedbackService
+### 3.12 HistoryService 
 
-> Exact filenames may vary slightly depending on your version (e.g., `history_service.py`, `user_feedback_service.py`), but conceptually they cover two closely related areas: **interaction history** and **feedback loops**.
-
-#### HistoryService
-
-**Purpose**: Stores and retrieves the history of user interactions with the assistant (queries, responses, tool calls).
+**Purpose**: Retrieves the history of user interactions with the assistant (queries, responses, tool calls).
 
 **Key Responsibilities:**
-- Persist conversation turns (question, answer, timestamp, company, user).
 - Provide APIs to:
   - Load recent history for a given user/company/session.
   - Filter history by date, tool usage, or tags.
-- Support features like:
   - Conversation continuation across sessions.
-  - Auditing and compliance (who asked what, when, and what was answered).
 
 This history can be consulted by the UI to provide a rich chat experience.
 
-#### UserFeedbackService
+### 3.13  UserFeedbackService
 
-**Purpose**: Collects and stores user feedback about responses (e.g., thumbs up/down, comments).
+**Purpose**: Collects and stores user feedback about the toolkit
 
 **Key Responsibilities:**
 - Capture feedback events from the UI:
@@ -440,7 +342,7 @@ Feedback configuration (channel, destination) is usually defined in `company.yam
 
 ---
 
-### 3.13 TaskService (`tasks_service.py`) *(in construction)*
+### 3.14 TaskService (`tasks_service.py`) *(in construction)*
 
 **Purpose**: Orchestrates background and long-running tasks such as document ingestion, batch analyses, or scheduled jobs.
 
@@ -448,14 +350,11 @@ Feedback configuration (channel, destination) is usually defined in `company.yam
 - Define a common interface for tasks:
   - Creation (enqueueing a new task).
   - Status tracking (pending, running, completed, failed).
-  - Result storage (logs, outputs, errors).
-- Integrate with:
-  - Document loading pipelines (e.g., bulk ingestion into the vector store).
-  - Company-specific batch processes (e.g., periodic reports, data refresh).
 - Provide APIs for:
   - Listing tasks for a given company and/or user.
   - Inspecting task logs and outputs.
-  - Retrying failed tasks (planned).
+  - Retrying failed tasks.
+  - user authorization of llm results
 
 **Status:**
 - The service is under active development.
@@ -466,7 +365,6 @@ Feedback configuration (channel, destination) is usually defined in `company.yam
 The `IAToolkit` class (`iatoolkit.py`) is the core application factory and implements the Singleton pattern to ensure only one instance exists throughout the application lifecycle.
 
 ### 4.1 Initialization Flow
-
 
 When you call `create_app()`, the following happens:
 
@@ -612,7 +510,9 @@ At a high level, the flow crosses the following layers:
 
 ## 5. Front end
 
-The IAToolkit front end is a lightweight, server‑rendered UI built on top of **Flask**, **Jinja2 templates**, and a small amount of **JavaScript**. The goal is to provide a clean chat experience that can be easily branded and extended per Company, without requiring a complex SPA framework.
+The IAToolkit front end is a lightweight, server‑rendered UI built on top of **Flask**, **Jinja2 templates**, and a small amount of **JavaScript**. 
+The goal is to provide a clean chat experience that can be easily branded and extended per Company, 
+without requiring a complex SPA framework.
 
 At a high level:
 
@@ -629,10 +529,10 @@ The core user experience is the chat interface, typically rendered by a template
 - Contains:
   - A **message history area** where user and assistant messages are displayed.
   - A **message input box** (textarea or input) and a **Send** button.
-  - Optional controls such as:
-    - Model selector (if enabled).
-    - Prompt templates dropdown.
-    - Buttons to open help or feedback modals.
+  - Prompt templates dropdown.
+  - Buttons to open help or feedback modals.
+  - Button for refresh the llm context
+  - Button for upload files to the llm
 
 - Uses Jinja2 to inject:
   - Company name, branding colors, and logo.
@@ -650,40 +550,38 @@ Rendering flow:
 
 ### 5.2 JavaScript: Sending Messages and Updating the Chat
 
-The JavaScript included in `chat.html` (or a linked `.js` file) is responsible for:
+The JavaScript included in `chat_main.js`  is responsible for:
 
 1. **Capturing user input** from the text area and handling the Send button (or Enter key).
-2. **Sending an AJAX request** (typically `fetch` with `POST`) to the backend endpoint:
+2. **Sending an AJAX request** (`fetch` with `POST`) to the backend endpoint:
    - Example: `/<company_short_name>/api/llm_query`
-   - Payload: JSON with the message text, optional prompt ID, and additional metadata.
+   - Payload: JSON with the message text, optional prompt ID, attached files.
 3. **Handling the response**:
    - Parsing the JSON payload.
    - Appending the assistant’s response to the chat history area.
-   - Optionally updating tokens, cost, or debug information (if exposed).
-
 
 This keeps the chat experience responsive without a full page reload.
 
 Common JS responsibilities:
 
 - Disable the Send button while a request is in progress.
-- Show a “typing…” indicator while waiting for the LLM response.
+- Show a “loading…” indicator while waiting for the LLM response.
 - Handle errors (e.g., network issues, server errors) and show a friendly message in the chat.
 
 ---
 
-### 5.3 Modals: Help, Onboarding, and Feedback
+### 5.3 Modals: Help, Onboarding, History, and Feedback
 
-The UI may include several **modals** (pop-up overlays) that provide additional functionality:
+The UI include several **modals** (pop-up overlays) that provide additional functionality:
 
 - **Onboarding / Help modals**:
   - Content driven by `onboarding_cards.yaml` and `help_content.yaml`.
   - Explain what the assistant can do, provide example questions, and describe key concepts.
+- **History modal**:
+  - Display the list of queries send by the user to the llm
 - **Feedback modal**:
-  - Allows users to rate responses (e.g., thumbs up/down) and optionally leave comments.
-  - Feedback is sent back to the backend (UserFeedbackService) along with context:
-    - Which query/response is being rated.
-    - User and company identifiers.
+  - Allows users to rate responses and  leave comments.
+  - Feedback is sent back to the backend (UserFeedbackService)
 
 Implementation details:
 
@@ -691,7 +589,6 @@ Implementation details:
 - CSS and JS are used to:
   - Show/hide modals (adding/removing `visible` / `open` classes).
   - Populate modal content dynamically when needed.
-- All modal content can be filtered through the i18n layer, so text is localized based on the current `locale`.
 
 ---
 
@@ -717,34 +614,6 @@ Styling is handled through a combination of global CSS and per-company branding:
 
 This allows each Company to have a **fully branded experience** (colors, logos, sometimes additional CSS) without duplicating templates.
 
----
-
-### 5.5 Putting It All Together
-
-From a developer perspective, the front end behaves as follows:
-
-1. **Initial page load**:
-   - Flask renders `chat.html` with company/user context and branding.
-   - CSS and JS are loaded from `static/`.
-
-2. **User interaction**:
-   - JS listens for message submissions.
-   - Requests are sent to the backend APIs.
-   - Responses are rendered into the chat history.
-
-3. **Optional modals**:
-   - Help/onboarding modals are populated from YAML-driven content.
-   - Feedback modals send structured feedback to the backend.
-
-4. **Branding and localization**:
-   - Colors and logos come from `company.yaml`.
-   - Text can be localized through the i18n services.
-
-The overall design keeps the front end **simple, extensible, and company-aware**, making it easy to:
-
-- Customize the look and feel per tenant.
-- Integrate new modals or controls.
-- Evolve the UI without changing the core backend architecture.
 
 ---
 ## 6. Testing Strategy
