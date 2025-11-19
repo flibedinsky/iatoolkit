@@ -79,15 +79,41 @@ http://127.0.0.1:5007/sample_company/home
     any confirmation emails (see company.yaml for more details).
 
 ### Step 4: Populate the SampleCompany Database 
-Most companies need access to their own data. IAToolkit allows you to define custom CLI commands for this purpose. 
-The sample_company provides a powerful example of how to do this.
-To populate the sample database, first ensure SAMPLE_DATABASE_URI is set in your .env file, and then run:
+
+The sample_company instance is pre-configured to demonstrate one of IAToolkit's most powerful features: 
+answering questions by querying an external SQL database.
+This database connection is declared in companies/sample_company/config/company.yaml under the data_sources.sql section. 
+As shown below, it is given the logical 
+name sample_database and gets its connection string from the SAMPLE_DATABASE_URI environment variable.
+```yaml
+# In companies/sample_company/config/company.yaml
+data_sources:
+  sql:
+    - database: "sample_database"
+      connection_string_env: "SAMPLE_DATABASE_URI"
+      description: |
+        This is Sample Company’s main database...
 ```
+To enable this functionality, we must first create and populate this database. 
+The following command uses the connection string from SAMPLE_DATABASE_URI to set up the schema and load it with 
+sample data (based on the "Northwind" dataset).. The following command handles the entire process, 
+creating the necessary tables and filling them with sample data for products, orders, customers, and more.
+
+Once the SAMPLE_DATABASE_URI variable is set, activate your virtual environment and run the 
+following command from the project root:
+```bash
 flask populate-sample-db
 ```
+You should see an output similar to this, confirming that the schema was created and the data was loaded successfully:
+```bash
+(venv) iatoolkit-install %flask populate-sample-db
+2025-11-19 13:52:31,840 - IATOOLKIT - root - INFO - 🎉 IAToolkit v0.10.2 inicializado correctamente
+⚙️  Creando y poblando la base de datos, esto puede tardar unos momentos...
+Database schema created successfully from 'companies/sample_company/sample_data/sample_database_schema.sql'.
+✅ Base de datos de poblada exitosamente.
+```
 
-This command will create tables for a tipical company with: customers, products, orders, countries, employees with dummy data.
-You can use is as an example of sql access to your own data
+This command will create the tables company with: customers, products, orders, countries, employees with dummy data.
 
 ## Next Steps
 
