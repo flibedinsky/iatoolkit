@@ -14,45 +14,10 @@ llm:
   model: "gpt-5"
   api-key: "OPENAI_API_KEY"     # the name of the api-key in the .env file
 
-  # Values for Gemini
+  # Example configuration for Gemini
   # model: "gemini-2.5-pro"
   # api-key: "GEMINI_API_KEY"
 
-# Embeddings: supported only openai and huggingface. only one at a atime
-embedding_provider:
-  provider: "openai"
-  model: "text-embedding-ada-002"
-  api_key_name: "OPENAI_API_KEY"
-
-  #  provider: "huggingface" this is the other option
-  #  model: "sentence-transformers/all-MiniLM-L6-v2"
-  #  api_key_name: "huggingface_token"
-
-
-security:
-  verify_account: false      # IMPORTANT! in production recommend to set to true
-
-# Email / Mail Provider configuration
-mail_provider:
-  # current provider to use:
-  provider: "brevo_mail"
-
-  # For mails sent from the Company, default sender email and name.
-  sender_email: "sample_ia@iatoolkit.com"
-  sender_name: "Sample Company IA"
-
-  brevo_mail:
-    # name of the env var that holds the Brevo API key
-    brevo_api: "BREVO_API_KEY"
-
-  smtplib:
-    # names of the env vars used by smtplib
-    host_env: "SMTP_HOST"
-    port_env: "SMTP_PORT"
-    username_env: "SMTP_USERNAME"
-    password_env: "SMTP_PASSWORD"
-    use_tls_env: "SMTP_USE_TLS"
-    use_ssl_env: "SMTP_USE_SSL"
 
 # Data Sources
 # Defines the SQL data sources available to the LLM.
@@ -72,21 +37,22 @@ data_sources:
         - "logs"
       # exclude these columns from all tables
       exclude_columns: [ 'created', 'updated' ]
-      #    El servicio usará esta sección para añadir detalles a las tablas
-      #    que se cargaron automáticamente con 'include_all_tables'.
+
+      # The service will use this section to add details to the tables
+      # that were automatically loaded using include_all_tables.
       tables:
         employee_territories:
-          # Para esta tabla, usa un nombre de esquema personalizado.
+          # For this table use a custom squema name.
           schema_name: "employee_territory"
 
         orders:
-          # Para la tabla 'orders', ignora la lista global 'exclude_columns'
-          # y usa esta lista más específica en su lugar.
+          # For the orders table, ignore the global exclude_columns list
+          # and use this:
           exclude_columns: [ 'internal_notes', 'processing_id' ]
 
         products:
-          # Para la tabla 'products', no hay overrides, pero podríamos
-          # añadir una descripción personalizada aquí si quisiéramos.
+          # For the products table, there are no overrides, but we can
+          # add a description if we want.
           description: "Catálogo de productos de la compañía."
 
 
@@ -105,8 +71,8 @@ tools:
 
 # Prompts
 # Defines the ordered list of categories and the prompts available in the UI.
-# Prompts are files in the company prompts/ folder, abd the
-# name of the file is the prompt name.prompt.
+# Prompts are files in the company prompts/ folder
+# (filename is: prompt_name.prompt).
 # Example: analisis_ventas.prompt
 prompt_categories:
   - "General"
@@ -139,13 +105,22 @@ prompts:
 # Company-specific Parameters
 # These parameters are used by the company code to customize its behavior.
 parameters:
-  cors_origin:
-    - "https://portal-interno.empresa_de_ejemplo.cl"
+  # Enable or disable the account verification flow when signup
+  verify_account: false      # IMPORTANT! in production recommend to set to true
+
+  # This configuration is for receiving the user feedback from the chat modal window
   user_feedback:
     channel: "email"
     destination: "fernando.libedinsky@gmail.com"
+
+  # CORS origins for the API: USUALLY YOUR COMPANY DOMAIN AND THE PORTAL DOMAIN
+  cors_origin:
+    - "https://portal-interno.empresa_de_ejemplo.cl"
+
+  # External URLs for the login and logout buttons
   external_urls:
     logout_url: ""
+
 
 # Branding and Content Files
 # this section defines the colors used in the UI
@@ -196,3 +171,39 @@ knowledge_base:
       path: "companies/sample_company/sample_data/employee_contracts"
       metadata:
         type: "employee_contract"
+
+# Embeddings configuration
+# You should define a 'provider', supported only openai and huggingface.
+embedding_provider:
+  provider: "openai"
+  model: "text-embedding-ada-002"
+  api_key_name: "OPENAI_API_KEY"
+
+  # Here is an example in case you use huggingface:
+  #  provider: "huggingface"
+  #  model: "sentence-transformers/all-MiniLM-L6-v2"
+  #  api_key_name: "huggingface_token"
+
+
+# Email / Mail Provider configuration
+mail_provider:
+  # current provider to use:
+  provider: "brevo_mail"
+
+  # For mails sent from the Company, default sender email and name.
+  sender_email: "sample_ia@iatoolkit.com"
+  sender_name: "Sample Company IA"
+
+  brevo_mail:
+    # name of the env var that holds the Brevo API key
+    brevo_api: "BREVO_API_KEY"
+
+  smtplib:
+    # names of the env vars used by smtplib
+    host_env: "SMTP_HOST"
+    port_env: "SMTP_PORT"
+    username_env: "SMTP_USERNAME"
+    password_env: "SMTP_PASSWORD"
+    use_tls_env: "SMTP_USE_TLS"
+    use_ssl_env: "SMTP_USE_SSL"
+

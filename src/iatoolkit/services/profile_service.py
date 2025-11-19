@@ -220,7 +220,7 @@ class ProfileService:
             # account verification can be skiped with this security parameter
             verified = False
             message = self.i18n_service.t('flash_messages.signup_success')
-            cfg = self.config_service.get_configuration(company_short_name, 'security')
+            cfg = self.config_service.get_configuration(company_short_name, 'params')
             if cfg and not cfg.get('verify_account', True):
                 verified = True
                 message = self.i18n_service.t('flash_messages.signup_success_no_verification')
