@@ -141,7 +141,15 @@ company.yaml
 ├── Parameter                     # Miscellaneous company-specific settings
 │   ├── cors_origin[]             # Allowed origins for browser-based access (CORS)
 │   ├── user_feedback{}           # Configuration for collecting user feedback (channel, target)
+│   ├── verify_account            # Enable or disable the account verification flow when signup
 │   └── external_urls{}           # External URLs (e.g., logout redirects, portals)
+│
+├── mail_provider                 # email configuration
+│   ├── provider                  # define an email provider (brevo_mail or smptlib)
+│   ├── sender_email              # sender email address
+│   ├── sender_name               # sender name
+│   └── brevo_mail                # brevo_mail configuration
+│       └── brevo_api             # api-key for brevo mail
 │
 ├── Branding                      # Visual customization for this company
 │   ├── header_background_color   # Header background color (hex)
@@ -197,24 +205,8 @@ llm:
     *   **`model`**: The specific LLM to use for chat and tool execution (e.g., `gpt-4`, `gemini-pro`).
     *   **`api-key`**: The **name of the environment variable** that holds the API key for the LLM provider.
 
-### 2.2 Embedding Provider
 
-Embeddings are numerical representations of text that enable semantic search capabilities. 
-This section configures which embedding model your company will use to convert documents and queries into vectors for similarity matching. IAToolkit supports multiple providers, allowing you to choose between OpenAI's models (offering high quality at a cost) or HuggingFace's open-source alternatives (offering flexibility and potential cost savings). The embedding provider works behind the scenes to power your document search and RAG (Retrieval-Augmented Generation) features. Note that you can use a different provider for embeddings than you use for your main LLM.
-```yaml
-# Embeddings: supported only openai and huggingface. only one at a atime
-embedding_provider:
-  provider: "openai"
-  model: "text-embedding-ada-002"
-  api_key_name: "OPENAI_API_KEY"
-```
-*   **`provider`**: The embedding service. Currently supports `openai` and `huggingface`.
-*   **`model`**: The specific embedding model to use.
-*   **`api_key_name`**: The **name of the environment variable** that holds the API key for the embedding provider. Often, this is the same as the LLM's API key.
-
-**Alternative configuration for HuggingFace:**
-
-### 2.3 Data Sources (SQL)
+### 2.2 Data Sources (SQL)
 
 This is one of the most powerful features of IAToolkit: the ability to connect your 
 AI directly to your corporate databases. 
@@ -233,10 +225,10 @@ data_sources:
     - database: "sample_database"
       connection_string_env: "SAMPLE_DATABASE_URI"
       description: |
-        Esta es la base de datos principal de  Sample Company.
-        Contiene toda la información comercial y operativa la empresa.
-        Es la fuente principal para responder preguntas sobre ventas, despachos,
-        ordenes de compra, empleados, paises y territorios.
+        This is Sample Company’s main database.
+        It contains all of the company’s commercial and operational information.
+        It is the primary source for answering questions about sales, shipments, 
+        purchase orders, employees, countries, and territories.
 
       # Loads all the databases tables automatically
       include_all_tables: true
@@ -244,23 +236,25 @@ data_sources:
       exclude_tables:
         - "test_table"
         - "logs"
+        
       # exclude these columns from all tables
       exclude_columns: [ 'created', 'updated' ]
-      #    El servicio usará esta sección para añadir detalles a las tablas
-      #    que se cargaron automáticamente con 'include_all_tables'.
+      
+      # The service will use this section to add details to the tables
+      # that were automatically loaded using include_all_tables.
       tables:
         employee_territories:
-          # Para esta tabla, usa un nombre de esquema personalizado.
+          # For this table use a custom squema name.
           schema_name: "employee_territory"
 
         orders:
-          # Para la tabla 'orders', ignora la lista global 'exclude_columns'
-          # y usa esta lista más específica en su lugar.
+          # For the orders table, ignore the global exclude_columns list
+          # and use this:
           exclude_columns: [ 'internal_notes', 'processing_id' ]
 
         products:
-          # Para la tabla 'products', no hay overrides, pero podríamos
-          # añadir una descripción personalizada aquí si quisiéramos.
+          # For the products table, there are no overrides, but we can
+          # add a description if we want.
           description: "Catálogo de productos de la compañía."
 ```
 
@@ -275,7 +269,7 @@ data_sources:
     *   **`exclude_columns`**: Override the global exclude_columns for this specific table.
     *   **`description`**: Provide a more detailed description for this table.
 
-### 2.4 Tools (Functions)
+### 2.3 Tools (Functions)
 
 Tools (also called functions or actions) extend your AI assistant's capabilities beyond 
 simple conversation. They are custom operations that the LLM can invoke to perform 
@@ -291,7 +285,7 @@ in Python.
 
 
 ```yaml
-# ools (Functions)
+# Tools (Functions)
 # Defines the custom actions the LLM can take, including their parameters.
 tools:
   - function_name: "document_search"
@@ -309,7 +303,7 @@ tools:
 *   **`description`**: A clear, natural language description telling the AI *when* and *why* it should use this tool.
 *   **`params`**: An OpenAPI-style schema defining the parameters the function accepts.
 
-### 2.5 Prompts
+### 2.4 Prompts
 
 Prompts are pre-configured, reusable conversation starters that appear in your 
 application's user interface. They serve as guided entry points for common tasks,
@@ -364,77 +358,36 @@ prompts:
         *   **`label`**: User-facing label for the field.
         *   **`type`**: Field type (e.g., `"text"`, `"date"`).
 
-### 2.6 Company-specific Parameters
+### 2.5 Company-specific Parameters
 
 This section acts as a flexible storage area for any custom configuration parameters 
 your company might need. It's a key-value map where you can define company-specific 
-settings that don't fit into the other structured sections. 
-Common uses include CORS origin configurations for web integrations, 
-user feedback channels (email, webhooks, etc.), 
-external URLs for logout redirects or SSO integrations, 
-and any other custom parameters your business logic requires. 
+settings that don't fit into the other structured sections.
 This flexibility ensures that IAToolkit can adapt to unique requirements without 
 requiring framework modifications.
 
 ```yaml
+# Company-specific Parameters
+# These parameters are used by the company code to customize its behavior.
 parameters:
-  cors_origin:
-    - "https://portal-interno.empresa_de_ejemplo.cl"
+  # Enable or disable the account verification flow when signup
+  verify_account: false      # IMPORTANT! in production recommend to set to true
+
+  # This configuration is for receiving the user feedback from the chat modal window
   user_feedback:
     channel: "email"
     destination: "fernando.libedinsky@gmail.com"
+
+  # CORS (Cross-Origin Resource Sharing) origins for the API: USUALLY YOUR COMPANY DOMAIN AND THE PORTAL DOMAIN
+  cors_origin:
+    - "https://portal-interno.empresa_de_ejemplo.cl"
+
+  # External URLs for the login and logout buttons
   external_urls:
     logout_url: ""
 ```
-*   **`cors_origin`**: List of allowed origins for CORS (Cross-Origin Resource Sharing).
-*   **`user_feedback`**: Configuration for user feedback collection.
-*   **`external_urls`**: External URLs for integration (e.g., custom logout redirects).
 
-### 2.7 Branding
-
-One of IAToolkit's most powerful multi-tenant features is the ability to fully 
-customize the look and feel of the interface for each company. 
-In this section, you define the color scheme that will be applied throughout 
-the user interface—from headers and buttons to text and backgrounds. 
-This allows you to create white-labeled experiences where each client or 
-department sees an interface that matches their brand identity. 
-All customization is done through simple hexadecimal color values, 
-with no front-end coding required. The system automatically applies 
-these colors to all UI components, ensuring a consistent branded experience.
-
-```yaml
-# Branding and Content Files
-branding:
-  header_background_color: "#4C6A8D"
-  header_text_color: "#FFFFFF"
-  brand_primary_color: "#4C6A8D"
-  brand_secondary_color: "#9EADC0"
-  brand_text_on_primary: "#FFFFFF"
-  brand_text_on_secondary: "#FFFFFF"
-```
-All colors are specified in hexadecimal format. These values control various UI elements, allowing each company to have its own visual identity.
-
-### 2.8 Help Files
-
-User assistance and onboarding are critical for adoption. 
-This section points to additional YAML files that contain structured content 
-for help systems, onboarding tutorials, and contextual assistance. 
-These files allow you to create rich, interactive help experiences—such as 
-step-by-step onboarding cards that guide new users through the system, 
-or context-sensitive help content that appears when users need assistance. 
-By keeping this content in separate, structured files, you can easily update 
-help documentation without touching code, and even localize it for different languages.
-
-```yaml
-# Help files
-help_files:
-  onboarding_cards: "onboarding_cards.yaml"
-  help_content: "help_content.yaml"
-```
-
-These files should be located in the company's `config/` directory.
-
-### 2.9 Knowledge Base (RAG)
+### 2.6 Knowledge Base (RAG)
 
 This section enables one of the most valuable AI capabilities: the ability to answer 
 questions based on your organization's private documents. 
@@ -488,6 +441,124 @@ knowledge_base:
     *   **`metadata`**: Key-value pairs that will be automatically attached to every document indexed from this source. This is extremely useful for filtering searches later (e.g., searching *only* within employee contracts using `metadata_filter={"type": "employee_contract"}`).
 ---
 
+### 2.7 Branding
+
+One of IAToolkit's most powerful multi-tenant features is the ability to fully 
+customize the look and feel of the interface for each company. 
+In this section, you define the color scheme that will be applied throughout 
+the user interface—from headers and buttons to text and backgrounds. 
+This allows you to create white-labeled experiences where each client or 
+department sees an interface that matches their brand identity. 
+All customization is done through simple hexadecimal color values, 
+with no front-end coding required. The system automatically applies 
+these colors to all UI components, ensuring a consistent branded experience.
+
+```yaml
+# Branding and Content Files
+branding:
+  header_background_color: "#4C6A8D"
+  header_text_color: "#FFFFFF"
+  brand_primary_color: "#4C6A8D"
+  brand_secondary_color: "#9EADC0"
+  brand_text_on_primary: "#FFFFFF"
+  brand_text_on_secondary: "#FFFFFF"
+```
+All colors are specified in hexadecimal format. These values control various UI elements, allowing each company to have its own visual identity.
+
+### 2.8 Embedding Provider
+
+Embeddings are numerical representations of text that enable semantic search capabilities. 
+This section configures which embedding model your company will use to convert documents and queries into vectors for similarity matching. IAToolkit supports multiple providers, allowing you to choose between OpenAI's models (offering high quality at a cost) or HuggingFace's open-source alternatives (offering flexibility and potential cost savings). The embedding provider works behind the scenes to power your document search and RAG (Retrieval-Augmented Generation) features. Note that you can use a different provider for embeddings than you use for your main LLM.
+```yaml
+# Embeddings: supported only openai and huggingface. only one at a atime
+embedding_provider:
+  provider: "openai"
+  model: "text-embedding-ada-002"
+  api_key_name: "OPENAI_API_KEY"          # value in .env file
+```
+*   **`provider`**: The embedding service. Currently supports `openai` and `huggingface`.
+*   **`model`**: The specific embedding model to use.
+*   **`api_key_name`**: The **name of the environment variable** that holds the API key for the embedding provider. Often, this is the same as the LLM's API key.
+
+**Alternative configuration for HuggingFace:**
+```yaml
+embedding_provider:
+  provider: "huggingface"
+  model: "sentence-transformers/all-MiniLM-L6-v2"
+  api_key_name: "huggingface_token"       # value in .env file
+```
+## 2.9 Mail Provider Configuration
+
+IAToolkit includes a flexible system for sending emails, which is essential for features like user registration, 
+password resets, and notifications. 
+The `mail_provider` section in `company.yaml` allows you to define how emails should be sent for each company.
+
+```yaml
+# Email / Mail Provider configuration
+mail_provider:
+  # current provider to use:
+  provider: "brevo_mail"
+
+  # For mails sent from the Company, default sender email and name.
+  sender_email: "sample_ia@iatoolkit.com"
+  sender_name: "Sample Company IA"
+
+  brevo_mail:
+    # name of the env var that holds the Brevo API key
+    brevo_api: "BREVO_API_KEY"
+
+  smtplib:
+    # names of the env vars used by smtplib
+    host_env: "SMTP_HOST"
+    port_env: "SMTP_PORT"
+    username_env: "SMTP_USERNAME"
+    password_env: "SMTP_PASSWORD"
+    use_tls_env: "SMTP_USE_TLS"
+    use_ssl_env: "SMTP_USE_SSL"
+```
+
+#### Key Parameters
+
+*   **`provider`**: Specifies which email service to use. The currently supported options are:
+    *   `"brevo_mail"`: For sending emails via the Brevo API.
+    *   `"smtplib"`: For sending emails through a standard SMTP server (e.g., Gmail, SendGrid, or a corporate mail server).
+*   **`sender_email`**: The default "From" email address that will appear on all emails sent by this company's assistant.
+*   **`sender_name`**: The default "From" name that will appear on all emails.
+
+#### Provider-Specific Blocks
+
+*   **`brevo_mail`**: This block is required if `provider` is set to `"brevo_mail"`.
+    *   **`brevo_api`**: Defines the **name of the environment variable** that holds your Brevo API key. The actual key should be stored securely in your `.env` file.
+
+*   **`smtplib`**: This block is required if `provider` is set to `"smtplib"`. It contains keys that map to the **names of the environment variables** for your SMTP server credentials.
+    *   `host_env`: The environment variable for the SMTP server hostname (e.g., `smtp.gmail.com`).
+    *   `port_env`: The environment variable for the SMTP port (e.g., `587`).
+    *   `username_env`: The environment variable for the SMTP username.
+    *   `password_env`: The environment variable for the SMTP password or app-specific password.
+    *   `use_tls_env` / `use_ssl_env`: Environment variables to control the use of transport-layer security. Set the value to `"true"` in your `.env` file to enable them.
+
+By separating the configuration from the secrets, you can safely commit `company.yaml` to version control while keeping your sensitive credentials secure in the `.env` file.
+
+### 2.10 Help Files
+
+User assistance and onboarding are critical for adoption. 
+This section points to additional YAML files that contain structured content 
+for help systems, onboarding tutorials, and contextual assistance. 
+These files allow you to create rich, interactive help experiences—such as 
+step-by-step onboarding cards that guide new users through the system, 
+or context-sensitive help content that appears when users need assistance. 
+By keeping this content in separate, structured files, you can easily update 
+help documentation without touching code, and even localize it for different languages.
+
+```yaml
+# Help files
+help_files:
+  onboarding_cards: "onboarding_cards.yaml"
+  help_content: "help_content.yaml"
+```
+
+These files should be located in the company's `config/` directory.
+
 ## 3. Creating a New Company
 
 To create a new company, you can scaffold it from the `sample_company` template:
@@ -529,20 +600,90 @@ app = create_app()
    - Create prompt templates in `companies/my_company/prompts/`
 
 ---
-## 7. System Prompts (context)
 
-#todo: explicar cuales son los system prompts y que tene c/u
----
+## 4. Integrating with Company-Specific Repositories in Github
 
-## 8. company specific repo en github
+For maximum isolation and portability, you can structure your project so that the **IAToolkit** framework 
+acts as an external dependency, while all code specific to your company (or client) resides in its own 
+dedicated GitHub repository.
 
-#todo: explicar la estructura y como se integra
----
+This approach is ideal for:
+*   **Agencies or consultants** managing multiple clients, each with their own repository.
+*   **Large organizations** wanting to keep code for different departments in separate repositories.
+*   **Isolated deployments** where each IAToolkit instance should only be aware of a single company.
+
+#### Company Repository Structure
+
+A repository dedicated to a company does not contain the IAToolkit source code itself; 
+instead, it consumes it as a library. The recommended file structure is as follows:
+
+```text
+my-client-project/
+├── companies/
+│   └── my_company/          # The complete company module
+│       ├── config/
+│       ├── context/
+│       ├── prompts/
+│       ├── schema/
+│       └── my_company.py
+│
+├── .env                      # Secrets and keys for THIS company only
+├── app.py                    # Flask application entry point
+├── requirements.txt          # Project dependencies, including iatoolkit
+└── ...                       # Other files like README.md, .gitignore, etc.
+```
+
+#### Key Components
+
+1.  **`companies/` Directory**
+    This directory is identical in structure to the one in the main framework, but it **only contains the company modules relevant to this specific deployment**. IAToolkit is designed to look inside this folder to find modules to register.
+
+2.  **`requirements.txt`**
+    This  defines your project's Python dependencies, with the primary one being `iatoolkit` itself. You can install it directly from a Git repository, ensuring you always use the correct version of the framework.
+
+    **Example `requirements.txt`:**
+    ```txt
+    # Install the IAToolkit framework from its GitHub repository
+    # You can point to a specific branch or tag (e.g., @main, @v1.2.0)
+    iatoolkit==0.98.0
+
+    # Other dependencies your company might need
+    pandas>=2.0.0
+    boto3
+    ```
+
+3.  **`.env` File**
+    This file contains **only** the environment variables and secrets required by the companies defined in this repository. This includes API keys for LLMs, database connection strings, etc.
+
+4.  **`app.py` File**
+    This is the entry point for running your application. Its responsibility is to import your company classes, register them with IAToolkit, and create the Flask application instance.
 
 
-## 9. Best Practices
+#### Development Workflow
 
-### 9.1 Organizing Context Files
+1.  **Create** a new GitHub repository for your company-specific project.
+2.  **Clone** the repository to your local machine.
+3.  **Create** the directory structure (`companies/my_company`, etc.).
+4.  **Develop** your company module inside `companies/my_company/`, including its `company.yaml`, `prompts`, `context`, and any custom Python code.
+5.  **Create** the `requirements.txt` file, pointing to your core IAToolkit framework repository.
+6.  **Create** the `.env` file with the necessary secrets.
+7.  **Create** the `app.py` entry point.
+8.  **Install dependencies**:
+    ```bash
+    pip install -r requirements.txt
+    ```
+9.  **Run the application**:
+    ```bash
+    flask run
+    # or
+    python app.py
+    ```
+
+With this approach, you maintain a clean and professional separation between the core framework and client-specific implementations, simplifying both maintenance and independent deployment.
+
+## 5. Best Practices
+
+### 5.1 Organizing Context Files
 
 Structure your context files logically. For example:
 - `context/company_overview.md` - General company information
@@ -550,7 +691,7 @@ Structure your context files logically. For example:
 - `context/procedures.md` - Standard operating procedures
 - `context/faqs.md` - Frequently asked questions
 
-### 9.2 Writing Good Tool Descriptions
+### 5.2 Writing Good Tool Descriptions
 
 The `description` field in your tools configuration is critical. Write descriptions that:
 - Clearly state what the tool does
@@ -558,7 +699,7 @@ The `description` field in your tools configuration is critical. Write descripti
 - Mention the types of questions it can answer
 - Include relevant examples if helpful
 
-### 9.3 Schema Files and Database Tables
+### 5.3 Schema Files and Database Tables
 
 When configuring data sources:
 - Provide clear, comprehensive descriptions for databases
@@ -566,7 +707,7 @@ When configuring data sources:
 - Add table-specific descriptions for complex or important tables
 - Test your queries to ensure the AI has access to the right data
 
-### 9.4 Prompt Templates
+### 5.4 Prompt Templates
 
 When creating `.prompt` files:
 - Use clear, descriptive filenames that match the `name` in `company.yaml`
@@ -576,7 +717,7 @@ When creating `.prompt` files:
 
 ---
 
-## 10. Summary
+## 6. Summary
 
 By combining the Python module for logic and the `company.yaml` for configuration, you can create a powerful, 
 context-aware, and fully customized AI agent that is deeply integrated with your unique business environment. 

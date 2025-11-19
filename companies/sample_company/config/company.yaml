@@ -113,7 +113,7 @@ parameters:
     channel: "email"
     destination: "fernando.libedinsky@gmail.com"
 
-  # CORS origins for the API: USUALLY YOUR COMPANY DOMAIN AND THE PORTAL DOMAIN
+  # CORS (Cross-Origin Resource Sharing) origins for the API: USUALLY YOUR COMPANY DOMAIN AND THE PORTAL DOMAIN
   cors_origin:
     - "https://portal-interno.empresa_de_ejemplo.cl"
 

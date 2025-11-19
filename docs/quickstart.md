@@ -31,18 +31,22 @@ First, set up your local environment and install the necessary dependencies.
 
 ### Step 2: Environment Configuration
 
-Configure the core settings of the application by creating a `.env` file.
-
+To function correctly, IAToolkit requires a few secret keys and core settings. 
+These sensitive values are managed in a .env file to keep them out of version control, which is a fundamental security best practice.
 1.  **Create the `.env` file** in the project's root directory. 
 2. You can copy the provided `.env.example` if it exists.
 3. add values for the following variables:
-    - `OPENAI_API_KEY` or `GEMINI_API_KEY` (see company.yaml)
+    - `OPENAI_API_KEY` (see company.yaml)
     - `DATABASE_URI` like: 'postgresql://postgres:xxxxxxx@127.0.0.1:5432/iatoolkit'
     - `REDIS_URL`: "redis://localhost:6379/0"
-    - `IATOOLKIT_SECRET_KEY`: "company key for encripyting"
+    - `IATOOLKIT_SECRET_KEY`: "company key for encryption"
     - `FERNET_KEY`: "define-your-own-tH9Y0PlZcOGIC3Vz"
 
-    
+4. Understand the Link Between .env and company.yaml:
+- The .env file stores the secrets themselves: API keys, database passwords, etc.
+- The company.yaml file defines a company's configuration and refers to the secrets by their variable name.
+This separation makes your company configurations portable and secure. For example, company.yaml might specify that the LLM API key should be read from a variable named OPENAI_API_KEY, while the actual key value sk-xxxx... lives only in your local .env file.
+
 ### Step 3: Run the Application
 You are now ready to start the IAToolkit web server.
 ```bash
@@ -60,7 +64,7 @@ You are now ready to start the IAToolkit web server.
  * Running on http://127.0.0.1:5000
 ```
 
-Now you can enter into the toolkkit main page:
+Now you can enter into the IAToolkit main page:
 http://127.0.0.1:5007/sample_company/home
 
 ### Possible Issues and How to Solve Them
@@ -115,6 +119,23 @@ Database schema created successfully from 'companies/sample_company/sample_data/
 
 This command will create the tables company with: customers, products, orders, countries, employees with dummy data.
 
+### Step 5: Load documents into the vector store 
+
+To enable the AI assistant to answer questions about your company's private documents (like manuals, policies, or contracts), 
+you need to load them into a vector store. 
+This process, known as Retrieval-Augmented Generation (RAG), 
+converts your documents into a searchable format that the AI can use to find relevant information.
+
+The `sample_company` is configured to look for documents in the `knowledge_base` section 
+of its `companies/sample_company/config/company.yaml` file. 
+It defines two sources: `employee_contracts` and `supplier_manuals`.
+
+**Run the Load Command**
+
+From your project's root directory, execute the following command:
+```bash
+    flask load
+```
 ## Next Steps
 
 Now that you have IAToolkit running, you're ready to create your own company and customize it for your specific needs.

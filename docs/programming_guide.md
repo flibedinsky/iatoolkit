@@ -76,11 +76,10 @@ Manages all data persistence and retrieval:
 - Query builders
 - Database connection management
 
-
 **Infrastructure Layer (`infra/`)**
 Handles all external system integrations:
 - LLM provider adapters (OpenAI, Gemini)
-- Email services
+- Email services (brevo mail)
 - Cloud storage connectors (S3, GCS)
 - Google Chat integration
 
@@ -109,11 +108,27 @@ application. This pattern provides several critical benefits:
 - **Flexibility**: Swap implementations without changing consuming code
 - **Maintainability**: Clear dependencies make the code easier to understand
 
-
 All dependencies are configured in `iatoolkit.py` within the `_configure_core_dependencies()` method, 
 which acts as the composition root for the entire application.
 
-### 2.2 Repository Pattern
+### 2.2 Service Layer Pattern
+
+The Service Layer is the heart of the application's business logic. 
+It sits between the presentation layer (Views) and the data access layer (Repositories), 
+orchestrating complex operations and business workflows. 
+Services provide a clean and robust API for the rest of the application to interact with core functionalities.
+
+#### Core Principles
+
+*   **Single Responsibility**: Each service is designed to manage a specific business domain or capability. For instance, `AuthService` handles authentication, while `QueryService` manages llm query flow. This keeps the codebase organized and easy to understand.
+
+*   **Orchestration, Not Implementation**: A service's primary role is to orchestrate tasks, not to implement low-level details. It defines a business workflow by coordinating calls to repositories (for data access), other services, or infrastructure components (like an email client). For example, a service might fetch data from two different repositories, combine it, and then use another service to send a notification.
+
+*   **Stateless by Design**: Services should be stateless. All the data required for an operation should be passed as arguments to its methods. This makes services highly reusable, predictable, and easier to test, as their output depends only on their input, not on previous interactions.
+
+*   **Dependency Injected**: All services are managed by the `injector` container. They declare their dependencies (such as repositories or other services) in their `__init__` method, and the DI container automatically provides the necessary instances.
+
+### 2.3 Repository Pattern
 
 The repository pattern abstracts data access logic, providing a clean interface between the business logic and data persistence layers.
 Each repository is responsible for a specific domain entity.
@@ -124,7 +139,8 @@ Each repository is responsible for a specific domain entity.
 - Database-agnostic business layer
 - Simplified query management
 
-### 2.3 Adapter Pattern (Infrastructure Layer)
+
+### 2.4 Adapter Pattern (Infrastructure Layer)
 
 External services are integrated using the adapter pattern, providing a uniform 
 interface regardless of the underlying provider. 
@@ -146,9 +162,7 @@ The service layer is the heart of IAToolkit's business logic. Here's a detailed 
 - Receives user queries from the UI
 - Manages conversation context and history
 - Handle the rendering of prompt templates through the prompt manager
-- Coordinates with the Dispatcher to route tool calls
 - Interfaces with LLM providers through the LLMClient
-- Handles streaming responses
 - Logs all interactions for auditing and cost tracking
 
 ---
@@ -158,7 +172,8 @@ The service layer is the heart of IAToolkit's business logic. Here's a detailed 
 **Purpose**: Manages the lifecycle of documents within the system.
 
 **Key Responsibilities:**
-- Document upload and validation
+- Document upload to the iatoolkit database: `documents` and `vsdocs`tables
+- Documents can be uploaded using the `/api/load` api-view (for a single document) or through `document_sources` defined in the `knowledge_base` section de `company.yaml` file. The batch load should be activaded by a cli command.
 - File format handling (PDF, DOCX, TXT, etc.)
 - Document chunking for vector storage
 - Metadata management
@@ -614,14 +629,110 @@ Styling is handled through a combination of global CSS and per-company branding:
 
 This allows each Company to have a **fully branded experience** (colors, logos, sometimes additional CSS) without duplicating templates.
 
+## 6. CLI Commands
+
+IAToolkit extends Flask's command-line interface (CLI) to provide a powerful way to perform administrative, 
+setup, and maintenance tasks directly from your terminal. 
+You can define custom commands for each company, allowing you to build administrative scripts that 
+are tightly integrated with your company's specific logic and configuration.
+
+To add custom CLI commands to a company, you need to implement the `register_cli_commands` 
+method in your company's main class. This method is defined in `BaseCompany` and is called by the IAToolkit framework during 
+the application startup process.
+
+The `sample_company` provides an excellent example of a custom CLI command: `flask load`. 
+This command is responsible for populating the vector database with documents 
+for Retrieval-Augmented Generation (RAG). 
+It reads the `knowledge_base` configuration from `company.yaml` to find and process the 
+specified document sources.
+
+#### 6.1 The `company.yaml` Configuration
+
+First, let's look at the `knowledge_base` section in `companies/sample_company/config/company.yaml`. This section declaratively defines the logical groups of documents to be indexed.
+
+```yaml
+# ... other configurations ...
+
+# Knowledge Base (RAG)
+# Defines the sources of unstructured documents for indexing.
+knowledge_base:
+
+  # Document Sources define the logical groups of documents to be indexed.
+  # Each key (e.g., "supplier_manuals") is a unique source identifier.
+  document_sources:
+    supplier_manuals:
+      path: "companies/sample_company/sample_data/supplier_manuals"
+      metadata:
+        type: "supplier_manual"
+
+    employee_contracts:
+      path: "companies/sample_company/sample_data/employee_contracts"
+      metadata:
+        type: "employee_contract"
+```
+Here, we have defined two document sources: `supplier_manuals` and `employee_contracts`, 
+each pointing to a specific path where the files are located.
+
+#### 6.2 The Python Implementation
+
+Next, let's see how `sample_company.py` implements the `load` command. 
+It overrides `register_cli_commands` and uses the injected `load_document_service` to perform the work.
+
+**In `companies/sample_company/sample_company.py`:**
+```python
+
+def register_cli_commands(self, app):
+    @app.cli.command("load")
+    def load_documents():
+        """📦 Ingests documents into the vector store based on company.yaml."""
+        try:
+            click.echo("⚙️  Loading documents into the vector store...")
+            
+            # This is the core logic:
+            # It tells the service to load only the specified sources
+            # from the knowledge_base configuration.
+            self.load_document_service.load_sources(
+                        company=self.company,
+                        sources_to_load=["employee_contracts", "supplier_manuals"]
+                    )
+            
+            click.echo("✅ Documents loaded successfully.")
+        except Exception as e:
+            logging.exception(e)
+            click.echo(f"❌ Error during document loading: {str(e)}")
+
+    # You can also register other commands here, like populate-sample-db
+    @app.cli.command("populate-sample-db")
+    def populate_sample_db():
+        # ... implementation for populating the SQL database ...
+        pass
+```
+
+**How It Works:**
+1.  The `@app.cli.command("load")` decorator registers a new command, making it available as `flask load`.
+2.  The `load_documents` function is executed when the command is run.
+3.  It calls `self.load_document_service.load_sources()`, passing the `company` object and a list of `sources_to_load`.
+4.  The service then looks into the `company.yaml` `knowledge_base.document_sources` section and processes only the sources whose keys match the 
+5. ones in the `sources_to_load` list (`"employee_contracts"` and `"supplier_manuals"`). For each source, it reads the files from the specified `path`, applies the metadata, and ingests them into the vector database.
+
+#### 6.3 Running the Command
+
+With this setup, you can populate your vector store for the `sample_company` by running a single command from your terminal:
+
+```bash
+# Ensure your virtual environment is activated
+(venv) iatoolkit % flask load
+```
+
+The output will show the progress as the service finds, processes, and indexes the documents from the configured paths. This powerful pattern allows you to create repeatable, version-controlled scripts for essential administrative tasks like data ingestion, database migrations, or system health checks.
 
 ---
-## 6. Testing Strategy
+## 7. Testing Strategy
 
 IAToolkit maintains **90%+ test coverage** to ensure reliability and facilitate safe refactoring. 
 Tests are organized to mirror the source code structure.
 
-### 6.1 Test Categories
+### 7.1 Test Categories
 
 **Unit Tests**: Test individual components in isolation with mocked dependencies
 - Located in `tests/services/`, `tests/repositories/`, etc.
@@ -634,9 +745,9 @@ Tests are organized to mirror the source code structure.
 
 **Example Test Structure:**
 
-## 7. Best Practices
+## 8. Best Practices
 
-### 7.1 Error Handling
+### 8.1 Error Handling
 
 Always use IAToolkitException for application errors:
 ```python
@@ -647,7 +758,7 @@ raise IAToolkitException(
     "Clear error message for debugging"
 )
 ```
-### 7.2 Logging
+### 8.2 Logging
 Use Python's standard logging:
 ```python
 
@@ -658,14 +769,14 @@ logging.error(f"Error occurred: {error_details}")
 logging.debug("Detailed debug information")
 ```
 
-### 7.3 Configuration Management
+### 8.3 Configuration Management
 
 Never hardcode configuration values. Always use:
 Environment variables for secrets
 company.yaml for company-specific settings
 ConfigurationService for accessing configuration
 
-## 8. Contributing Guidelines
+## 9. Contributing Guidelines
 When contributing to IAToolkit:
 1. Follow the existing structure: Place code in the appropriate layer
 2. Write tests: Maintain the high test coverage standard
