@@ -1,23 +1,14 @@
 ## Copyright (c) 2024 Fernando Libedinsky
-
-from dotenv import load_dotenv
-from companies.sample_company.sample_company import SampleCompany
 import os
 import sys
 
-# --- Try to import iatoolkit as an installed package ---
-try:
-    from iatoolkit import IAToolkit, register_company
-except ImportError:
-    # Fallback: running from source repo, add ./src to sys.path
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    src_path = os.path.join(base_dir, "src")
-    if src_path not in sys.path:
-        sys.path.insert(0, src_path)
+src_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'src')
+sys.path.insert(0, src_path)
 
-    # Try again after modifying sys.path
-    from iatoolkit import IAToolkit, register_company
-
+from dotenv import load_dotenv
+from iatoolkit.iatoolkit import IAToolkit
+from iatoolkit.company_registry import register_company
+from companies.sample_company.sample_company import SampleCompany
 
 # load environment variables
 load_dotenv()
