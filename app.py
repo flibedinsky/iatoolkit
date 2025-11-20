@@ -1,4 +1,4 @@
-## Copyright (c) 2024 Fernando Libedinsky
+
 import os
 import sys
 
