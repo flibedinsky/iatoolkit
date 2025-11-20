@@ -11,10 +11,11 @@ and run the local web server.
 ### Step 1: Clone and Install
 
 First, set up your local environment and install the necessary dependencies.
+Python version: 3.12 or superior
 
 1.  **Clone the Repository**:
     ```bash
-    git clone <https://github.com/flibedinsky/iatoolkit>
+    git clone https://github.com/flibedinsky/iatoolkit
     cd iatoolkit
     ```
 

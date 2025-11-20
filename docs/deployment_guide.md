@@ -172,6 +172,36 @@ On Heroku: You can run commands using `heroku run`.
 
 After these commands complete, your production instance will be fully configured and ready to use.
 
+## 7. Mail Service Configuration
+
+IAToolkit uses a mail service to send notifications like account verification and password resets. 
+It also use this service when the user order the chatbot to send emails.
+To enable this in production, you must configure your mail provider in `company.yaml` and set 
+the required credentials as environment variables in your hosting environment.
+
+The system supports multiple providers, such as Brevo (formerly Sendinblue) 
+and standard SMTP servers, as detailed in the [Companies and Components](./companies_and_components.md) guide.
+
+### Environment Variables for Mail Service
+
+Depending on the provider you configured in your `company.yaml`, 
+you will need to add the following variables to your production environment 
+configuration (e.g., in Heroku Config Vars):
+
+#### For Brevo (`provider: "brevo_mail"`)
+*   `BREVO_API_KEY`: Your API key from Brevo. The name of this environment variable is what you define in the `brevo_api` key inside `company.yaml`.
+
+#### For SMTP (`provider: "smtplib"`)
+*   `SMTP_HOST`: Your SMTP server hostname.
+*   `SMTP_PORT`: The port for the SMTP server.
+*   `SMTP_USERNAME`: Your SMTP username.
+*   `SMTP_PASSWORD`: Your SMTP password.
+*   `SMTP_USE_TLS`: Set to "true" to enable TLS.
+*   `SMTP_USE_SSL`: Set to "true" to enable SSL.
+
+**Note**: The names for the SMTP environment variables (`SMTP_HOST`, `SMTP_PORT`, etc.) are configurable in the `smtplib` section of your `company.yaml` file.
+
+Once these variables are set according to your `company.yaml` configuration, the mail service will be operational.
 
 
 

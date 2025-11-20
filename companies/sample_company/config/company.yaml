@@ -199,11 +199,9 @@ mail_provider:
     brevo_api: "BREVO_API_KEY"
 
   smtplib:
-    # names of the env vars used by smtplib
+    # the default names are in the mail_service.py file
     host_env: "SMTP_HOST"
     port_env: "SMTP_PORT"
     username_env: "SMTP_USERNAME"
     password_env: "SMTP_PASSWORD"
-    use_tls_env: "SMTP_USE_TLS"
-    use_ssl_env: "SMTP_USE_SSL"
 
