@@ -110,7 +110,7 @@ Database schema created successfully from 'companies/sample_company/sample_data/
 ✅ database created and populated successfully!
 ```
 
-This command will create the tables company with: customers, products, orders, countries, employees with dummy data.
+This command will create the following tables with dummy data: customers, products, orders, countries, employees.
 
 ### Step 5: Load documents into the vector store 
 
