@@ -22,7 +22,7 @@ class ExternalLoginView(BaseLoginView):
 
         company = self.profile_service.get_company_by_short_name(company_short_name)
         if not company:
-            return jsonify({"error": "Empresa no encontrada"}), 404
+            return jsonify({"error": f"company not found: {company_short_name}"}), 404
 
         user_identifier = auth_result.get('user_identifier')
 
@@ -37,7 +37,7 @@ class ExternalLoginView(BaseLoginView):
         )
 
         if not redeem_token:
-            return jsonify({"error": "Error al generar el redeem_token para login externo."}), 403
+            return jsonify({"error": "error generating reedem token for external login."}), 403
 
         # 4. define URL to call when slow path is finished
         target_url = url_for('finalize_with_token',
@@ -58,7 +58,7 @@ class RedeemTokenApiView(BaseLoginView):
     def post(self, company_short_name: str):
         data = request.get_json()
         if not data or 'token' not in data:
-            return jsonify({"error": "Falta token de validación"}), 400
+            return jsonify({"error": "missing validation token in api-view"}), 400
 
         # get the token and validate with auth service
         token = data.get('token')

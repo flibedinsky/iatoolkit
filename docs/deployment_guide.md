@@ -10,7 +10,7 @@ Before you begin, ensure you have the following resources provisioned on your cl
 
 1.  **A PostgreSQL Database**: For the core IAToolkit system (users, queries, etc.).
 2.  **A Redis Instance**: For session management and caching.
-3.  **(Optional) A second PostgreSQL Database**: For your company-specific data (e.g., the Northwind sample database).
+3.  **(Optional) A second PostgreSQL Database**: For your company-specific data (e.g., the demo SampleCompany database).
 4.  **(Optional) An S3-compatible Object Storage Bucket**: If you plan to use the RAG feature with documents in production.
 
 ## 2. Deployment Strategy: Decoupled Company Repository
@@ -218,7 +218,6 @@ The main uses for the API key are:
 
 The API key is generated using a Flask CLI command. You will need to run this command in your production server environment 
 for the desired company.
-The api key is generted with the following command
 
 ```bash
 flask api-key sample_company

@@ -125,7 +125,7 @@ class TestRedeemTokenApiView:
     def test_redeem_missing_token_returns_400(self):
         resp = self.client.post(f"/{self.company_short_name}/api/redeem_token", json={})
         assert resp.status_code == 400
-        assert "Falta token" in resp.get_json().get("error", "")
+        assert "missing validation token" in resp.get_json().get("error", "")
 
     def test_redeem_failure_returns_401(self):
         self.auth_service.redeem_token_for_session.return_value = {'success': False, 'error': 'Token es inválido'}
