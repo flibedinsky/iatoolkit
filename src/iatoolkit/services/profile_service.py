@@ -219,8 +219,7 @@ class ProfileService:
 
             # account verification can be skiped with this security parameter
             verified = False
-            message = self.i18n_service.t('flash_messages.signup_success')
-            cfg = self.config_service.get_configuration(company_short_name, 'params')
+            cfg = self.config_service.get_configuration(company_short_name, 'parameters')
             if cfg and not cfg.get('verify_account', True):
                 verified = True
                 message = self.i18n_service.t('flash_messages.signup_success_no_verification')
@@ -237,11 +236,13 @@ class ProfileService:
             # associate new company to user
             new_user.companies.append(company)
 
+            # and create in the database
             self.profile_repo.create_user(new_user)
 
             # send email with verification
-            if not verified:
+            if not cfg or cfg.get('verify_account', True):
                 self.send_verification_email(new_user, company_short_name)
+                message = self.i18n_service.t('flash_messages.signup_success')
 
             return {"message": message}
         except Exception as e:
