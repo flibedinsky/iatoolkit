@@ -27,8 +27,6 @@ user_company = Table('iat_user_company',
                      Column('company_id', Integer,
                             ForeignKey('iat_companies.id',ondelete='CASCADE'),
                                 primary_key=True),
-                     Column('is_active', Boolean, default=True),
-                     Column('role', String(50), default='user'),  # Para manejar roles por empresa
                      Column('created_at', DateTime, default=datetime.now)
                      )
 
