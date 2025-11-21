@@ -344,6 +344,8 @@ You can invoke a predefined prompt to perform complex tasks and return structure
 Imagine you have a prompt named `get_sales_report` that is designed to call an internal tool (`get_sales_data`) 
 and format the output.
 
+The prompt `get_sales_report` should be defined in the file `company.yaml`.
+
 **Sample Prompt (`companies/my_company/prompts/get_sales_report.prompt`):**
 ```text
 You are an expert sales analyst.
