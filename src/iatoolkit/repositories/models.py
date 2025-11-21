@@ -36,7 +36,7 @@ class ApiKey(Base):
     """Represents an API key for a company to authenticate against the system."""
     __tablename__ = 'iat_api_keys'
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     company_id = Column(Integer, ForeignKey('iat_companies.id', ondelete='CASCADE'), nullable=False)
     key = Column(String(128), unique=True, nullable=False, index=True) # La API Key en sí
     is_active = Column(Boolean, default=True, nullable=False)
@@ -50,7 +50,7 @@ class Company(Base):
     """Represents a company or tenant in the multi-tenant system."""
     __tablename__ = 'iat_companies'
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     short_name = Column(String(20), nullable=False, unique=True, index=True)
     name = Column(String(256), nullable=False)
 
@@ -96,7 +96,7 @@ class User(Base):
     """Represents an IAToolkit user who can be associated with multiple companies."""
     __tablename__ = 'iat_users'
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     email = Column(String(80), unique=True, nullable=False)
     first_name = Column(String(50), nullable=False)
     last_name = Column(String(50), nullable=False)
@@ -131,7 +131,7 @@ class Function(Base):
     """Represents a custom or system function that the LLM can call (tool)."""
     __tablename__ = 'iat_functions'
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     company_id = Column(Integer,
                         ForeignKey('iat_companies.id',ondelete='CASCADE'),
                         nullable=True)
@@ -171,7 +171,7 @@ class LLMQuery(Base):
     """Logs a query made to the LLM, including input, output, and metadata."""
     __tablename__ = 'iat_queries'
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     company_id = Column(Integer, ForeignKey('iat_companies.id',
                             ondelete='CASCADE'), nullable=False)
     user_identifier = Column(String(128), nullable=False)
@@ -196,7 +196,7 @@ class VSDoc(Base):
     """Stores a text chunk and its corresponding vector embedding for similarity search."""
     __tablename__ = "iat_vsdocs"
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     company_id = Column(Integer, ForeignKey('iat_companies.id',
                     ondelete='CASCADE'), nullable=False)
     document_id = Column(Integer, ForeignKey('iat_documents.id',
@@ -224,7 +224,7 @@ class TaskType(Base):
     """Defines a type of task that can be executed, including its prompt template."""
     __tablename__ = 'iat_task_types'
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(100), unique=True, nullable=False)
     prompt_template = Column(String(100), nullable=True)  # Plantilla de prompt por defecto.
     template_args = Column(JSON, nullable=True)  # Argumentos/prefijos de configuración para el template.
@@ -233,7 +233,7 @@ class Task(Base):
     """Represents an asynchronous task to be executed by the system, often involving an LLM."""
     __tablename__ = 'iat_tasks'
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     company_id = Column(Integer, ForeignKey("iat_companies.id"))
 
     user_id = Column(Integer, nullable=True, default=0)
@@ -263,7 +263,7 @@ class UserFeedback(Base):
     """Stores feedback and ratings submitted by users for specific interactions."""
     __tablename__ = 'iat_feedback'
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     company_id = Column(Integer, ForeignKey('iat_companies.id',
                                             ondelete='CASCADE'), nullable=False)
     user_identifier = Column(String(128), default='', nullable=True)
@@ -277,7 +277,7 @@ class UserFeedback(Base):
 class PromptCategory(Base):
     """Represents a category to group and organize prompts."""
     __tablename__ = 'iat_prompt_categories'
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
     order = Column(Integer, nullable=False, default=0)
     company_id = Column(Integer, ForeignKey('iat_companies.id'), nullable=False)
@@ -292,7 +292,7 @@ class Prompt(Base):
     """Represents a system or user-defined prompt template for the LLM."""
     __tablename__ = 'iat_prompt'
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     company_id = Column(Integer, ForeignKey('iat_companies.id',
                                             ondelete='CASCADE'), nullable=True)
     name = Column(String(64), nullable=False)
@@ -313,7 +313,7 @@ class AccessLog(Base):
     # Modelo ORM para registrar cada intento de acceso a la plataforma.
     __tablename__ = 'iat_access_log'
 
-    id = Column(BigInteger, primary_key=True)
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
 
     timestamp = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
     company_short_name = Column(String(100), nullable=False, index=True)
