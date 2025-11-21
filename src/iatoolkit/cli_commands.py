@@ -17,25 +17,23 @@ def register_core_commands(app):
         """⚙️ Genera una nueva API key para una compañía ya registrada."""
         try:
             profile_service = IAToolkit.get_instance().get_injector().get(ProfileService)
-            click.echo(f"🔑 Generando API key para '{company_short_name}'...")
+            click.echo(f"🔑 Generating API-KEY for company: '{company_short_name}'...")
             result = profile_service.new_api_key(company_short_name)
 
             if 'error' in result:
                 click.echo(f"❌ Error: {result['error']}")
-                click.echo("👉 Asegúrate de que el nombre de la compañía es correcto y está registrada.")
+                click.echo("👉 Make sure the company is registered and valid.")
             else:
-                click.echo("✅ ¡Configuración lista! Agrega esta variable a tu entorno:")
+                click.echo("✅ ¡Api-key is ready! add this variable to your environment:")
                 click.echo(f"IATOOLKIT_API_KEY='{result['api-key']}'")
         except Exception as e:
             logging.exception(e)
-            click.echo(f"❌ Ocurrió un error inesperado durante la configuración: {e}")
+            click.echo(f"❌ unexpectd error during the configuration: {e}")
 
     @app.cli.command("encrypt-key")
     @click.argument("key")
     def encrypt_llm_api_key(key: str):
         from iatoolkit.common.util import Utility
-
-
 
         util = IAToolkit.get_instance().get_injector().get(Utility)
         try:

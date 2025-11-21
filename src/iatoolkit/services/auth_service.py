@@ -132,7 +132,7 @@ class AuthService:
         # check if the api-key is valid and active
         api_key_entry = self.profile_service.get_active_api_key_entry(api_key)
         if not api_key_entry:
-            logging.info(f"Invalid or inactive API Key {api_key}")
+            logging.info(f"Invalid or inactive IAToolkit API Key: {api_key}")
             return {"success": False,
                     "error_message": self.i18n_service.t('errors.auth.invalid_api_key'),
                     "status_code": 402}

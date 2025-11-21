@@ -203,6 +203,67 @@ configuration (e.g., in Heroku Config Vars):
 
 Once these variables are set according to your `company.yaml` configuration, the mail service will be operational.
 
+## 8. IAToolkit API-Key
+
+To enable integrations and allow external systems to communicate securely with your IAToolkit instance, 
+you need to generate an API key. This key is used to authenticate API calls.
+
+The main uses for the API key are:
+
+1.  **Executing Prompts via API**: Allows internal company processes to programmatically call predefined IAToolkit prompts. For example, a CRM system could trigger a prompt to have the LLM summarize a customer's history based on a customer object.
+2.  **Corporate Portal Integration**: Enables the external login flow from an internal company portal, providing a seamless Single Sign-On (SSO) experience for users, as detailed in the next chapter.
+
+
+### 8.1. API Key Generation
+
+The API key is generated using a Flask CLI command. You will need to run this command in your production server environment 
+for the desired company.
+The api key is generted with the following command
+
+```bash
+flask api-key sample_company
+```
+
+and the following output will be displayed:
+
+```bash
+(venv) iatoolkit %flask api-key sample_company
+...
+2025-11-21 15:07:56,439 - IATOOLKIT - root - INFO - 🎉 IAToolkit v0.74.0 inicializado correctamente
+🔑 Generating API-KEY for company: 'sample_company'...
+✅ ¡Api-key is ready! add this variable to your environment:
+IATOOLKIT_API_KEY='ntyFHTob55TCHFdLoOkCxSi0WhyOfMGRJcqH5qIM'```
+```
+
+### 8.2. Configuration
+
+The `IATOOLKIT_API_KEY` environment variable must be configured in the environment of the **client system** that 
+will be making calls to the IAToolkit API (for example, your internal corporate portal's server). 
+You should **not** configure this variable in the IAToolkit server environment itself.
+
+This key should be treated with the same confidentiality as a password.
+
+## 9. External Login
+
+IAToolkit offers an "external login" feature designed to smoothly integrate the chat platform into a company portal or 
+intranet where users are already authenticated.
+
+This allows a user to navigate from the internal portal to IAToolkit and be logged in automatically, 
+without needing to re-enter their credentials, providing a Single Sign-On (SSO) experience.
+
+### 9.1. Authentication Flow
+
+1.  **API Call**: The external system (your corporate portal) must make an authenticated `POST` call to the following IAToolkit endpoint:
+    `/external_login/<company_short_name>`
+
+2.  **Authentication**: The call must include the `IATOOLKIT_API_KEY` (generated in the previous step) in the authorization headers to be validated. Additionally, the `auth_service` expects to receive the corporate user's identity.
+
+3.  **Session Creation**: If authentication is successful, IAToolkit internally creates a session context for the user and generates a single-use token.
+
+4.  **Chat Access**: IAToolkit returns a URL that includes this token, to which the user can be redirected to finalize the login process and directly access the chat.
+
+The reference implementation for this flow can be found in the file `src/iatoolkit/views/external_login_view.py`.
+
 
 
 
